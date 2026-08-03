@@ -665,7 +665,7 @@ test("authored remediation supports prediction, explanation, and code retries", 
   const source = codeLab.getByRole("textbox", { name: "Python source" });
   const check = codeLab.getByRole("button", { name: "Check work" });
   await check.click();
-  await expect(codeLab).toContainText("2 passed, 2 failed", {
+  await expect(codeLab).toContainText("2 passed, 3 failed", {
     timeout: 30_000,
   });
   await expect(codeLab).toContainText(
@@ -674,12 +674,12 @@ test("authored remediation supports prediction, explanation, and code retries", 
 
   await source.fill(
     (await source.inputValue()).replace(
-      "np.row_stack((x, prediction))",
+      "np.vstack((x, prediction))",
       "np.column_stack((x, prediction))",
     ),
   );
   await check.click();
-  await expect(codeLab).toContainText("4 passed, 0 failed", {
+  await expect(codeLab).toContainText("5 passed, 0 failed", {
     timeout: 30_000,
   });
   await expect(codeLab).not.toContainText(
