@@ -87,6 +87,7 @@ export function PythonCodeLab({
   const sourceRef = useRef<HTMLTextAreaElement>(null);
   const editorTabRef = useRef<HTMLButtonElement>(null);
   const outputTabRef = useRef<HTMLButtonElement>(null);
+  const exitEditorOnNextTab = useRef(false);
 
   useEffect(
     () => () => {
@@ -284,6 +285,20 @@ export function PythonCodeLab({
   const handleSourceKeyDown = (
     event: ReactKeyboardEvent<HTMLTextAreaElement>,
   ) => {
+    if (
+      event.key === "Escape" &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey
+    ) {
+      exitEditorOnNextTab.current = true;
+      return;
+    }
+    if (event.key === "Tab" && exitEditorOnNextTab.current) {
+      exitEditorOnNextTab.current = false;
+      return;
+    }
+    exitEditorOnNextTab.current = false;
     if (event.key !== "Tab" || event.altKey || event.ctrlKey || event.metaKey) {
       return;
     }
@@ -317,6 +332,7 @@ export function PythonCodeLab({
   const outputTabId = `${activity.id}-output-tab`;
   const editorPanelId = `${activity.id}-editor-panel`;
   const outputPanelId = `${activity.id}-output-panel`;
+  const editorInstructionsId = `${activity.id}-editor-instructions`;
 
   return (
     <section
@@ -324,7 +340,6 @@ export function PythonCodeLab({
       className={`python-code-lab lesson-activity ${demonstrated ? "demonstrated" : ""}`}
       aria-labelledby={`${activity.id}-title`}
       aria-busy={busy}
-      aria-disabled={!enabled}
       tabIndex={-1}
     >
       <header>
@@ -332,6 +347,12 @@ export function PythonCodeLab({
           <span className="eyebrow">CODE · ISOLATED PYTHON WORKER</span>
           <h2 id={`${activity.id}-title`}>Rebuild the mechanism in Python.</h2>
           <p>{activity.spec.instructions}</p>
+          <small
+            className="code-editor-keyboard-help"
+            id={editorInstructionsId}
+          >
+            Tab indents. Press Escape, then Tab to leave the editor.
+          </small>
         </div>
         <div className="runtime-contract">
           <ShieldCheck size={16} aria-hidden="true" />
@@ -396,9 +417,13 @@ export function PythonCodeLab({
           <textarea
             ref={sourceRef}
             aria-label="Python source"
+            aria-describedby={editorInstructionsId}
             spellCheck={false}
             value={source}
             onChange={(event) => updateSource(event.target.value)}
+            onBlur={() => {
+              exitEditorOnNextTab.current = false;
+            }}
             onKeyDown={handleSourceKeyDown}
           />
           <footer>

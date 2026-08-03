@@ -213,7 +213,7 @@
 }
 
 .module > header > span {
-  color: #6d727d;
+  color: #8f949e;
   font-family: var(--mono);
   font-size: 10px;
 }
@@ -625,7 +625,7 @@
 }
 
 .mechanism-strip span {
-  color: #8c919b;
+  color: #6b707a;
   font-family: var(--mono);
   font-size: 10px;
 }
@@ -749,7 +749,7 @@
 }
 
 .block-index small {
-  color: #b0b4bc;
+  color: #6b707a;
 }
 
 .reading-block h2 {
@@ -1058,6 +1058,7 @@
 
 .choice-prediction {
   display: grid;
+  min-width: 0;
   grid-template-columns: minmax(0, 0.86fr) minmax(340px, 1.14fr);
   gap: 36px 64px;
   padding: 52px max(32px, calc((100% - 900px) / 2));
@@ -1066,9 +1067,14 @@
   background: #f7f9fd;
 }
 
+.choice-prediction > * {
+  min-width: 0;
+}
+
 .choice-prediction h2 {
   max-width: 470px;
   margin: 9px 0 11px;
+  overflow-wrap: anywhere;
   color: var(--ink);
   font-size: 26px;
   line-height: 1.25;
@@ -1623,6 +1629,16 @@
   color: #a4a9b2;
   font-size: 12px;
   line-height: 1.55;
+}
+
+.python-code-lab > header .code-editor-keyboard-help {
+  display: block;
+  max-width: 670px;
+  margin-top: 8px;
+  color: #c0c5ce;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 .runtime-contract {

@@ -6,7 +6,7 @@ import {
   Route,
   X,
 } from "lucide-react";
-import type { RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { courseModules, lessons } from "../content/course";
 import {
   lessonState,
@@ -36,6 +36,7 @@ export function CourseNav({
   onCloseMobile,
   onSelectLesson,
 }: CourseNavProps) {
+  const activeLessonButtonRef = useRef<HTMLButtonElement>(null);
   const activeLesson = lessons.find((item) => item.id === activeLessonId);
   const checkpointActivities = activeLesson
     ? objectiveCheckpointActivities(activeLesson)
@@ -49,6 +50,12 @@ export function CourseNav({
         )
       ).length
     : 0;
+
+  useEffect(() => {
+    if (isModal && !mobileOpen) return;
+    activeLessonButtonRef.current?.scrollIntoView({ block: "nearest" });
+  }, [activeLessonId, isModal, mobileOpen]);
+
   return (
     <aside
       id="course-map-panel"
@@ -114,6 +121,7 @@ export function CourseNav({
                 return (
                   <li key={lesson.id}>
                     <button
+                      ref={active ? activeLessonButtonRef : undefined}
                       type="button"
                       data-lesson-id={lesson.id}
                       className={active ? "active" : ""}

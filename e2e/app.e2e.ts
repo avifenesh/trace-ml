@@ -217,6 +217,31 @@ test("prediction choices form one keyboard-operable radio group", async ({
   ).toBeEnabled();
 });
 
+test("Python source preserves Tab indentation and supports Escape then Tab", async ({
+  page,
+}) => {
+  const source = page.getByRole("textbox", { name: "Python source" });
+  await source.focus();
+  await source.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    textarea.setSelectionRange(0, 0);
+  });
+
+  await page.keyboard.press("Tab");
+  await expect(source).toBeFocused();
+  await expect(source).toHaveValue(/^ {4}/);
+
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Reset starter code" }),
+  ).toBeFocused();
+  await expect(source).toHaveAttribute(
+    "aria-describedby",
+    "00-python-numpy-plot-editor-instructions",
+  );
+});
+
 test("lesson evidence has one authoritative progress live region", async ({
   page,
 }) => {
@@ -825,7 +850,31 @@ test("mobile course map and Q&A are mutually exclusive drawers", async ({
   await expect(openDrawers).toHaveCount(0);
 });
 
+test("a restored deep lesson is visible when the mobile map opens", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(
+    ([key, value]) => localStorage.setItem(key, value),
+    [ACTIVE_LESSON_KEY, "shift-monitor"],
+  );
+  await page.reload();
+
+  await page.getByRole("button", { name: "Open course map" }).click();
+  const map = courseMap(page);
+  const closeButton = map.getByRole("button", { name: "Close course map" });
+  const activeLesson = map.locator('[data-lesson-id="shift-monitor"]');
+
+  await expect(activeLesson).toHaveAttribute("aria-current", "page");
+  await expect(activeLesson).toBeInViewport();
+  await expect(closeButton).toBeFocused();
+  expect(
+    await map.locator(".module-list").evaluate((element) => element.scrollTop),
+  ).toBeGreaterThan(0);
+});
+
 for (const [viewportName, width, height] of [
+  ["minimum phone", 320, 680],
   ["phone", 390, 844],
   ["desktop", 1024, 680],
 ] as const) {
