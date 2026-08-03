@@ -1,0 +1,22 @@
+[package]
+name = "trace-ml"
+version = "0.1.0"
+description = "An inspectable, evidence-led machine learning course."
+authors = ["Avi Fenesh"]
+license = "UNLICENSED"
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "trace_ml_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.5", features = [] }
+tauri-plugin-opener = "2.5.4"
