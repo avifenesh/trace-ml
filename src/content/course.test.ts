@@ -570,6 +570,16 @@ describe("fixed authored course integrity", () => {
         expectNonBlank(response.rubric.demonstratedFeedback);
         expectNonBlank(response.rubric.unsupportedFeedback);
       });
+
+      lesson.activities.forEach((activity) => {
+        const evidenceConceptIds =
+          activity.evidenceConceptIds ?? activity.conceptIds;
+        expect(evidenceConceptIds.length, activity.id).toBeGreaterThan(0);
+        expectUnique(evidenceConceptIds);
+        evidenceConceptIds.forEach((conceptId) => {
+          expect(activity.conceptIds, activity.id).toContain(conceptId);
+        });
+      });
     });
   });
 

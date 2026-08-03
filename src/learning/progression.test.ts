@@ -9,8 +9,10 @@ import {
   recordActivityAttempt,
 } from "./evidence";
 import {
+  activityEvidenceConceptIds,
   lessonState,
   objectiveCheckpointActivities,
+  objectiveCheckpointComplete,
   type ObjectiveCheckpointActivity,
 } from "./progression";
 import type {
@@ -34,7 +36,7 @@ function addCheckpointEvidence(
     lessonId: lesson.id,
     lessonRevision: lesson.revision ?? "unversioned",
     activityId: activity.id,
-    conceptIds: activity.conceptIds,
+    conceptIds: activityEvidenceConceptIds(activity),
     evidenceKind: activity.evidenceKind,
     response: `${level} response`,
     rubricSignals: [],
@@ -80,7 +82,7 @@ describe("lesson progression", () => {
         lessonId: "capacity-curves",
         lessonRevision: lesson.revision ?? "unversioned",
         activityId: activity.id,
-        conceptIds: activity.conceptIds,
+        conceptIds: activityEvidenceConceptIds(activity),
         evidenceKind: activity.evidenceKind,
         response: "Evidence from a different lesson.",
         rubricSignals: [],
@@ -90,6 +92,23 @@ describe("lesson progression", () => {
     });
 
     expect(lessonState(lesson, "another-lesson", record)).toBe("available");
+  });
+
+  it("requires only the concepts an activity explicitly evidences", () => {
+    const lesson = authoredLesson("knn-versus-tree");
+    const prediction = objectiveCheckpointActivities(lesson).find(
+      (activity) => activity.kind === "prediction",
+    );
+    if (!prediction) throw new Error("Expected an authored prediction.");
+    const narrowed = {
+      ...prediction,
+      evidenceConceptIds: [prediction.conceptIds[0]!],
+    };
+    let record = createLearnerRecord();
+    record = addCheckpointEvidence(record, lesson, narrowed);
+
+    expect(objectiveCheckpointComplete(lesson, narrowed, record)).toBe(true);
+    expect(objectiveCheckpointComplete(lesson, prediction, record)).toBe(false);
   });
 
   it("does not let free-form prose certify objective completion", () => {

@@ -62,6 +62,7 @@ export interface PredictionActivity {
   id: string;
   kind: "prediction";
   conceptIds: ConceptId[];
+  evidenceConceptIds?: ConceptId[];
   evidenceKind: "prediction";
   checkpoint: LessonCheckpoint;
   renderer?: "choice" | "line-model";
@@ -77,6 +78,7 @@ export interface TextResponseActivity {
   id: string;
   kind: "text-response";
   conceptIds: ConceptId[];
+  evidenceConceptIds?: ConceptId[];
   evidenceKind: "explanation" | "transfer";
   prompt: string;
   guidance: string;
@@ -123,6 +125,7 @@ export interface VisualLabActivity {
     | "q-learning"
     | "shift-monitor";
   conceptIds: ConceptId[];
+  evidenceConceptIds?: ConceptId[];
   evidenceKind: "manipulation";
   title: string;
   prompt: string;
@@ -168,6 +171,7 @@ export interface CodeLabActivity {
   id: string;
   kind: "code-lab";
   conceptIds: ConceptId[];
+  evidenceConceptIds?: ConceptId[];
   evidenceKind: "code-check";
   spec: CodeLabSpec;
 }

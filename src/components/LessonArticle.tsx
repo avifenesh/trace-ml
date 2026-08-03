@@ -16,7 +16,10 @@ import type {
 } from "../content/types";
 import { researchSourcesForIds } from "../content/research-sources";
 import type { RecordActivityInput } from "../learning/evidence";
-import { objectiveCheckpointActivities } from "../learning/progression";
+import {
+  activityEvidenceConceptIds,
+  objectiveCheckpointActivities,
+} from "../learning/progression";
 import type { ActivityState } from "../learning/useActivityStateStore";
 import { openExternalLink } from "../open-external";
 import { ChoicePredictionGate } from "./ChoicePredictionGate";
@@ -198,7 +201,7 @@ export function LessonArticle({
   ) => {
     onActivityEvidence({
       activityId: activity.id,
-      conceptIds: activity.conceptIds,
+      conceptIds: activityEvidenceConceptIds(activity),
       evidenceKind: activity.evidenceKind,
       response,
       rubricSignals: supported ? ["prediction-supported"] : [],
@@ -242,7 +245,7 @@ export function LessonArticle({
           onAssess={(response, assessment) =>
             onActivityEvidence({
               activityId: activity.id,
-              conceptIds: activity.conceptIds,
+              conceptIds: activityEvidenceConceptIds(activity),
               evidenceKind: activity.evidenceKind,
               response,
               rubricSignals: assessment.matchedCriteria,
@@ -269,7 +272,7 @@ export function LessonArticle({
           onEvidence={(response) =>
             onActivityEvidence({
               activityId: activity.id,
-              conceptIds: activity.conceptIds,
+              conceptIds: activityEvidenceConceptIds(activity),
               evidenceKind: activity.evidenceKind,
               response,
               rubricSignals: ["compared-distinct-states"],
@@ -294,7 +297,7 @@ export function LessonArticle({
         onEvidence={(response, rubricSignals, summary) =>
           onActivityEvidence({
             activityId: activity.id,
-            conceptIds: activity.conceptIds,
+            conceptIds: activityEvidenceConceptIds(activity),
             evidenceKind: activity.evidenceKind,
             response,
             rubricSignals,

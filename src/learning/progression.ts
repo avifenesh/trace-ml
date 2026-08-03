@@ -16,6 +16,10 @@ export type ObjectiveCheckpointActivity = Extract<
   { kind: "prediction" | "visual-lab" | "code-lab" }
 >;
 
+export function activityEvidenceConceptIds(activity: LessonActivity) {
+  return activity.evidenceConceptIds ?? activity.conceptIds;
+}
+
 export function objectiveCheckpointActivities(
   lesson: Lesson,
 ): ObjectiveCheckpointActivity[] {
@@ -37,7 +41,7 @@ export function objectiveCheckpointComplete(
     lessonRevision: lesson.revision ?? "unversioned",
     activityId: activity.id,
   };
-  return activity.conceptIds.every((conceptId) =>
+  return activityEvidenceConceptIds(activity).every((conceptId) =>
     hasDemonstratedEvidence(
       record,
       conceptId,
