@@ -112,6 +112,90 @@ describe("MechanismDiagram", () => {
     ).toBeTruthy();
   });
 
+  it("keeps the mean baseline at one fixed screen position", () => {
+    const baselinePositions = [0, 1, 3, 4].map((weight) => {
+      const rendered = render(
+        <MechanismDiagram
+          labId="data-and-baseline"
+          observation={observationFor("data-and-baseline", weight)}
+        />,
+      );
+      const position = Number(
+        screen
+          .getByTestId("mean-baseline-reference")
+          .getAttribute("data-y"),
+      );
+      rendered.unmount();
+      return position;
+    });
+
+    expect(new Set(baselinePositions).size).toBe(1);
+  });
+
+  it("uses one linear-model scale so larger weights draw steeper lines", () => {
+    const renderedRise = (weight: number) => {
+      const rendered = render(
+        <MechanismDiagram
+          labId="linear-model"
+          observation={observationFor("linear-model", weight)}
+        />,
+      );
+      const line = screen.getByTestId("linear-prediction-line");
+      const rise = Math.abs(
+        Number(line.getAttribute("data-end-y")) -
+          Number(line.getAttribute("data-start-y")),
+      );
+      rendered.unmount();
+      return rise;
+    };
+
+    expect(renderedRise(5)).toBeGreaterThan(renderedRise(0.5));
+    expect(renderedRise(-2)).toBeGreaterThan(renderedRise(-0.5));
+  });
+
+  it("renders one fixed loss curve, a moving point, and absolute square heights", () => {
+    const renderedGeometry = (weight: number) => {
+      const rendered = render(
+        <MechanismDiagram
+          labId="loss-landscape"
+          observation={observationFor("loss-landscape", weight)}
+        />,
+      );
+      const curve = screen.getByTestId("loss-landscape-curve");
+      const axes = screen.getByTestId("loss-landscape-axes");
+      const currentGuide = screen.getByTestId(
+        "loss-landscape-current-guide",
+      );
+      const point = screen.getByTestId("loss-landscape-current");
+      const square = screen.getByTestId("loss-square-2");
+      const geometry = {
+        curve: curve.getAttribute("d"),
+        axesFill: axes.getAttribute("fill"),
+        currentGuideFill: currentGuide.getAttribute("fill"),
+        pointX: Number(point.getAttribute("cx")),
+        pointY: Number(point.getAttribute("cy")),
+        mse: Number(point.getAttribute("data-mse")),
+        squareHeight: Number(square.getAttribute("data-height")),
+      };
+      rendered.unmount();
+      return geometry;
+    };
+    const weightOne = renderedGeometry(1);
+    const weightOneHalf = renderedGeometry(1.5);
+    const optimum = renderedGeometry(2);
+
+    expect(weightOne.curve).toBe(weightOneHalf.curve);
+    expect(weightOneHalf.curve).toBe(optimum.curve);
+    expect(weightOne.axesFill).toBe("none");
+    expect(weightOne.currentGuideFill).toBe("none");
+    expect(weightOneHalf.pointX).toBeGreaterThan(weightOne.pointX);
+    expect(optimum.pointY).toBeGreaterThan(weightOneHalf.pointY);
+    expect(optimum.mse).toBe(0);
+    expect(weightOne.squareHeight).toBeGreaterThan(
+      weightOneHalf.squareHeight,
+    );
+  });
+
   it("keeps the ensemble at the exact fixed learner count", () => {
     const observation = observationFor("ensemble-votes", 1);
     const { container } = render(

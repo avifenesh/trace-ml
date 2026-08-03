@@ -88,6 +88,16 @@ function linearResidualState(weight: number) {
   };
 }
 
+function controlValues(control: VisualLabControl) {
+  const stepCount = Math.round(
+    (control.max - control.min) / control.step,
+  );
+  return Array.from(
+    { length: stepCount + 1 },
+    (_unused, index) => control.min + index * control.step,
+  );
+}
+
 function descentTrace(learningRate: number) {
   let weight = 0;
   const lossAt = (candidateWeight: number) =>
@@ -622,6 +632,14 @@ export function visualMechanismObservation(
       const fixedFeature = 2;
       const fixedBias = 4;
       const fixedTarget = 12;
+      const predictionBounds = [
+        control.min * fixedFeature + fixedBias,
+        control.max * fixedFeature + fixedBias,
+      ];
+      const comparisonDomain = [
+        Math.min(...predictionBounds, fixedTarget, 10),
+        Math.max(...predictionBounds, fixedTarget, 10),
+      ];
       const prediction =
         boundedValue * fixedFeature + fixedBias;
       const residual = prediction - fixedTarget;
@@ -639,12 +657,17 @@ export function visualMechanismObservation(
           prediction,
           residual,
           meanBaseline: 10,
+          comparisonDomain,
         },
       };
     }
     case "linear-model": {
       const inputs = [-2, 0, 5] as const;
       const predictions = inputs.map((x) => boundedValue * x + 4);
+      const predictionDomain = [
+        control.min,
+        control.max,
+      ].flatMap((weight) => inputs.map((x) => weight * x + 4));
       return {
         ...base,
         primary: `w = ${formatNumber(boundedValue)}; y-hat = [${predictions.map((prediction) => formatNumber(prediction)).join(", ")}]`,
@@ -656,11 +679,19 @@ export function visualMechanismObservation(
           bias: 4,
           inputs,
           predictions,
+          predictionDomain,
         },
       };
     }
     case "loss-landscape": {
       const state = linearResidualState(boundedValue);
+      const landscapeWeights = controlValues(control);
+      const landscapeStates = landscapeWeights.map(linearResidualState);
+      const landscapeLosses = landscapeStates.map(({ mse }) => mse);
+      const landscapeLossMax = Math.max(...landscapeLosses);
+      const squareScaleMax = Math.max(
+        ...landscapeStates.flatMap(({ squares }) => squares),
+      );
       return {
         ...base,
         primary: `residuals [${state.residuals.map((residual) => formatNumber(residual)).join(", ")}]`,
@@ -674,6 +705,10 @@ export function visualMechanismObservation(
           residuals: state.residuals,
           squares: state.squares,
           mse: state.mse,
+          landscapeWeights,
+          landscapeLosses,
+          landscapeLossMax,
+          squareScaleMax,
         },
       };
     }

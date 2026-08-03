@@ -123,6 +123,7 @@ describe("visual mechanism observations", () => {
       expect(numberMetric(state, "fixedBias")).toBe(4);
       expect(numberMetric(state, "fixedTarget")).toBe(12);
       expect(numberMetric(state, "meanBaseline")).toBe(10);
+      expect(arrayMetric(state, "comparisonDomain")).toEqual([4, 12]);
     }
     expect(numberMetric(minimum, "prediction")).toBe(4);
     expect(numberMetric(initial, "prediction")).toBe(6);
@@ -130,17 +131,32 @@ describe("visual mechanism observations", () => {
   });
 
   it("rotates the linear predictions around the fixed bias", () => {
-    const result = observe("linear-model", 3);
+    const { minimum, initial, maximum } = authoredStates("linear-model");
+    const result = initial;
     expect(arrayMetric(result, "inputs")).toEqual([-2, 0, 5]);
     expect(arrayMetric(result, "predictions")).toEqual([-2, 4, 19]);
     expect(numberMetric(result, "bias")).toBe(4);
+    for (const state of [minimum, initial, maximum]) {
+      expect(arrayMetric(state, "predictionDomain")).toEqual([
+        8, 4, -6, -6, 4, 29,
+      ]);
+    }
   });
 
-  it("derives every residual, square, and MSE from the authored loss rows", () => {
+  it("derives residuals and one fixed-domain landscape from the authored loss rows", () => {
     const result = observe("loss-landscape", 1);
     expect(arrayMetric(result, "residuals")).toEqual([0, -1, -2]);
     expect(arrayMetric(result, "squares")).toEqual([0, 1, 4]);
     expect(numberMetric(result, "mse")).toBeCloseTo(5 / 3, 12);
+    const weights = arrayMetric(result, "landscapeWeights");
+    const losses = arrayMetric(result, "landscapeLosses");
+    expect(weights).toHaveLength(21);
+    expect(weights[0]).toBe(-1);
+    expect(weights.at(-1)).toBe(4);
+    expect(losses[0]).toBe(15);
+    expect(losses[weights.indexOf(2)]).toBe(0);
+    expect(numberMetric(result, "landscapeLossMax")).toBe(15);
+    expect(numberMetric(result, "squareScaleMax")).toBe(36);
   });
 
   it("replays twelve recomputed gradient steps from the authored initial state", () => {

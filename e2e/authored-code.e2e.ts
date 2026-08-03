@@ -10,7 +10,7 @@ import {
 test.describe.configure({ mode: "serial" });
 
 const EXPECTED_LAB_COUNT = 19;
-const EXPECTED_CHECK_COUNT = 92;
+const EXPECTED_CHECK_COUNT = 93;
 
 async function runStarterAndSolution(
   page: Page,
@@ -108,7 +108,7 @@ test("all 19 authored Python labs are satisfiable in real Pyodide", async ({
   ).toHaveLength(EXPECTED_LAB_COUNT);
   expect(
     authoredCheckCount,
-    "The executable course contract must still contain exactly 92 checks.",
+    "The executable course contract must still contain exactly 93 checks.",
   ).toBe(EXPECTED_CHECK_COUNT);
   expect(
     solutionIds,

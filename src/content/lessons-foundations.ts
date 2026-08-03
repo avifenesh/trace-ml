@@ -47,12 +47,14 @@ function visualLab(
   invariant: string,
   intervention: string,
   control: VisualLabActivity["control"],
+  evidenceConceptIds?: ConceptId[],
 ): VisualLabActivity {
   return {
     id,
     kind: "visual-lab",
     labId: id as VisualLabActivity["labId"],
     conceptIds,
+    ...(evidenceConceptIds ? { evidenceConceptIds } : {}),
     evidenceKind: "manipulation",
     title,
     prompt,
@@ -200,7 +202,7 @@ export const foundationLessons: Lesson[] = [
         "prerequisite-trace",
         ["array-shape", "slope-chain-rule", "probability-baseline"],
         "Keep three traces synchronized",
-        "Move x through the composed function while the plotted x-y relation, array dimensions, and class counts remain visible. Record the axes, shape, both derivative factors, and majority baseline.",
+        "Move x through the composed function while its forward values, array dimensions, and class counts remain visible. Record the shape, both derivative factors, and majority baseline.",
         "The array layout, function definition, and 80-to-20 class counts stay fixed.",
         "Change only x and inspect how u, the outer slope, and the final derivative change.",
         {
@@ -212,6 +214,7 @@ export const foundationLessons: Lesson[] = [
           lowLabel: "-2",
           highLabel: "3",
         },
+        ["slope-chain-rule"],
       ),
       responseActivity(
         "00-mechanism-explanation",
@@ -255,8 +258,8 @@ export const foundationLessons: Lesson[] = [
         "00-sensor-transfer",
         "transfer",
         ["array-shape", "slope-chain-rule", "probability-baseline"],
-        "A sensor system receives 12 windows with 5 measurements each, computes z = 3t - 2 and score = z^2, and has 90 normal versus 10 fault records. State the score-vector shape, dscore/dt at t = 2, and the accuracy of an always-normal baseline.",
-        "Map examples to the preserved axis, trace both derivative factors, and use the observed class counts.",
+        "A sensor system receives 12 windows with 5 measurements each, averages the five measurements in each window into one scalar t, computes z = 3t - 2 and score = z^2, and has 90 normal versus 10 fault records. State the score-vector shape, dscore/dt at t = 2, and the accuracy of an always-normal baseline.",
+        "Reduce each window to one t, map windows to the preserved axis, trace both derivative factors, and use the observed class counts.",
         [
           {
             id: "00-transfer-shape",
@@ -305,7 +308,7 @@ def line_points(inputs, weight, bias):
     x = np.asarray(inputs, dtype=float)
     prediction = weight * x + bias
     # REPAIR: each row must be one (x, prediction) point.
-    return np.row_stack((x, prediction))
+    return np.vstack((x, prediction))
 
 
 INPUTS = np.array([0.0, 1.0, 2.0])
@@ -344,6 +347,14 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
             expression: "str(PLOT_POINTS.tolist())",
             expected: "[[0.0, 1.0], [1.0, 3.0], [2.0, 5.0]]",
             conceptIds: ["plot-axes"],
+          },
+          {
+            id: "00-code-held-out-coordinates",
+            label: "The repair uses held-out inputs, weight, and bias",
+            expression:
+              "str(line_points(np.array([-1.0, 3.0]), weight=-2.0, bias=0.5).tolist())",
+            expected: "[[-1.0, 2.5], [3.0, -5.5]]",
+            conceptIds: ["numpy-array", "plot-axes", "array-shape"],
           },
         ],
         100,
@@ -501,6 +512,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
           lowLabel: "0",
           highLabel: "4",
         },
+        ["parameter-update", "baseline"],
       ),
       responseActivity(
         "01-role-explanation",
@@ -721,7 +733,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         ["linear-parameters", "prediction-contract"],
         "Link equation, table, and line",
         "Change the weight while the input cases and bias remain fixed. Compare the before and after prediction for every x, including a negative input and x = 0.",
-        "The x values, targets, and bias b = 4 remain fixed.",
+        "The x values and bias b = 4 remain fixed.",
         "Change only weight w and inspect the corresponding rotation around x = 0.",
         {
           label: "Weight w",
@@ -732,6 +744,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
           lowLabel: "-2",
           highLabel: "5",
         },
+        ["linear-parameters"],
       ),
       responseActivity(
         "02-parameter-explanation",
@@ -958,6 +971,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
           lowLabel: "-1",
           highLabel: "4",
         },
+        ["residual", "loss", "loss-landscape"],
       ),
       responseActivity(
         "03-loss-explanation",
@@ -1009,8 +1023,8 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         "03-calibration-transfer",
         "transfer",
         ["residual", "loss", "loss-landscape"],
-        "A scale calibration model predicts grams from voltage. Three residuals are -1, +1, and +8 grams. Compute the MSE, interpret the +8 sign, and explain what happens to the landscape point if that residual were corrected to +2 while parameters and other rows stayed fixed.",
-        "Use the new units and show both MSE calculations.",
+        "A scale calibration model predicts grams from voltage. Three residuals are -1, +1, and +8 grams. A calibration audit then corrects the third recorded target, changing that residual to +2 at the same parameter setting while the other two rows stay fixed. Compute both MSE values, interpret the +8 sign, and explain why the corrected target defines a new dataset and therefore a new loss landscape.",
+        "Use the new units, show both MSE calculations, and distinguish a new dataset and landscape from movement within one fixed landscape.",
         [
           {
             id: "03-transfer-mse",
@@ -1032,16 +1046,17 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
           },
           {
             id: "03-transfer-corrected",
-            label: "compute corrected MSE as 2 and lower the landscape point",
+            label: "compute corrected MSE as 2 and identify a new dataset and landscape",
             keywordGroups: [
               ["2"],
-              ["lower", "decrease", "drops"],
+              ["target", "dataset", "data"],
+              ["new", "different"],
               ["landscape", "loss", "MSE"],
             ],
           },
         ],
-        "The residual-to-landscape mechanism now holds for calibration data.",
-        "Square all three residuals before and after the correction, then divide each sum by three.",
+        "You distinguished a lower MSE at the same parameters on a corrected dataset from movement within the original landscape.",
+        "Square all three residuals before and after the correction, divide each sum by three, and name why changing a target changes the dataset-defined landscape.",
       ),
       pythonLab(
         "03-python-loss",

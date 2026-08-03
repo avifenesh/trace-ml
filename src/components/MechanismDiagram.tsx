@@ -298,9 +298,12 @@ function DataBaselineView({ observation }: ObservationViewProps) {
   const prediction = numberMetric(observation, "prediction");
   const residual = numberMetric(observation, "residual");
   const meanBaseline = numberMetric(observation, "meanBaseline");
+  const comparisonDomain = numberArrayMetric(
+    observation,
+    "comparisonDomain",
+  );
 
-  const values = [prediction, target, meanBaseline];
-  const [minimum, maximum] = paddedBounds(values);
+  const [minimum, maximum] = paddedBounds(comparisonDomain);
   const yFor = (value: number) =>
     scale(value, minimum, maximum, 210, 58);
 
@@ -352,6 +355,12 @@ function DataBaselineView({ observation }: ObservationViewProps) {
               stroke={String(color)}
               strokeWidth="2"
               strokeDasharray={label === "prediction" ? undefined : "5 4"}
+              data-testid={
+                label === "mean baseline"
+                  ? "mean-baseline-reference"
+                  : undefined
+              }
+              data-y={y}
             />
             <text x="82" y={y - 6} fill={String(color)} fontSize="10">
               {label} {formatNumber(value)}
@@ -376,9 +385,13 @@ function LinearModelView({ observation }: ObservationViewProps) {
   const bias = numberMetric(observation, "bias");
   const inputs = numberArrayMetric(observation, "inputs");
   const predictions = numberArrayMetric(observation, "predictions");
+  const predictionDomain = numberArrayMetric(
+    observation,
+    "predictionDomain",
+  );
   const xMin = Math.min(...inputs);
   const xMax = Math.max(...inputs);
-  const [yMin, yMax] = paddedBounds([...predictions, bias]);
+  const [yMin, yMax] = paddedBounds(predictionDomain);
   const xFor = (value: number) => scale(value, xMin, xMax, 74, 584);
   const yFor = (value: number) => scale(value, yMin, yMax, 210, 42);
   const ordered = inputs
@@ -442,50 +455,138 @@ function LossLandscapeView({ observation }: ObservationViewProps) {
   const residuals = numberArrayMetric(observation, "residuals");
   const squares = numberArrayMetric(observation, "squares");
   const mse = numberMetric(observation, "mse");
-  const maximumSquare = Math.max(1, ...squares);
+  const landscapeWeights = numberArrayMetric(
+    observation,
+    "landscapeWeights",
+  );
+  const landscapeLosses = numberArrayMetric(
+    observation,
+    "landscapeLosses",
+  );
+  const landscapeLossMax = numberMetric(
+    observation,
+    "landscapeLossMax",
+  );
+  const squareScaleMax = numberMetric(
+    observation,
+    "squareScaleMax",
+  );
+  const weightMin = landscapeWeights[0];
+  const weightMax = landscapeWeights.at(-1) ?? weightMin;
+  const landscapeXFor = (value: number) =>
+    scale(value, weightMin, weightMax, 44, 306);
+  const landscapeYFor = (value: number) =>
+    scale(value, 0, landscapeLossMax, 210, 48);
+  const landscapePath = landscapeWeights
+    .map(
+      (candidateWeight, index) =>
+        `${index === 0 ? "M" : "L"} ${landscapeXFor(candidateWeight).toFixed(2)} ${landscapeYFor(landscapeLosses[index]).toFixed(2)}`,
+    )
+    .join(" ");
+  const currentX = landscapeXFor(weight);
+  const currentY = landscapeYFor(mse);
 
   return (
     <>
       <text x="38" y="26" fill={BLUE} fontSize="11" fontWeight="700">
         y-hat = {formatNumber(weight)}x + {formatNumber(bias)}
       </text>
-      <text x="435" y="26" fill={YELLOW} fontSize="11" fontWeight="700">
+      <text x="500" y="26" fill={YELLOW} fontSize="11" fontWeight="700">
         MSE = {formatNumber(mse)}
       </text>
+      <path
+        d="M44 48V210H306"
+        fill="none"
+        stroke={GRID}
+        strokeWidth="1"
+        data-testid="loss-landscape-axes"
+      />
+      {[102, 156].map((y) => (
+        <path
+          key={y}
+          d={`M44 ${y}H306`}
+          fill="none"
+          stroke={GRID}
+          strokeDasharray="3 6"
+        />
+      ))}
+      <text x="44" y="40" fill={MUTED} fontSize="10">
+        MSE
+      </text>
+      <text x="255" y="239" fill={MUTED} fontSize="10">
+        weight w
+      </text>
+      <text x="42" y="226" fill={MUTED} fontSize="9">
+        {formatNumber(weightMin)}
+      </text>
+      <text x="296" y="226" fill={MUTED} fontSize="9">
+        {formatNumber(weightMax)}
+      </text>
+      <path
+        d={landscapePath}
+        fill="none"
+        stroke={BLUE}
+        strokeWidth="3"
+        data-testid="loss-landscape-curve"
+      />
+      <path
+        d={`M${currentX} 210V${currentY}`}
+        fill="none"
+        stroke={GREEN}
+        strokeWidth="1"
+        strokeDasharray="3 4"
+        data-testid="loss-landscape-current-guide"
+      />
+      <circle
+        cx={currentX}
+        cy={currentY}
+        r="7"
+        fill={GREEN}
+        stroke={PANEL}
+        strokeWidth="2"
+        data-testid="loss-landscape-current"
+        data-weight={weight}
+        data-mse={mse}
+        aria-label={`Current landscape point at weight ${formatNumber(weight)} and MSE ${formatNumber(mse)}`}
+      />
       {predictions.map((prediction, index) => {
-        const x = 54 + index * 190;
-        const height = 112 * (squares[index] / maximumSquare);
+        const x = 330 + index * 98;
+        const height = 68 * (squares[index] / squareScaleMax);
         return (
           <g key={index}>
             <rect
               x={x}
-              y="49"
-              width="154"
+              y="48"
+              width="88"
               height="172"
               rx="4"
               fill={PANEL}
               stroke={GRID}
             />
-            <text x={x + 13} y="72" fill={MUTED} fontSize="10">
+            <text x={x + 11} y="68" fill={MUTED} fontSize="9">
               ROW {index + 1}
             </text>
-            <text x={x + 13} y="94" fill={INK} fontSize="10">
+            <text x={x + 11} y="88" fill={INK} fontSize="9">
               y-hat {formatNumber(prediction)}
             </text>
-            <text x={x + 13} y="113" fill={CORAL} fontSize="10">
-              residual {formatNumber(residuals[index])}
+            <text x={x + 11} y="106" fill={CORAL} fontSize="9">
+              r {formatNumber(residuals[index])}
+            </text>
+            <text x={x + 11} y="124" fill={YELLOW} fontSize="9">
+              r^2 {formatNumber(squares[index])}
             </text>
             <rect
-              x={x + 13}
-              y={202 - height}
-              width="26"
-              height={Math.max(2, height)}
+              x={x + 11}
+              y={210 - height}
+              width="18"
+              height={height}
               fill={CORAL}
               opacity="0.72"
+              data-testid={`loss-square-${index}`}
+              data-square={squares[index]}
+              data-height={height}
+              aria-label={`Row ${index + 1} squared residual ${formatNumber(squares[index])}`}
             />
-            <text x={x + 49} y="198" fill={YELLOW} fontSize="10">
-              square {formatNumber(squares[index])}
-            </text>
           </g>
         );
       })}

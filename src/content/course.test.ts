@@ -357,7 +357,7 @@ describe("fixed authored course integrity", () => {
         (resource) => resource.kind === "video-and-reading",
       ),
     ).toHaveLength(4);
-    expect(allCodeChecks).toHaveLength(92);
+    expect(allCodeChecks).toHaveLength(93);
 
     expectUnique(allOutcomes.map((outcome) => outcome.id));
     expectUnique(allBlocks.map((block) => block.id));
@@ -429,7 +429,7 @@ describe("fixed authored course integrity", () => {
       allPageChunkIds.push(...chunks.map((chunk) => chunk.id));
     });
 
-    expect(allPageChunkIds).toHaveLength(194);
+    expect(allPageChunkIds).toHaveLength(195);
     expectUnique(allPageChunkIds);
   });
 
@@ -583,7 +583,7 @@ describe("fixed authored course integrity", () => {
     });
   });
 
-  it("pins all 19 staged Python labs and their 92 executable checks", () => {
+  it("pins all 19 staged Python labs and their 93 executable checks", () => {
     expect(
       lessons
         .filter((lesson) =>
@@ -628,6 +628,7 @@ describe("fixed authored course integrity", () => {
       expectNonBlank(starterFile.contents);
 
       const expectedCheckCount = new Map([
+        ["00-python-numpy-plot", 5],
         ["xor-python-lab", 3],
         ["logistic-python-lab", 5],
         ["regularization-python-lab", 6],
@@ -686,6 +687,31 @@ describe("fixed authored course integrity", () => {
           "shift-monitor-python-lab",
           ["distribution-shift", "monitoring", "system-diagnosis"],
         ],
+      ]),
+    );
+
+    expect(
+      new Map(
+        visualLabs
+          .filter((activity) =>
+            [
+              "prerequisite-trace",
+              "data-and-baseline",
+              "linear-model",
+              "loss-landscape",
+            ].includes(activity.id)
+          )
+          .map((activity) => [
+            activity.id,
+            activity.evidenceConceptIds,
+          ]),
+      ),
+    ).toEqual(
+      new Map([
+        ["prerequisite-trace", ["slope-chain-rule"]],
+        ["data-and-baseline", ["parameter-update", "baseline"]],
+        ["linear-model", ["linear-parameters"]],
+        ["loss-landscape", ["residual", "loss", "loss-landscape"]],
       ]),
     );
   });

@@ -16,7 +16,7 @@ interface BypassProbe {
 
 export const CODE_LAB_SOLUTION_REPAIRS = {
   "00-python-numpy-plot": {
-    before: "return np.row_stack((x, prediction))",
+    before: "return np.vstack((x, prediction))",
     after: "return np.column_stack((x, prediction))",
   },
   "03-python-loss": {
@@ -136,6 +136,18 @@ export const CODE_LAB_SOLUTION_REPAIRS = {
 } as const satisfies Record<string, SolutionRepair>;
 
 export const CODE_LAB_BYPASS_PROBES: BypassProbe[] = [
+  {
+    id: "line-points-returns-authored-fixture",
+    activityId: "00-python-numpy-plot",
+    replacements: [
+      {
+        before: "return np.column_stack((x, prediction))",
+        after:
+          "return np.array([[0.0, 1.0], [1.0, 3.0], [2.0, 5.0]])",
+      },
+    ],
+    rejectedBy: ["00-code-held-out-coordinates"],
+  },
   {
     id: "displayed-descent-trace-ignores-rate",
     activityId: "04-python-descent",

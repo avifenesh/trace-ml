@@ -52,4 +52,15 @@ describe("authored code-lab solution fixtures", () => {
       });
     });
   });
+
+  it("pins the Lesson 00 hard-coded plotting bypass", () => {
+    expect(
+      CODE_LAB_BYPASS_PROBES.find(
+        (probe) => probe.id === "line-points-returns-authored-fixture",
+      ),
+    ).toMatchObject({
+      activityId: "00-python-numpy-plot",
+      rejectedBy: ["00-code-held-out-coordinates"],
+    });
+  });
 });
