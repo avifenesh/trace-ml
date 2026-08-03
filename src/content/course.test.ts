@@ -357,7 +357,7 @@ describe("fixed authored course integrity", () => {
         (resource) => resource.kind === "video-and-reading",
       ),
     ).toHaveLength(4);
-    expect(allCodeChecks).toHaveLength(84);
+    expect(allCodeChecks).toHaveLength(92);
 
     expectUnique(allOutcomes.map((outcome) => outcome.id));
     expectUnique(allBlocks.map((block) => block.id));
@@ -583,7 +583,7 @@ describe("fixed authored course integrity", () => {
     });
   });
 
-  it("pins all 19 staged Python labs and their 84 executable checks", () => {
+  it("pins all 19 staged Python labs and their 92 executable checks", () => {
     expect(
       lessons
         .filter((lesson) =>
@@ -630,10 +630,13 @@ describe("fixed authored course integrity", () => {
       const expectedCheckCount = new Map([
         ["xor-python-lab", 3],
         ["logistic-python-lab", 5],
-        ["regularization-python-lab", 5],
-        ["backprop-python-lab", 6],
-        ["optimizer-python-lab", 8],
-        ["shift-monitor-python-lab", 5],
+        ["regularization-python-lab", 6],
+        ["ensemble-python-lab", 5],
+        ["backprop-python-lab", 7],
+        ["optimizer-python-lab", 9],
+        ["cluster-python-lab", 5],
+        ["q-learning-python-lab", 6],
+        ["shift-monitor-python-lab", 6],
       ]).get(activity.id) ?? 4;
       expect(activity.spec.checks, lesson.id).toHaveLength(
         expectedCheckCount,
@@ -658,8 +661,33 @@ describe("fixed authored course integrity", () => {
         .map((activity) => [
           activity.id,
           activity.spec.allowedPackages,
-        ]),
+      ]),
     ).toEqual([...SCIENTIFIC_PACKAGE_LABS]);
+
+    expect(
+      new Map(
+        codeLabs
+          .filter((activity) => activity.evidenceConceptIds)
+          .map((activity) => [
+            activity.id,
+            activity.evidenceConceptIds,
+          ]),
+      ),
+    ).toEqual(
+      new Map([
+        ["06-python-capacity", ["model-capacity", "generalization"]],
+        ["ensemble-python-lab", ["bagging", "boosting"]],
+        ["cluster-python-lab", ["k-means", "pca"]],
+        [
+          "attention-python-lab",
+          ["attention", "qkv", "training-versus-inference"],
+        ],
+        [
+          "shift-monitor-python-lab",
+          ["distribution-shift", "monitoring", "system-diagnosis"],
+        ],
+      ]),
+    );
   });
 
   it("keeps the authored capstone fixture coherent across prose and code", () => {

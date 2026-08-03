@@ -1728,6 +1728,11 @@ FOLD_LOSSES = {
     0.5: [0.48, 0.51, 0.50],
     2.0: [0.62, 0.57, 0.65],
 }
+ALTERNATE_FOLD_LOSSES = {
+    0.0: [0.10, 0.90, 0.80],
+    0.5: [0.30, 0.35, 0.40],
+    2.0: [0.40, 0.45, 0.50],
+}
 print("ridge lambda 0:", ridge_weight([1.0, 2.0], [2.0, 4.0], 0.0))
 print("ridge lambda 5:", ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))
 print("scikit-learn lambda 5:", sklearn_ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))
@@ -1769,6 +1774,13 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
             id: "regularization-cv-choice-check",
             label: "Cross-validation selects the lowest mean fold loss",
             expression: "choose_lambda(FOLD_LOSSES)",
+            expected: 0.5,
+            conceptIds: ["cross-validation", "hyperparameter-selection"],
+          },
+          {
+            id: "regularization-cv-aggregation-check",
+            label: "Selection aggregates all folds instead of choosing by the first fold",
+            expression: "choose_lambda(ALTERNATE_FOLD_LOSSES)",
             expected: 0.5,
             conceptIds: ["cross-validation", "hyperparameter-selection"],
           },
@@ -2053,7 +2065,8 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
         "You matched each ensemble mechanism to a distinct observed failure and named the evidence needed.",
         "Treat the unstable tree, correlated trees, and underfitting shallow model as three separate diagnoses.",
       ),
-      pythonLab(
+      {
+        ...pythonLab(
         "ensemble-python-lab",
         ["bagging", "random-forest", "boosting"],
         "ensemble_votes.py",
@@ -2094,7 +2107,7 @@ print("boosted:", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))
             label: "Classification learners combine by majority vote",
             expression: "majority_vote([1, 0, 1])",
             expected: 1,
-            conceptIds: ["bagging", "random-forest"],
+            conceptIds: ["bagging"],
           },
           {
             id: "ensemble-average-check",
@@ -2120,9 +2133,19 @@ print("boosted:", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))
             expected: 2.5,
             conceptIds: ["boosting"],
           },
+          {
+            id: "ensemble-boost-rate-check",
+            label: "Learning rate scales the residual contribution",
+            expression:
+              "str(boost_step([2.0, 5.0], [4.0, 1.0], 0.25))",
+            expected: "[2.5, 4.0]",
+            conceptIds: ["boosting"],
+          },
         ],
         112,
-      ),
+        ),
+        evidenceConceptIds: ["bagging", "boosting"],
+      },
     ],
     resources: [
       videoAndReading(

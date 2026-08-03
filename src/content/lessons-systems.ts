@@ -328,6 +328,14 @@ print("branch contributions:", branch_contributions(*CASES[0]))
             conceptIds: ["chain-rule", "backpropagation"],
           },
           {
+            id: "backprop-route-identity",
+            label: "Product and square routes retain their distinct local derivatives",
+            expression:
+              "str(branch_contributions(3.0, 0.5, 0.0, 0.75))",
+            expected: "(3.0, 1.0, 4.0)",
+            conceptIds: ["chain-rule", "backpropagation"],
+          },
+          {
             id: "backprop-analytic-gradient",
             label: "Backward pass is correct across signed graph states",
             expression:
@@ -789,6 +797,14 @@ REFERENCE_TRACE = reference_trace()
             conceptIds: ["adam"],
           },
           {
+            id: "optimizer-adam-stateful-second-step",
+            label: "A changed gradient uses carried, bias-corrected Adam moments",
+            expression:
+              "(lambda first_step: (lambda second_step: str((round(second_step[0], 6), round(second_step[1], 6), round(second_step[2], 6))))(adam_step(first_step[0], first_step[1], first_step[2], -1.0, 2, 0.1)))(adam_step(4.0, 0.0, 0.0, 2.0, 1, 0.1))",
+            expected: "(3.873366, 0.08, 0.004996)",
+            conceptIds: ["adam"],
+          },
+          {
             id: "optimizer-adam-trace-loss",
             label: "The completed Adam trace carries state while loss falls",
             expression:
@@ -1064,7 +1080,8 @@ REFERENCE_TRACE = reference_trace()
         "You matched each representation to the job its objective actually supports.",
         "Assign one method to compact groups, one to linear reconstruction, and one to co-borrowing prediction.",
       ),
-      pythonLab(
+      {
+        ...pythonLab(
         "cluster-python-lab",
         ["k-means", "pca", "embedding-objective"],
         "geometry_objectives.py",
@@ -1124,8 +1141,16 @@ START = [(0.0, 0.0), (10.0, 10.0)]
             conceptIds: ["k-means"],
           },
           {
+            id: "cluster-alternate-assignments",
+            label: "Nearest-centroid assignment generalizes to a different geometry",
+            expression:
+              "str(assign_points([(9.0, 0.0), (1.0, 0.0), (6.0, 0.0)], [(0.0, 0.0), (10.0, 0.0)]))",
+            expected: "[1, 0, 1]",
+            conceptIds: ["k-means"],
+          },
+          {
             id: "cluster-pca-reconstruction",
-            label: "Projection and reconstruction expose discarded variation",
+            label: "A supplied unit-axis projection exposes perpendicular error",
             expression:
               "squared_distance((3.0, 1.0), reconstruct(project((3.0, 1.0), (1.0, 0.0)), (1.0, 0.0)))",
             expected: 1,
@@ -1133,14 +1158,16 @@ START = [(0.0, 0.0), (10.0, 10.0)]
           },
           {
             id: "cluster-embedding-similarity",
-            label: "Embedding similarity is computed in learned coordinates",
+            label: "A dot product is computed in the supplied coordinates",
             expression: "dot((1.0, 2.0, -1.0), (2.0, 0.5, 1.0))",
             expected: 2,
             conceptIds: ["embedding-objective"],
           },
         ],
         1601,
-      ),
+        ),
+        evidenceConceptIds: ["k-means", "pca"],
+      },
     ],
     resources: [
       interactive(
@@ -1742,9 +1769,10 @@ KERNEL = [
         "You transferred the routing mechanism and preserved the distinction between an intermediate weight and a final cause.",
         "Assign request, lookup description, and routed content to three different Q-K-V roles.",
       ),
-      pythonLab(
+      {
+        ...pythonLab(
         "attention-python-lab",
-        ["attention", "qkv", "transformer"],
+        ["attention", "qkv", "transformer", "training-versus-inference"],
         "attention_inference.py",
         "PRIMM: Predict the equal-score mixture before running. Run the working softmax and causal mask, investigate the weights, then complete the value-weighted sum. Modify one key score and trace the output change. This isolated inference pass assumes position information was already supplied; it performs no training update.",
         `from math import exp, log
@@ -1801,15 +1829,18 @@ LOG_THREE = log(3.0)
           },
           {
             id: "attention-no-training",
-            label: "Inference leaves the supplied keys and values unchanged",
+            label: "Completed inference returns an output without mutating inputs",
             expression:
-              "str((lambda keys, values: (scalar_attention(1.0, keys, values), keys, values))([0.0, LOG_THREE], [2.0, 10.0])[1:])",
-            expected: "([0.0, 1.0986122886681098], [2.0, 10.0])",
+              "str((lambda keys, values: (lambda result: (round(result[1], 6), keys, values))(scalar_attention(1.0, keys, values)))([0.0, LOG_THREE], [2.0, 10.0]))",
+            expected:
+              "(8.0, [0.0, 1.0986122886681098], [2.0, 10.0])",
             conceptIds: ["training-versus-inference"],
           },
         ],
         1801,
-      ),
+        ),
+        evidenceConceptIds: ["attention", "qkv", "training-versus-inference"],
+      },
     ],
     resources: [
       interactive(
@@ -2130,10 +2161,26 @@ def update_table(table, state, action, reward, next_state,
           },
           {
             id: "q-table-update",
-            label: "Q entry moves halfway toward the target",
+            label: "Scalar Q update moves halfway toward the target",
             expression: "q_update(1.0, 6.5, 0.5)",
             expected: 3.75,
             conceptIds: ["q-learning"],
+          },
+          {
+            id: "q-table-mutation",
+            label: "Continuing update mutates the selected table entry",
+            expression:
+              "str((lambda table: (update_table(table, 's', 'a', 2.0, 'next', 0.9, 0.5), table['s']['a']))({'s': {'a': 1.0}, 'next': {'left': 3.0, 'right': 5.0}}))",
+            expected: "(3.75, 3.75)",
+            conceptIds: ["bellman-update", "q-learning"],
+          },
+          {
+            id: "q-terminal-table-mutation",
+            label: "Terminal table update uses reward without a next-state lookup",
+            expression:
+              "str((lambda table: (update_table(table, 's', 'a', 2.0, 'missing', 0.9, 0.5, True), table['s']['a']))({'s': {'a': 4.0}}))",
+            expected: "(3.0, 3.0)",
+            conceptIds: ["mdp", "bellman-update", "q-learning"],
           },
         ],
         1901,
@@ -2421,7 +2468,8 @@ def update_table(table, state, action, reward, next_state,
         "You transferred the layered diagnosis to a delayed-label safety system with an explicit control.",
         "Separate signals available today from outcome labels available next week, then compare both sensors on the same water.",
       ),
-      pythonLab(
+      {
+        ...pythonLab(
         "shift-monitor-python-lab",
         ["distribution-shift", "fairness", "monitoring", "system-diagnosis"],
         "deployment_monitor.py",
@@ -2445,7 +2493,7 @@ def false_negative_rate(records, group):
         if record_group == group and target == 1
     ]
     if not positives:
-        return 0.0
+        return None
     return sum(prediction == 0 for prediction in positives) / len(positives)
 
 
@@ -2456,7 +2504,7 @@ def overall_false_negative_rate(records):
         if target == 1
     ]
     if not positives:
-        return 0.0
+        return None
     return sum(prediction == 0 for prediction in positives) / len(positives)
 
 
@@ -2465,9 +2513,13 @@ def release_ready(
     overall_fnr_max=${CAPSTONE_INCIDENT.releaseGates.overallFalseNegativeRate},
     night_fnr_max=${CAPSTONE_INCIDENT.releaseGates.nightFalseNegativeRate},
 ):
+    overall_rate = overall_false_negative_rate(records)
+    night_rate = false_negative_rate(records, "night")
     return (
-        overall_false_negative_rate(records) <= overall_fnr_max
-        and false_negative_rate(records, "night") <= night_fnr_max
+        overall_rate is not None
+        and night_rate is not None
+        and overall_rate <= overall_fnr_max
+        and night_rate <= night_fnr_max
     )
 
 
@@ -2475,11 +2527,12 @@ def diagnose(reference_brightness, live_brightness, records,
              shift_threshold=${CAPSTONE_INCIDENT.alertThresholds.brightnessMeanShift},
              gap_threshold=${CAPSTONE_INCIDENT.alertThresholds.falseNegativeRateGap}):
     shift = mean_shift(reference_brightness, live_brightness)
-    gap = abs(
-        false_negative_rate(records, "night")
-        - false_negative_rate(records, "day")
-    )
-    # Modify: return the fixed diagnosis when both alert thresholds fail.
+    night_rate = false_negative_rate(records, "night")
+    day_rate = false_negative_rate(records, "day")
+    if night_rate is None or day_rate is None:
+        return "insufficient-positive-support"
+    gap = abs(night_rate - day_rate)
+    # Modify: return the fixed diagnosis for both, one, or no alert.
     return None
 
 
@@ -2517,7 +2570,7 @@ LIVE_RECORDS = (
             expression:
               "round(false_negative_rate(LIVE_RECORDS, 'night') - false_negative_rate(LIVE_RECORDS, 'day'), 3)",
             expected: CAPSTONE_INCIDENT.metrics.falseNegativeRateGap,
-            conceptIds: ["fairness"],
+            conceptIds: ["monitoring"],
           },
           {
             id: "shift-release-gates",
@@ -2525,19 +2578,30 @@ LIVE_RECORDS = (
             expression:
               "str((round(overall_false_negative_rate(LIVE_RECORDS), 3), round(false_negative_rate(LIVE_RECORDS, 'night'), 3), release_ready(LIVE_RECORDS)))",
             expected: `(${CAPSTONE_INCIDENT.metrics.overallFalseNegativeRate}, ${CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate}, False)`,
-            conceptIds: ["fairness", "monitoring"],
+            conceptIds: ["monitoring"],
+          },
+          {
+            id: "shift-missing-support",
+            label: "Undefined actual-positive support fails the release gate closed",
+            expression:
+              "str((false_negative_rate([('night', 0, 0)], 'night'), overall_false_negative_rate([('night', 0, 0)]), release_ready([('night', 0, 0)]), release_ready([('day', 1, 1), ('night', 0, 0)])))",
+            expected: "(None, None, False, False)",
+            conceptIds: ["monitoring"],
           },
           {
             id: "shift-fixed-diagnosis",
-            label: "Fixed capstone rule links drift and subgroup gap",
+            label: "Diagnostic rule distinguishes both, one, no, and unsupported alerts",
             expression:
-              "diagnose(REFERENCE_BRIGHTNESS, LIVE_BRIGHTNESS, LIVE_RECORDS)",
-            expected: "data-shift-and-subgroup-gap",
+              "str([diagnose(REFERENCE_BRIGHTNESS, LIVE_BRIGHTNESS, LIVE_RECORDS), diagnose([0.0], [1.0], [('day', 1, 1), ('night', 1, 1)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 1, 0)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 1, 1)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 0, 0)], 0.5, 0.5)])",
+            expected:
+              "['data-shift-and-subgroup-gap', 'data-shift-only', 'subgroup-gap-only', 'within-alert-thresholds', 'insufficient-positive-support']",
             conceptIds: ["system-diagnosis"],
           },
         ],
         2001,
-      ),
+        ),
+        evidenceConceptIds: ["distribution-shift", "monitoring", "system-diagnosis"],
+      },
     ],
     resources: [
       reading(

@@ -3,6 +3,17 @@ interface SolutionRepair {
   after: string;
 }
 
+interface SourceReplacement extends SolutionRepair {
+  occurrences?: number;
+}
+
+interface BypassProbe {
+  id: string;
+  activityId: string;
+  replacements: SourceReplacement[];
+  rejectedBy: string[];
+}
+
 export const CODE_LAB_SOLUTION_REPAIRS = {
   "00-python-numpy-plot": {
     before: "return np.row_stack((x, prediction))",
@@ -110,13 +121,185 @@ export const CODE_LAB_SOLUTION_REPAIRS = {
   },
   "shift-monitor-python-lab": {
     before:
-      "    # Modify: return the fixed diagnosis when both alert thresholds fail.\n    return None",
-    after: `    # Return the fixed diagnosis when both release gates fail.
-    if shift > shift_threshold and gap > gap_threshold:
+      "    # Modify: return the fixed diagnosis for both, one, or no alert.\n    return None",
+    after: `    # Return the fixed diagnosis for both, one, or no alert.
+    shift_alert = shift > shift_threshold
+    gap_alert = gap > gap_threshold
+    if shift_alert and gap_alert:
         return "data-shift-and-subgroup-gap"
-    return "within-fixed-release-gates"`,
+    if shift_alert:
+        return "data-shift-only"
+    if gap_alert:
+        return "subgroup-gap-only"
+    return "within-alert-thresholds"`,
   },
 } as const satisfies Record<string, SolutionRepair>;
+
+export const CODE_LAB_BYPASS_PROBES: BypassProbe[] = [
+  {
+    id: "displayed-descent-trace-ignores-rate",
+    activityId: "04-python-descent",
+    replacements: [
+      {
+        before:
+          "final_weight, loss_history = train(ROWS, 0.0, learning_rate, 12)",
+        after:
+          "final_weight, loss_history = train(ROWS, 0.0, 0.5, 12)",
+      },
+    ],
+    rejectedBy: ["04-code-convergence"],
+  },
+  {
+    id: "regularization-uses-first-fold",
+    activityId: "regularization-python-lab",
+    replacements: [
+      {
+        before: "return min(scored)[1]",
+        after:
+          "return min(fold_losses, key=lambda penalty: fold_losses[penalty][0])",
+      },
+    ],
+    rejectedBy: ["regularization-cv-aggregation-check"],
+  },
+  {
+    id: "boosting-hardcodes-half-residual",
+    activityId: "ensemble-python-lab",
+    replacements: [
+      {
+        before: "prediction + learning_rate * correction",
+        after: "prediction + correction / 2",
+      },
+    ],
+    rejectedBy: ["ensemble-boost-rate-check"],
+  },
+  {
+    id: "backprop-swaps-route-contributions",
+    activityId: "backprop-python-lab",
+    replacements: [
+      {
+        before:
+          "return product_contribution, square_contribution, product_contribution + square_contribution",
+        after:
+          "return square_contribution, product_contribution, product_contribution + square_contribution",
+      },
+    ],
+    rejectedBy: ["backprop-route-identity"],
+  },
+  {
+    id: "adam-uses-gradient-sign",
+    activityId: "optimizer-python-lab",
+    replacements: [
+      {
+        before: `next_weight = weight - learning_rate * corrected_first / (
+        corrected_second ** 0.5 + epsilon
+    )`,
+        after:
+          "next_weight = weight - learning_rate * (1.0 if gradient > 0 else -1.0)",
+      },
+    ],
+    rejectedBy: ["optimizer-adam-stateful-second-step"],
+  },
+  {
+    id: "cluster-returns-authored-assignments",
+    activityId: "cluster-python-lab",
+    replacements: [
+      {
+        before: `return [
+        min(
+            range(len(centroids)),
+            key=lambda index: squared_distance(point, centroids[index]),
+        )
+        for point in points
+    ]`,
+        after: "return [0, 0, 1, 1]",
+      },
+    ],
+    rejectedBy: ["cluster-alternate-assignments"],
+  },
+  {
+    id: "attention-leaves-output-incomplete",
+    activityId: "attention-python-lab",
+    replacements: [
+      {
+        before:
+          "output = sum(weight * value for weight, value in zip(weights, values))",
+        after: "output = None",
+      },
+    ],
+    rejectedBy: ["attention-no-training"],
+  },
+  {
+    id: "q-table-does-not-mutate",
+    activityId: "q-learning-python-lab",
+    replacements: [
+      {
+        before:
+          "table[state][action] = q_update(table[state][action], target, learning_rate)",
+        after:
+          "q_update(table[state][action], target, learning_rate)",
+      },
+    ],
+    rejectedBy: ["q-table-mutation", "q-terminal-table-mutation"],
+  },
+  {
+    id: "q-terminal-reads-next-state",
+    activityId: "q-learning-python-lab",
+    replacements: [
+      {
+        before:
+          "next_values = [] if terminal else list(table[next_state].values())",
+        after: "next_values = list(table[next_state].values())",
+      },
+    ],
+    rejectedBy: ["q-terminal-table-mutation"],
+  },
+  {
+    id: "release-treats-missing-support-as-zero",
+    activityId: "shift-monitor-python-lab",
+    replacements: [
+      {
+        before: "    if not positives:\n        return None",
+        after: "    if not positives:\n        return 0.0",
+        occurrences: 2,
+      },
+    ],
+    rejectedBy: ["shift-missing-support"],
+  },
+  {
+    id: "diagnosis-collapses-one-alert-branches",
+    activityId: "shift-monitor-python-lab",
+    replacements: [
+      {
+        before: `    if shift_alert and gap_alert:
+        return "data-shift-and-subgroup-gap"
+    if shift_alert:
+        return "data-shift-only"
+    if gap_alert:
+        return "subgroup-gap-only"
+    return "within-alert-thresholds"`,
+        after: `    if shift_alert and gap_alert:
+        return "data-shift-and-subgroup-gap"
+    return "within-alert-thresholds"`,
+      },
+    ],
+    rejectedBy: ["shift-fixed-diagnosis"],
+  },
+];
+
+function replaceExpectedOccurrences(
+  source: string,
+  replacement: SourceReplacement,
+  context: string,
+) {
+  const expectedOccurrences = replacement.occurrences ?? 1;
+  const actualOccurrences = source.split(replacement.before).length - 1;
+  if (actualOccurrences !== expectedOccurrences) {
+    throw new Error(
+      `${context} expected ${expectedOccurrences} repair target occurrence(s), found ${actualOccurrences}.`,
+    );
+  }
+  return source.split(replacement.before).join(replacement.after);
+}
 
 export function buildSolvedSource(activityId: string, starter: string) {
   if (!Object.hasOwn(CODE_LAB_SOLUTION_REPAIRS, activityId)) {
@@ -148,5 +331,28 @@ export function buildSolvedSource(activityId: string, starter: string) {
     starter.slice(0, firstMatch) +
     repair.after +
     starter.slice(firstMatch + repair.before.length)
+  );
+}
+
+export function buildBypassSource(
+  activityId: string,
+  probeId: string,
+  solvedSource: string,
+) {
+  const probe = CODE_LAB_BYPASS_PROBES.find(
+    (candidate) =>
+      candidate.activityId === activityId && candidate.id === probeId,
+  );
+  if (!probe) {
+    throw new Error(`Missing bypass probe ${activityId}/${probeId}.`);
+  }
+  return probe.replacements.reduce(
+    (source, replacement) =>
+      replaceExpectedOccurrences(
+        source,
+        replacement,
+        `Bypass probe ${activityId}/${probeId}`,
+      ),
+    solvedSource,
   );
 }

@@ -1339,7 +1339,7 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
         "04-python-descent",
         ["gradient-direction", "gradient-descent", "learning-rate"],
         "descent_trace.py",
-        "Predict: determine the first weight update and whether learning_rate = 0.5 will be stable. Run the working specimen and inspect its loss trace. Investigate the gradient at each position. Modify only learning_rate to 0.05 and rerun; the checks verify the gradient, first update, and stable result.",
+        "Predict: determine the first weight update and whether learning_rate = 0.5 will be stable. Run the working specimen and inspect its loss trace. Investigate the gradient at each position. Modify only learning_rate to 0.05 and rerun; the checks verify the gradient and the actual displayed trace driven by that learning rate.",
         `ROWS = [
     (1.0, 3.0),
     (2.0, 5.0),
@@ -1385,11 +1385,11 @@ print("loss trace:", loss_history)
           },
           {
             id: "04-code-first-update",
-            label: "One stable step reaches the verified weight",
+            label: "The selected learning rate drives the first displayed update",
             expression:
-              "round(0.0 - 0.05 * weight_gradient(ROWS, 0.0), 6)",
+              "round(0.0 - learning_rate * weight_gradient(ROWS, 0.0), 6)",
             expected: 0.933333,
-            conceptIds: ["gradient-descent"],
+            conceptIds: ["gradient-descent", "learning-rate"],
           },
           {
             id: "04-code-rate-change",
@@ -1400,10 +1400,12 @@ print("loss trace:", loss_history)
           },
           {
             id: "04-code-convergence",
-            label: "Twelve stable updates approach the true weight",
-            expression: "round(train(ROWS, 0.0, 0.05, 12)[0], 6)",
-            expected: 1.998941,
-            conceptIds: ["gradient-descent"],
+            label: "The displayed trace is the complete stable run",
+            expression:
+              "str((round(final_weight, 6), [round(loss, 6) for loss in loss_history]))",
+            expected:
+              "(1.998941, [18.666667, 5.30963, 1.510295, 0.429595, 0.122196, 0.034758, 0.009887, 0.002812, 0.0008, 0.000228, 6.5e-05, 1.8e-05, 5e-06])",
+            conceptIds: ["gradient-descent", "learning-rate"],
           },
         ],
         404,
@@ -1976,7 +1978,8 @@ print("final test loss:", mean_squared_error(TEST_ROWS, selected_prediction))
         "You matched each calibration failure to capacity evidence, proposed controlled tests, and stated the learning-curve boundary.",
         "Model A cannot fit either split; Model B fits training too specifically. Neither comparison varies training size under one held-out protocol.",
       ),
-      pythonLab(
+      {
+        ...pythonLab(
         "06-python-capacity",
         ["model-capacity", "learning-curves", "generalization"],
         "capacity_trace.py",
@@ -2034,7 +2037,7 @@ for name, coefficients in [
             expression:
               "str((mean_squared_error(TRAIN_ROWS, LINEAR_COEFFICIENTS), mean_squared_error(VALIDATION_ROWS, LINEAR_COEFFICIENTS)))",
             expected: "(2.8, 1.0625)",
-            conceptIds: ["model-capacity", "learning-curves"],
+            conceptIds: ["model-capacity"],
           },
           {
             id: "06-code-quadratic",
@@ -2050,7 +2053,7 @@ for name, coefficients in [
             expression:
               "mean_squared_error(TRAIN_ROWS, OVERFIT_COEFFICIENTS) == 0.0 and round(mean_squared_error(VALIDATION_ROWS, OVERFIT_COEFFICIENTS), 6) == 31.347656",
             expected: true,
-            conceptIds: ["learning-curves", "generalization"],
+            conceptIds: ["model-capacity", "generalization"],
           },
           {
             id: "06-code-modification",
@@ -2062,7 +2065,9 @@ for name, coefficients in [
           },
         ],
         606,
-      ),
+        ),
+        evidenceConceptIds: ["model-capacity", "generalization"],
+      },
     ],
     resources: [
       reading(

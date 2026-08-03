@@ -1,22 +1,25 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { CodeLabActivity } from "../src/content/types";
 import {
+  buildBypassSource,
   buildSolvedSource,
+  CODE_LAB_BYPASS_PROBES,
   CODE_LAB_SOLUTION_REPAIRS,
 } from "./fixtures/code-lab-solutions";
 
 test.describe.configure({ mode: "serial" });
 
 const EXPECTED_LAB_COUNT = 19;
-const EXPECTED_CHECK_COUNT = 84;
+const EXPECTED_CHECK_COUNT = 92;
 
 async function runStarterAndSolution(
   page: Page,
   activity: CodeLabActivity,
   solvedSource: string,
+  bypassSources: { id: string; source: string }[],
 ) {
   return page.evaluate(
-    async ({ authoredActivity, solution }) => {
+    async ({ authoredActivity, solution, bypasses }) => {
       // @ts-expect-error Browser-only Vite module URL.
       const { PyodideRunner } = await import(
         "/src/runtime/PyodideRunner.ts"
@@ -39,12 +42,23 @@ async function runStarterAndSolution(
       try {
         const starter = await run(spec.starterFiles[0].contents);
         const solved = await run(solution);
-        return { starter, solved };
+        const bypassResults = [];
+        for (const bypass of bypasses) {
+          bypassResults.push({
+            id: bypass.id,
+            result: await run(bypass.source),
+          });
+        }
+        return { starter, solved, bypassResults };
       } finally {
         runner.dispose();
       }
     },
-    { authoredActivity: activity, solution: solvedSource },
+    {
+      authoredActivity: activity,
+      solution: solvedSource,
+      bypasses: bypassSources,
+    },
   );
 }
 
@@ -94,7 +108,7 @@ test("all 19 authored Python labs are satisfiable in real Pyodide", async ({
   ).toHaveLength(EXPECTED_LAB_COUNT);
   expect(
     authoredCheckCount,
-    "The executable course contract must still contain exactly 84 checks.",
+    "The executable course contract must still contain exactly 92 checks.",
   ).toBe(EXPECTED_CHECK_COUNT);
   expect(
     solutionIds,
@@ -114,15 +128,23 @@ test("all 19 authored Python labs are satisfiable in real Pyodide", async ({
         activity.id,
         starterFile.contents,
       );
+      const activityProbes = CODE_LAB_BYPASS_PROBES.filter(
+        (probe) => probe.activityId === activity.id,
+      );
+      const bypassSources = activityProbes.map((probe) => ({
+        id: probe.id,
+        source: buildBypassSource(activity.id, probe.id, solvedSource),
+      }));
       expect(
         solvedSource,
         `${activity.id}: the bounded repair must change the authored starter.`,
       ).not.toBe(starterFile.contents);
 
-      const { starter, solved } = await runStarterAndSolution(
+      const { starter, solved, bypassResults } = await runStarterAndSolution(
         page,
         activity,
         solvedSource,
+        bypassSources,
       );
       const expectedCheckIds = activity.spec.checks.map(
         (check) => check.id,
@@ -166,6 +188,25 @@ test("all 19 authored Python labs are satisfiable in real Pyodide", async ({
           result?.passed,
           checkFailureLabel(activity, authoredCheck, result),
         ).toBe(true);
+      }
+
+      for (const probe of activityProbes) {
+        const bypass = bypassResults.find(
+          (candidate) => candidate.id === probe.id,
+        );
+        expect(
+          bypass?.result.status,
+          `${activity.id}/${probe.id}: bypass source did not complete.\n${bypass?.result.error ?? ""}`,
+        ).toBe("completed");
+        for (const checkId of probe.rejectedBy) {
+          const result = bypass?.result.checks.find(
+            (check) => check.id === checkId,
+          );
+          expect(
+            result?.passed,
+            `${activity.id}/${probe.id}: known bypass still passed ${checkId}.`,
+          ).toBe(false);
+        }
       }
     });
   }
