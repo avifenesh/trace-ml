@@ -5,6 +5,10 @@ import {
   retrieveLessonContextByChunkIds,
   type RetrievedContext,
 } from "./retrieval";
+import {
+  unfinishedPredictionBoundary,
+  unfinishedPredictionTargeted,
+} from "./checkpoint-guard";
 
 export interface TutorAnswer {
   text: string;
@@ -430,11 +434,20 @@ export function answerFromLesson(
   lesson: Lesson,
   activeBlockId?: string,
   history: readonly TutorHistoryMessage[] = [],
+  committedActivityIds: ReadonlySet<string> = new Set(),
 ): TutorAnswer {
   if (crossesHelperBoundary(query)) {
     return {
       text:
         "I can explain or answer questions from this page, but I cannot teach lessons, choose or arrange course material, create course content or assessments, grade work, or unlock progress. Ask me about a term or mechanism visible here.",
+      sources: [],
+      retrievalMode: "page-context",
+    };
+  }
+
+  if (unfinishedPredictionTargeted(query, lesson, committedActivityIds)) {
+    return {
+      text: unfinishedPredictionBoundary,
       sources: [],
       retrievalMode: "page-context",
     };

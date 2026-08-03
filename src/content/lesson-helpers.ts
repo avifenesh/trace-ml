@@ -9,8 +9,8 @@ import type {
   EvidenceKind,
 } from "../learning/types";
 
-export const COURSE_REVISION = "2026-08-03-r2";
-export const PREREQUISITE_TRACE_REVISION = "2026-08-03-r3";
+export const COURSE_REVISION = "2026-08-04-r1";
+export const PREREQUISITE_TRACE_REVISION = COURSE_REVISION;
 export const PYODIDE_ENVIRONMENT =
   "pyodide-314.0.3-python-3.14.2-numpy-2.4.3-autograd-1.9.1-sklearn-1.8.0-local-assets";
 

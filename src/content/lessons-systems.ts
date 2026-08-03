@@ -26,7 +26,7 @@ export const systemLessons: Lesson[] = [
     question: "How does one loss assign credit to every earlier operation?",
     summary:
       "Run a branched scalar graph forward, add both gradient paths into one shared parameter, and verify the result numerically.",
-    durationMinutes: 38,
+    durationMinutes: 60,
     revision: COURSE_REVISION,
     sourceIds: ["S85", "S57", "S100", "S10"],
     mechanism: {
@@ -65,6 +65,103 @@ export const systemLessons: Lesson[] = [
         requiredEvidenceKinds: ["code-check"],
       },
     ],
+    teaching: {
+      title: "Follow loss information backward without losing a path",
+      introduction: [
+        "A computational graph is a step-by-step record of a calculation. In this lesson, x is an input, w is a parameter the model can change, b is an added bias, and target is the desired answer. The graph first computes p = w * x and q = w squared, then combines them as y_hat = p + q + b. The name y_hat means the model's prediction. Finally, L = 0.5 * (y_hat - target) squared produces one loss number, where a smaller loss means the prediction is closer to the target.",
+        "Backpropagation asks how sensitive that final loss is to every earlier value. The notation dL/dw means the rate at which L changes when w changes by a very small amount. The letter d marks a derivative, not ordinary division. At each operation, a local derivative describes how that operation's output responds to one input. The chain rule connects operations: multiply sensitivities while moving along one path from the loss toward an earlier value.",
+        "A boundary appears when one value feeds more than one later operation. Each route carries a separate contribution, and contributions that return to the same value must be added. Reverse-mode automatic differentiation, or autodiff, performs this bookkeeping in reverse graph order, but it does not decide whether the graph or loss expresses the right problem. A finite-difference check independently perturbs a value and tests the derivative calculation at that point.",
+      ],
+      vocabulary: [
+        {
+          term: "Computational graph",
+          definition:
+            "A directed record whose nodes hold values and whose connections show which operations produced later values.",
+        },
+        {
+          term: "Forward pass",
+          definition:
+            "The left-to-right evaluation that computes every intermediate value and the final loss.",
+        },
+        {
+          term: "Derivative",
+          definition:
+            "A local rate of change, such as dL/dw for loss change with respect to parameter w.",
+        },
+        {
+          term: "Gradient",
+          definition:
+            "The collection of loss derivatives for the values or parameters being considered.",
+        },
+        {
+          term: "Chain rule",
+          definition:
+            "The rule that multiplies local derivatives along a connected path through composed operations.",
+        },
+        {
+          term: "Reverse-mode autodiff",
+          definition:
+            "An algorithm that starts at one output and accumulates chain-rule contributions backward through a recorded graph.",
+        },
+      ],
+      workedExample: {
+        title: "Trace both routes from one loss back to w",
+        setup:
+          "Use x = 2, w = 1, b = 0, and target = 1 in p = w * x, q = w squared, y_hat = p + q + b, and L = 0.5 * (y_hat - target) squared.",
+        steps: [
+          {
+            label: "Compute and record the forward state",
+            explanation:
+              "p = 1 * 2 = 2 and q = 1 squared = 1. Therefore y_hat = 2 + 1 + 0 = 3, the prediction error y_hat - target is 2, and L = 0.5 * 2 squared = 2.",
+          },
+          {
+            label: "Seed the backward pass at the loss",
+            explanation:
+              "For L = 0.5 * (y_hat - target) squared, dL/dy_hat = y_hat - target = 2. This says a small increase in y_hat would increase the current loss at a local rate of 2.",
+          },
+          {
+            label: "Trace the product route",
+            explanation:
+              "Because y_hat includes p with coefficient 1, dL/dp = 2. Since p = w * x, dp/dw = x = 2. Multiplying along this route gives (dL/dp)(dp/dw) = 2 * 2 = 4.",
+          },
+          {
+            label: "Trace the square route",
+            explanation:
+              "Likewise dL/dq = 2. Since q = w squared, dq/dw = 2w = 2 at w = 1. This second route contributes (dL/dq)(dq/dw) = 2 * 2 = 4.",
+          },
+          {
+            label: "Join the routes and check the boundary",
+            explanation:
+              "Both routes end at the same w, so dL/dw = 4 + 4 = 8. A centered finite difference with epsilon = 0.001 gives approximately 8.000004, supporting the arithmetic. It checks this derivative implementation, not whether the objective is appropriate.",
+          },
+        ],
+        takeaway:
+          "Forward values identify the state being differentiated; backward multiplication handles each route; addition preserves every route that reaches a shared parameter.",
+      },
+      misconceptions: [
+        {
+          misconception: "Backpropagation sends the loss value itself backward.",
+          correction:
+            "It sends sensitivities: derivatives of the loss with respect to intermediate values. The forward loss here is 2, while the final derivative with respect to w is 8.",
+        },
+        {
+          misconception: "Only one branch should be followed because w is one parameter.",
+          correction:
+            "One parameter can influence the loss through several operations. Omitting either branch discards a real effect and incorrectly gives 4 instead of 8.",
+        },
+        {
+          misconception: "A successful gradient check proves that the model is correct.",
+          correction:
+            "It only compares analytical and numerical derivatives near tested inputs. A wrong data pipeline, graph, target, or objective can still have internally correct derivatives.",
+        },
+      ],
+      summary: [
+        "Write every forward value before differentiating so each local derivative has a known evaluation point.",
+        "Multiply derivative factors along each route, then add contributions when routes meet at one earlier value.",
+        "In the branched graph, the product route contributes 4 and the square route contributes 4, so the gradient dL/dw must accumulate both contributions.",
+      ],
+      sourceIds: ["S85", "S57", "S100", "S10"],
+    },
     blocks: [
       {
         id: "backprop-graph-forward",
@@ -136,18 +233,18 @@ export const systemLessons: Lesson[] = [
         checkpoint: {
           id: "backprop-direction-prediction",
           prompt:
-            "In the worked branched graph, what is dL/dw after both paths back to w are accumulated?",
+            "A new graph uses x = 3, w = 2, b = 0, target = 5, p = w*x, q = w^2, y_hat = p + q + b, and L = 0.5*(y_hat - target)^2. What is dL/dw after both routes are accumulated?",
           options: [
-            { id: "eight", label: "8: add 4 from each path" },
-            { id: "four", label: "4: keep one path only" },
-            { id: "two", label: "2: use only the loss sensitivity" },
-            { id: "zero", label: "0: the two paths cancel" },
+            { id: "thirty-five", label: "35" },
+            { id: "fifteen", label: "15" },
+            { id: "twenty", label: "20" },
+            { id: "five", label: "5" },
           ],
-          correctOptionId: "eight",
+          correctOptionId: "thirty-five",
           supportedExplanation:
-            "Correct. The product route contributes 2 * x = 4 and the square route contributes 2 * 2w = 4, so dL/dw = 8.",
+            "Correct. y_hat = 10, so dL/dy_hat = 5. The product route contributes 5*x = 15 and the square route contributes 5*(2w) = 20, giving dL/dw = 35.",
           revisitExplanation:
-            "Trace w through p = w*x and q = w^2 separately, then add their contributions where they return to the shared parameter.",
+            "First compute y_hat and the loss sensitivity. Then multiply through p = w*x and q = w^2 separately before adding the two contributions at w.",
         },
       },
       {
@@ -410,7 +507,7 @@ print("branch contributions:", branch_contributions(*CASES[0]))
     question: "Which mechanism produced this training curve?",
     summary:
       "Diagnose exact plain-SGD learning-rate regimes, then trace mini-batch, momentum, and Adam state in executable code.",
-    durationMinutes: 55,
+    durationMinutes: 65,
     revision: COURSE_REVISION,
     sourceIds: ["S86", "S101", "S102", "S47", "S10"],
     mechanism: {
@@ -449,6 +546,108 @@ print("branch contributions:", branch_contributions(*CASES[0]))
         requiredEvidenceKinds: ["code-check"],
       },
     ],
+    teaching: {
+      title: "Read every optimizer update as a state transition",
+      introduction: [
+        "Training repeatedly changes model parameters to reduce an objective, usually a loss computed on training examples. Let theta name one parameter and let theta_star name the value that minimizes a simple objective. The error e_t = theta_t - theta_star is the parameter's signed distance from that minimum at step t. A gradient g_t is the local slope of the objective at theta_t. Plain stochastic gradient descent, or SGD, updates theta by theta_(t+1) = theta_t - eta * g_t, where eta is the learning rate.",
+        "The learning rate scales the proposed move. A positive multiplier in the error recurrence keeps the error on the same side of the minimum; a negative multiplier crosses the minimum. A multiplier whose absolute value is below 1 shrinks the error, one with absolute value equal to 1 preserves its size, and one above 1 grows it. This sign-and-magnitude test turns a training curve into a traceable mechanism instead of a visual guess.",
+        "Mini-batch SGD recomputes g_t from a subset of examples at each step, so the gradient itself can vary. Momentum also carries a velocity-like state v_t made from current and earlier gradients. Adam carries two states: m_t, a decaying average of gradients, and v_t, a decaying average of squared gradients, then bias-corrects both before updating. These optimizers transform gradients; they do not choose the objective, repair data, or guarantee useful generalization.",
+      ],
+      vocabulary: [
+        {
+          term: "Parameter",
+          definition:
+            "A model value, written theta here, that the optimizer is allowed to change during training.",
+        },
+        {
+          term: "Objective",
+          definition:
+            "The numerical quantity training is set up to minimize or maximize; this lesson minimizes a loss.",
+        },
+        {
+          term: "Gradient",
+          definition:
+            "The objective's local slope with respect to a parameter at the current state.",
+        },
+        {
+          term: "Learning rate",
+          definition:
+            "The positive step-size factor eta that scales an optimizer's proposed parameter change.",
+        },
+        {
+          term: "Momentum state",
+          definition:
+            "A carried value that combines the current gradient with a decaying history of earlier gradients.",
+        },
+        {
+          term: "Adam moments",
+          definition:
+            "Carried first- and second-moment states that track gradients and squared gradients before bias correction.",
+        },
+      ],
+      workedExample: {
+        title: "Locate the exact boundary between shrinking and persistent error",
+        setup:
+          "Minimize J(theta) = (theta - 3) squared. Here theta_star = 3, e_t = theta_t - 3, g_t = 2e_t, and plain SGD uses theta_(t+1) = theta_t - eta * g_t. Start at theta_0 = 5.",
+        steps: [
+          {
+            label: "Expose the initial state",
+            explanation:
+              "e_0 = 5 - 3 = 2, J(theta_0) = 2 squared = 4, and g_0 = 2e_0 = 4. The state before the update is therefore theta = 5, error = 2, loss = 4, gradient = 4.",
+          },
+          {
+            label: "Derive the error transition",
+            explanation:
+              "Subtract theta_star from the SGD update: e_(t+1) = e_t - eta * 2e_t = (1 - 2eta)e_t. The multiplier 1 - 2eta completely determines this fixed quadratic replay.",
+          },
+          {
+            label: "Check a shrinking case",
+            explanation:
+              "With eta = 0.25, the multiplier is 0.5. The first update is theta_1 = 5 - 0.25 * 4 = 4, so e_1 = 1 and the loss falls from 4 to 1 without crossing the minimum.",
+          },
+          {
+            label: "Substitute the boundary value",
+            explanation:
+              "With eta = 1, the multiplier is 1 - 2 = -1. From theta_0 = 5, the update gives theta_1 = 5 - 1 * 4 = 1, so e_1 = -2: the sign flips, but the magnitude remains 2.",
+          },
+          {
+            label: "Advance one more state",
+            explanation:
+              "At theta_1 = 1, g_1 = 2(1 - 3) = -4. The next update gives theta_2 = 1 - 1 * (-4) = 5, so e_2 = 2 and the loss is again 4. The trace oscillates forever without shrinking.",
+          },
+          {
+            label: "Mark the optimizer boundary",
+            explanation:
+              "This recurrence describes plain SGD with a fixed full gradient and no carried state. Momentum would also require v_t; Adam would require m_t and v_t. Those states cannot be inferred from theta alone.",
+          },
+        ],
+        takeaway:
+          "For a fixed quadratic, inspect the update multiplier's sign and absolute value; at eta = 1, the multiplier -1 means alternating sides with unchanged error size.",
+      },
+      misconceptions: [
+        {
+          misconception: "Any oscillation means the run is diverging.",
+          correction:
+            "Oscillation only describes sign changes. Its magnitude may shrink, stay constant, or grow; eta = 1 produces constant-magnitude oscillation in this replay.",
+        },
+        {
+          misconception: "A jagged mini-batch curve proves the learning rate is too large.",
+          correction:
+            "Changing batches also changes gradient estimates. Hold batch order, initialization, model, and seed fixed before attributing a trace to learning rate.",
+        },
+        {
+          misconception: "Momentum and Adam remember earlier parameter values directly.",
+          correction:
+            "Their defining carried states summarize gradients. The exact convention matters, including how the first momentum buffer and Adam's bias corrections are initialized.",
+        },
+      ],
+      summary: [
+        "Translate the parameter update into an error recurrence before classifying the trace.",
+        "Use the multiplier's sign for crossing behavior and its absolute value for shrinking, persistence, or growth.",
+        "At eta = 1, e_(t+1) = -e_t, so the error changes sign while keeping the same magnitude.",
+      ],
+      sourceIds: ["S86", "S101", "S102", "S47", "S10"],
+    },
     blocks: [
       {
         id: "optimizer-batches",
@@ -520,18 +719,18 @@ print("branch contributions:", branch_contributions(*CASES[0]))
         checkpoint: {
           id: "optimizer-overshoot-prediction",
           prompt:
-            "For the fixed quadratic replay, the error update is e(t+1) = (1 - 2 eta)e(t). What happens at eta = 1 exactly?",
+            "A different quadratic has error update e(t+1) = (1 - 2 eta)e(t). Starting from any nonzero error, what happens when eta = 0.75?",
           options: [
             { id: "nonconvergent", label: "It oscillates without shrinking" },
             { id: "convergent", label: "It converges without crossing" },
             { id: "shrinking", label: "It oscillates and shrinks" },
             { id: "divergent", label: "It oscillates and grows" },
           ],
-          correctOptionId: "nonconvergent",
+          correctOptionId: "shrinking",
           supportedExplanation:
-            "Correct. At eta = 1 the multiplier is -1, so the error changes sign on every step but keeps the same magnitude.",
+            "Correct. At eta = 0.75 the multiplier is -0.5, so each step changes the error's sign while halving its magnitude.",
           revisitExplanation:
-            "Substitute eta = 1 into 1 - 2 eta and track both the sign and magnitude of the resulting multiplier.",
+            "Substitute 0.75 into 1 - 2 eta. Use the multiplier's sign to decide whether the update crosses the minimum and its absolute value to decide whether the error shrinks.",
         },
       },
       {
@@ -855,7 +1054,7 @@ REFERENCE_TRACE = reference_trace()
     question: "What does a representation preserve, and why?",
     summary:
       "Contrast k-means clustering, PCA projection, and embeddings learned for a predictive objective.",
-    durationMinutes: 50,
+    durationMinutes: 60,
     revision: COURSE_REVISION,
     sourceIds: ["S52", "S87", "S13"],
     mechanism: {
@@ -894,6 +1093,108 @@ REFERENCE_TRACE = reference_trace()
         requiredEvidenceKinds: ["code-check"],
       },
     ],
+    teaching: {
+      title: "Ask which objective created the geometry",
+      introduction: [
+        "A vector is an ordered list of numerical coordinates. A representation is the choice of coordinates used to describe an example, and geometry means the distances and directions among represented examples. Proximity has meaning only after you identify the objective and measurements that produced it.",
+        "K-means, principal component analysis, and learned embeddings create geometry for different reasons. K-means alternates between assigning each point to its nearest centroid and replacing each centroid with the mean of its assigned points. Principal component analysis, or PCA, first centers each feature by subtracting its mean, then finds linear directions that retain as much variance as possible. A learned embedding places examples in coordinates adjusted by a training loss for a predictive or self-supervised task.",
+        "Their boundaries matter. K-means uses distances, so feature scale, initial centroids, and outliers can change its result. PCA preserves high-variance linear structure, not labels or every detail; fewer dimensions create reconstruction error. Embedding distances inherit the examples, loss, architecture, and optimization. A two-dimensional display can distort a high-dimensional embedding, so a visible neighborhood is not a universal semantic fact.",
+      ],
+      vocabulary: [
+        {
+          term: "Representation",
+          definition:
+            "An ordered set of coordinates used to describe one example for a particular purpose.",
+        },
+        {
+          term: "Centroid",
+          definition:
+            "The coordinate-wise arithmetic mean of all points currently assigned to one k-means cluster.",
+        },
+        {
+          term: "Squared distance",
+          definition:
+            "The sum of squared coordinate differences between two points, used by standard k-means.",
+        },
+        {
+          term: "Principal component",
+          definition:
+            "A unit direction chosen by PCA to retain as much remaining projected variance as possible.",
+        },
+        {
+          term: "Projection",
+          definition:
+            "The coordinates obtained by expressing a centered point along selected directions.",
+        },
+        {
+          term: "Embedding objective",
+          definition:
+            "The training loss whose signal determines which relationships a learned coordinate space tends to preserve.",
+        },
+      ],
+      workedExample: {
+        title: "Keep the points visible while three objectives treat them differently",
+        setup:
+          "Use four two-dimensional points: A = (0, -1), B = (2, 1), C = (8, 1), and D = (10, -1). Start k-means with centroid c1 = A and centroid c2 = D, and use squared Euclidean distance.",
+        steps: [
+          {
+            label: "Compute the assignment state",
+            explanation:
+              "A has squared distances 0 to c1 and 100 to c2. B has 8 to c1 and 68 to c2, so A and B join cluster 1. C has 68 to c1 and 8 to c2, while D has 100 and 0, so C and D join cluster 2.",
+          },
+          {
+            label: "Relocate both centroids",
+            explanation:
+              "The mean of A and B is c1 = ((0 + 2)/2, (-1 + 1)/2) = (1, 0). The mean of C and D is c2 = ((8 + 10)/2, (1 - 1)/2) = (9, 0). Assignments and centroids are separate intermediate states.",
+          },
+          {
+            label: "Hold assignments fixed and move one point",
+            explanation:
+              "Move B from (2, 1) to (6, 1) without reassigning it. The first centroid becomes ((0 + 6)/2, (-1 + 1)/2) = (3, 0). Its horizontal coordinate moves right from 1 to 3 because a centroid is a mean.",
+          },
+          {
+            label: "Center the original points for PCA",
+            explanation:
+              "Before the move, the feature mean is (5, 0). The centered points are (-5, -1), (-3, 1), (3, 1), and (5, -1). Horizontal variation is much larger than vertical variation, so the first principal direction is the horizontal axis.",
+          },
+          {
+            label: "Project and reconstruct",
+            explanation:
+              "Keeping one principal component retains horizontal coordinates -5, -3, 3, and 5. Reconstructing adds the mean back and sets the discarded vertical coordinate to 0, so each point loses its original vertical value of -1 or 1.",
+          },
+          {
+            label: "Change the objective, not the arithmetic",
+            explanation:
+              "An embedding trained to predict left-versus-right shelf membership may place A near B and C near D. One trained to predict top-versus-bottom position may instead place B near C. The task signal, not k-means or PCA, defines that learned proximity.",
+          },
+        ],
+        takeaway:
+          "Expose assignments, means, centered coordinates, projections, reconstructions, and training objectives separately; the same examples can support different valid geometries.",
+      },
+      misconceptions: [
+        {
+          misconception: "A cluster is a discovered class label.",
+          correction:
+            "K-means creates assignments that reduce within-cluster squared distance. It does not read labels or prove that a cluster is a real-world category.",
+        },
+        {
+          misconception: "PCA keeps the most predictive information.",
+          correction:
+            "PCA keeps high-variance linear directions without using the prediction target. A low-variance feature can still be important for prediction.",
+        },
+        {
+          misconception: "Nearby embedding points must have the same meaning.",
+          correction:
+            "Closeness reflects a particular training signal and data distribution. Interpretation requires checking the objective, original space, examples, and stability.",
+        },
+      ],
+      summary: [
+        "For k-means, hold assignments fixed before recomputing each centroid as the mean of its members.",
+        "For PCA, distinguish centered input, retained projection, discarded coordinates, and reconstructed output.",
+        "If one assigned point moves far right, its cluster mean must move right; no class label is created.",
+      ],
+      sourceIds: ["S52", "S87", "S13"],
+    },
     blocks: [
       {
         id: "cluster-objectives-first",
@@ -965,18 +1266,18 @@ REFERENCE_TRACE = reference_trace()
         checkpoint: {
           id: "cluster-outlier-prediction",
           prompt:
-            "All assignments are fixed. One point moves far to the right. What happens to the mean centroid of its cluster?",
+            "One fixed cluster has vertical coordinates 1, 4, and 7. Without changing assignments, the last point moves from 7 to 10. What is the centroid's new vertical coordinate?",
           options: [
-            { id: "right", label: "It moves right" },
-            { id: "left", label: "It moves left" },
-            { id: "same", label: "It cannot move" },
-            { id: "label", label: "It becomes a class label" },
+            { id: "five", label: "5" },
+            { id: "four", label: "4, the old centroid" },
+            { id: "ten", label: "10, the moved point" },
+            { id: "three", label: "3, the number of points" },
           ],
-          correctOptionId: "right",
+          correctOptionId: "five",
           supportedExplanation:
-            "Correct. A centroid is the coordinate-wise mean, so the moved point pulls that cluster's mean right.",
+            "Correct. With assignments fixed, the new centroid coordinate is the mean: (1 + 4 + 10) / 3 = 5.",
           revisitExplanation:
-            "Hold assignments fixed and recompute the arithmetic mean of the cluster coordinates.",
+            "Keep exactly the same three members, replace 7 with 10, add their vertical coordinates, and divide by three.",
         },
       },
       {
@@ -1207,7 +1508,7 @@ START = [(0.0, 0.0), (10.0, 10.0)]
     question: "What does convolution share, and what can each output see?",
     summary:
       "Compute a tiny convolution, grow its receptive field, and trace the direct gradient path in a residual block.",
-    durationMinutes: 38,
+    durationMinutes: 60,
     revision: COURSE_REVISION,
     sourceIds: ["S88", "S89", "S12"],
     mechanism: {
@@ -1246,6 +1547,108 @@ START = [(0.0, 0.0), (10.0, 10.0)]
         requiredEvidenceKinds: ["code-check"],
       },
     ],
+    teaching: {
+      title: "Trace one shared detector across locations and layers",
+      introduction: [
+        "An image or time series can be stored as a grid of numbers. A patch is a local window, and a kernel is a small set of learned weights with the same shape. At one output location, convolution multiplies matching patch and kernel entries and adds the products. The result is an activation. Many libraries technically use cross-correlation, but the course follows the standard convention of calling it convolution.",
+        "Weight sharing reuses the same kernel at every location. The kernel does not learn again when it moves; only the patch changes. Stride is how far the window moves, while padding adds values around the boundary. With both fixed, moving a pattern usually moves its matching activation. This behavior can fail at boundaries or when later operations discard location.",
+        "A receptive field is the set of input positions that can possibly influence one later activation. With stride 1, no dilation, and width-3 kernels, one layer sees three positions, two stacked layers can see five, and three can see seven. A residual block adds an identity route: y = x + F(x), where F is a learned branch. Its derivative is dy/dx = 1 + dF/dx, exposing a direct value and gradient path without guaranteeing that every deep network will train well.",
+      ],
+      vocabulary: [
+        {
+          term: "Patch",
+          definition:
+            "The local group of input values aligned with a kernel at one output location.",
+        },
+        {
+          term: "Kernel",
+          definition:
+            "A small shared array of weights multiplied with each local patch.",
+        },
+        {
+          term: "Activation",
+          definition:
+            "The numerical output produced at a location after applying the local weighted calculation.",
+        },
+        {
+          term: "Weight sharing",
+          definition:
+            "Reusing exactly the same kernel parameters at multiple spatial or temporal locations.",
+        },
+        {
+          term: "Receptive field",
+          definition:
+            "The input positions that have a computational path to one selected later activation.",
+        },
+        {
+          term: "Residual path",
+          definition:
+            "A direct identity route that adds an input x to a learned transformation F(x).",
+        },
+      ],
+      workedExample: {
+        title: "Slide one kernel, shift the pattern, and preserve the boundaries",
+        setup:
+          "Use the one-dimensional input [0, 1, 2, 1, 0], kernel [1, 2, 1], stride 1, and valid padding, which means no added boundary values. Each output is the dot product of one width-3 patch and the fixed kernel.",
+        steps: [
+          {
+            label: "List the valid patches",
+            explanation:
+              "The kernel fits at three locations. The patches are [0, 1, 2], [1, 2, 1], and [2, 1, 0]. Writing them first separates movement of the window from the shared arithmetic.",
+          },
+          {
+            label: "Compute every activation",
+            explanation:
+              "The outputs are 0*1 + 1*2 + 2*1 = 4, then 1*1 + 2*2 + 1*1 = 6, then 2*1 + 1*2 + 0*1 = 4. The complete output is [4, 6, 4].",
+          },
+          {
+            label: "Move only the input pattern",
+            explanation:
+              "Shift the pattern one cell right to obtain [0, 0, 1, 2, 1]. Keep the kernel, stride, and padding unchanged. The new patches are [0, 0, 1], [0, 1, 2], and [1, 2, 1].",
+          },
+          {
+            label: "Reuse the same kernel",
+            explanation:
+              "The new activations are 1, 4, and 6. The strongest match moved from output position 2 to output position 3. No weight update occurred; the matching patch simply appeared one location later.",
+          },
+          {
+            label: "Grow the possible influence",
+            explanation:
+              "If a second width-3, stride-1 layer reads the first layer, one of its activations can combine three neighboring first-layer activations whose combined input span is five positions. A third such layer expands that span to seven.",
+          },
+          {
+            label: "Expose the residual boundary",
+            explanation:
+              "For x = 3 and F(x) = -1, the block output is y = 2. If the learned branch is locally flat so dF/dx = 0, then dy/dx = 1 + 0 = 1: the identity route still carries a gradient.",
+          },
+        ],
+        takeaway:
+          "Kernel values, input patches, output locations, receptive-field reach, and the residual identity route are distinct states that should never be collapsed into one vague feature story.",
+      },
+      misconceptions: [
+        {
+          misconception: "Each location has its own separately learned kernel.",
+          correction:
+            "Standard convolution shares one kernel across locations. Different patches create different activations while the kernel parameters stay fixed.",
+        },
+        {
+          misconception: "Every point inside a receptive field affects the output equally.",
+          correction:
+            "A receptive field marks possible computational influence. Actual influence depends on learned weights, nonlinearities, and the current input.",
+        },
+        {
+          misconception: "A residual connection makes deep training automatically stable.",
+          correction:
+            "It provides a direct route for values and gradients, but optimization can still fail because of data, objectives, scales, or other architecture choices.",
+        },
+      ],
+      summary: [
+        "At each location, identify the patch, multiply by the unchanged kernel, and add the products.",
+        "Keep stride, padding, and kernel fixed when testing whether a translated pattern produces a translated response.",
+        "When the same pattern moves one valid cell right, its matching activation should also move right rather than trigger new learning.",
+      ],
+      sourceIds: ["S88", "S89", "S12"],
+    },
     blocks: [
       {
         id: "convolution-local-rule",
@@ -1317,18 +1720,18 @@ START = [(0.0, 0.0), (10.0, 10.0)]
         checkpoint: {
           id: "convolution-shift-prediction",
           prompt:
-            "The same local pattern moves one cell right and the shared kernel is unchanged. What should happen in the ideal valid region?",
+            "In a one-dimensional audio signal with stride 1, the same click pattern moves two samples left. The shared kernel and padding are unchanged, and both positions stay inside the valid region. What should happen?",
           options: [
-            { id: "move", label: "The matching activation moves right" },
+            { id: "move", label: "The matching activation moves two positions left" },
             { id: "vanish", label: "All activations become zero" },
             { id: "weights", label: "A new kernel is learned immediately" },
             { id: "same-cell", label: "The activation must stay in the old cell" },
           ],
           correctOptionId: "move",
           supportedExplanation:
-            "Correct. The same kernel is applied at each location, so shifting the pattern shifts the corresponding response.",
+            "Correct. Reusing the same detector at every valid location makes the corresponding response follow the click two positions left.",
           revisitExplanation:
-            "Hold the detector fixed and ask which local patch now contains the pattern.",
+            "Keep kernel, stride, and padding fixed, then locate the new patch containing the unchanged click pattern.",
         },
       },
       {
@@ -1540,7 +1943,7 @@ KERNEL = [
     question: "Where did this token's new information come from?",
     summary:
       "Compute a tiny query-key-softmax-value pass while separating inference, training, and causal explanation.",
-    durationMinutes: 50,
+    durationMinutes: 60,
     revision: COURSE_REVISION,
     sourceIds: ["S90", "S91", "S97", "S103", "S12"],
     mechanism: {
@@ -1580,6 +1983,108 @@ KERNEL = [
         requiredEvidenceKinds: ["code-check"],
       },
     ],
+    teaching: {
+      title: "Separate matching, routing, and interpretation in attention",
+      introduction: [
+        "Self-attention builds each token representation by routing information from allowed positions. For one receiving position, a query vector q describes what it is matching. Each source has a key vector k for matching and a value vector v containing information to route. A vector is an ordered list of numbers. These vectors come from learned projections, but their weights are fixed during this inference pass.",
+        "The mechanism has visible intermediate states. First, a query-key dot product multiplies corresponding coordinates and adds them to form a compatibility score. Scaled dot-product attention divides that score by the square root of d_k, where d_k is the number of key coordinates. A causal mask then removes forbidden future positions. Softmax exponentiates the remaining scores and divides by their sum, producing nonnegative attention weights that add to 1. Finally, those weights multiply value vectors, which are added to form the routed output.",
+        "Several boundaries prevent overclaiming. Keys determine routing weights; values supply content. A causal mask controls available positions but does not encode their full order. This forward pass changes representations, not parameters; training also requires a loss, backpropagation, and optimizer steps. An attention weight is routing, not proof that one token caused a final prediction. Causal claims require intervention and measured output change.",
+      ],
+      vocabulary: [
+        {
+          term: "Query",
+          definition:
+            "A vector q from the receiving position that is compared with candidate keys.",
+        },
+        {
+          term: "Key",
+          definition:
+            "A vector k from a candidate source position that helps determine its routing weight.",
+        },
+        {
+          term: "Value",
+          definition:
+            "A vector v containing the source information that is multiplied by an attention weight.",
+        },
+        {
+          term: "Scaled dot-product score",
+          definition:
+            "A query-key dot product divided by the square root of the key dimension d_k.",
+        },
+        {
+          term: "Softmax",
+          definition:
+            "A normalization that converts allowed finite scores into positive weights summing to 1.",
+        },
+        {
+          term: "Causal mask",
+          definition:
+            "An information boundary that gives unavailable future positions zero weight before left-to-right prediction.",
+        },
+      ],
+      workedExample: {
+        title: "Route two values from equal scores while excluding the future",
+        setup:
+          "For one receiving token, use q = [1, 0]. Two allowed source positions have k1 = [1, 0], k2 = [1, 0], v1 = [2, 0], and v2 = [0, 4]. A third future position has a high raw match but is blocked by a causal mask. The key dimension d_k is 2.",
+        steps: [
+          {
+            label: "Freeze the inference state",
+            explanation:
+              "Treat q, all keys, all values, and the projection parameters that produced them as fixed. Computing attention from these vectors is a forward pass; no gradient or optimizer update appears in this state.",
+          },
+          {
+            label: "Compute the allowed raw matches",
+            explanation:
+              "The dot products are q dot k1 = 1*1 + 0*0 = 1 and q dot k2 = 1*1 + 0*0 = 1. Equal keys relative to this query produce equal raw scores.",
+          },
+          {
+            label: "Scale and apply the mask",
+            explanation:
+              "Dividing by sqrt(2) gives two allowed scores of approximately 0.707. The future position's score is replaced by negative infinity before softmax, regardless of how large its unmasked match was.",
+          },
+          {
+            label: "Normalize the allowed scores",
+            explanation:
+              "Both allowed exponentials are exp(0.707). Each is divided by their sum, 2*exp(0.707), so the weights are 0.5 and 0.5. The masked future position receives weight 0.",
+          },
+          {
+            label: "Mix values, not keys",
+            explanation:
+              "The output is 0.5*v1 + 0.5*v2 = 0.5*[2, 0] + 0.5*[0, 4] = [1, 2]. Keys affected the weights; the two value vectors supplied the output coordinates.",
+          },
+          {
+            label: "Stop at the interpretation boundary",
+            explanation:
+              "The vector [1, 2] is one attention output that later residual, normalization, and feed-forward operations can transform. The equal weights describe this route only; they do not prove equal causal importance to a final model decision.",
+          },
+        ],
+        takeaway:
+          "A trustworthy attention trace shows fixed projections, query-key scores, masking, softmax denominators, value-weighted sums, and where the inference and explanation claims stop.",
+      },
+      misconceptions: [
+        {
+          misconception: "The output is a weighted sum of keys.",
+          correction:
+            "Keys participate in score calculation. The normalized weights multiply values, and those weighted values are summed into the output.",
+        },
+        {
+          misconception: "Running attention teaches the model which token matters.",
+          correction:
+            "Inference uses already learned parameters. Learning requires a loss, backward derivatives, and optimizer updates across training examples.",
+        },
+        {
+          misconception: "The largest attention weight is the model's explanation.",
+          correction:
+            "It is a routing value inside one component. A causal interpretation needs a controlled change to that route and evidence about the resulting output.",
+        },
+      ],
+      summary: [
+        "Compute query-key compatibility only for allowed positions, then apply scaling and masking before normalization.",
+        "Softmax gives equal weights to equal finite scores because their exponentials and denominator contributions are equal.",
+        "With exactly two allowed equal scores, the next prediction should use weights 0.5 and 0.5, without implying training or causal proof.",
+      ],
+      sourceIds: ["S90", "S91", "S97", "S103", "S12"],
+    },
     blocks: [
       {
         id: "attention-inference-scope",
@@ -1659,18 +2164,18 @@ KERNEL = [
         checkpoint: {
           id: "attention-equal-score-prediction",
           prompt:
-            "One query has equal scores for two allowed keys. What weights does softmax assign across those two positions?",
+            "One query has the same finite score for three allowed keys, with no other allowed positions. What weights does softmax assign?",
           options: [
-            { id: "half", label: "0.5 and 0.5" },
-            { id: "one-zero", label: "1 and 0" },
-            { id: "scores", label: "The raw key values" },
+            { id: "thirds", label: "1/3, 1/3, and 1/3" },
+            { id: "halves", label: "0.5, 0.5, and 0" },
+            { id: "one-hot", label: "1, 0, and 0" },
             { id: "train", label: "It updates the model weights" },
           ],
-          correctOptionId: "half",
+          correctOptionId: "thirds",
           supportedExplanation:
-            "Correct. Equal finite scores have equal exponentials, so normalization gives equal weights.",
+            "Correct. The three equal scores have equal exponentials, and each exponential is one of three equal terms in the denominator, so every weight is 1/3.",
           revisitExplanation:
-            "Softmax divides each equal exponential by their two-term sum.",
+            "Write one identical exponential for each of the three scores, add all three in the denominator, and divide each term by that sum.",
         },
       },
       {
@@ -1880,7 +2385,7 @@ LOG_THREE = log(3.0)
     question: "How does a reward update an earlier decision?",
     summary:
       "Separate bandits from stateful decisions, compute a Bellman target, and execute a tabular Q-learning update.",
-    durationMinutes: 48,
+    durationMinutes: 60,
     revision: COURSE_REVISION,
     sourceIds: ["S92", "S93", "S98", "S09"],
     mechanism: {
@@ -1920,6 +2425,108 @@ LOG_THREE = log(3.0)
         requiredEvidenceKinds: ["code-check"],
       },
     ],
+    teaching: {
+      title: "Trace immediate reward, future value, and the terminal boundary",
+      introduction: [
+        "Reinforcement learning studies an agent that acts and then observes consequences. A state, written s, summarizes the current decision situation. An action a is a choice available in that state. After acting, the environment supplies a reward r and a next state s_prime. A Markov decision process, or MDP, models these states, actions, transition behavior, and rewards. The Markov boundary says the current state contains the information the model uses to describe what happens next.",
+        "Q-learning stores or approximates Q(s, a), an estimate of the expected discounted return for taking action a in state s and then following an optimal target policy. Its update is off-policy: the target uses max_a Q(s_prime, a), while the behavior policy collecting experience may still explore instead of acting greedily. Return means accumulated future rewards. The discount factor gamma lies between 0 and 1 and scales later value relative to immediate reward. For a nonterminal transition, the target is r + gamma * max_a Q(s_prime, a): observed reward plus the best current next-state estimate. Using an estimate inside a target is called bootstrapping.",
+        "The update exposes one more state. The temporal-difference error is target - current Q(s, a). With learning rate alpha, the new entry is current Q + alpha * error; only the visited state-action entry changes in a table. A terminal transition ends the episode, so no next decision exists and the future-value term must be omitted. This is also the boundary from a stationary context-free bandit: a bandit repeats one decision context, while an MDP represents actions that change future states and opportunities.",
+      ],
+      vocabulary: [
+        {
+          term: "State",
+          definition:
+            "The information s used to describe the current decision situation before an action.",
+        },
+        {
+          term: "Action",
+          definition:
+            "A choice a available to the agent in a state.",
+        },
+        {
+          term: "Reward",
+          definition:
+            "A numerical consequence r observed after a transition, not a correct-action label for every state.",
+        },
+        {
+          term: "Q value",
+          definition:
+            "An estimate Q(s, a) of expected discounted return for one state-action pair.",
+        },
+        {
+          term: "Bellman target",
+          definition:
+            "The immediate reward plus discounted best next-state value, except at a terminal transition.",
+        },
+        {
+          term: "Temporal-difference error",
+          definition:
+            "The Bellman target minus the current Q estimate for the visited state-action pair.",
+        },
+      ],
+      workedExample: {
+        title: "Update one warehouse decision and then cross the terminal boundary",
+        setup:
+          "A warehouse agent in state s = low stock chooses action a = order. It receives reward r = 2 and reaches state s_prime = stocked. Use gamma = 0.9, current Q(s, a) = 1, best next-state Q value = 5, and learning rate alpha = 0.5.",
+        steps: [
+          {
+            label: "Record the complete transition",
+            explanation:
+              "The observed tuple is (s = low stock, a = order, r = 2, s_prime = stocked, terminal = false). Keeping the terminal flag explicit prevents an unavailable future state from entering the calculation.",
+          },
+          {
+            label: "Form the nonterminal target",
+            explanation:
+              "Because another decision follows, target = r + gamma * max_a Q(s_prime, a) = 2 + 0.9*5 = 6.5. The value 5 is an existing estimate, not an observed reward.",
+          },
+          {
+            label: "Measure the prediction error",
+            explanation:
+              "The temporal-difference error is target - current Q(s, a) = 6.5 - 1 = 5.5. Its positive sign says the visited entry currently underestimates this target.",
+          },
+          {
+            label: "Move the visited entry",
+            explanation:
+              "New Q(s, a) = 1 + 0.5*5.5 = 3.75. The update moves halfway toward 6.5. Other actions and states remain unchanged because this transition supplied no direct update for them.",
+          },
+          {
+            label: "Change only the terminal flag",
+            explanation:
+              "Now suppose the same action receives reward 2 and ends the episode. There is no s_prime decision to value, so the target is exactly r = 2. Adding 0.9*5 would invent consequences after termination.",
+          },
+          {
+            label: "Update at termination",
+            explanation:
+              "If the terminal transition's current Q is 1 and alpha remains 0.5, its temporal-difference error is 2 - 1 = 1 and its new Q is 1 + 0.5*1 = 1.5. The target is 2 even though the partial update stops at 1.5.",
+          },
+        ],
+        takeaway:
+          "Keep reward, next-state estimate, terminal flag, target, temporal-difference error, and updated table entry visible as separate quantities.",
+      },
+      misconceptions: [
+        {
+          misconception: "Reward is the correct action label.",
+          correction:
+            "Reward evaluates an experienced consequence. The learner must estimate how current actions affect both immediate and later rewards under transitions.",
+        },
+        {
+          misconception: "The largest next-state Q value is always added.",
+          correction:
+            "It is included only for a nonterminal transition. At episode termination there is no next action, so the target equals the observed reward.",
+        },
+        {
+          misconception: "One update changes the entire Q table.",
+          correction:
+            "Tabular Q-learning changes the visited state-action entry. Other entries change only when their own transitions are updated.",
+        },
+      ],
+      summary: [
+        "Write the transition and terminal flag before deciding whether a next-state value exists.",
+        "For a continuing transition, combine immediate reward with gamma times the best current next-state estimate.",
+        "For a terminal transition with reward 2, the Bellman target is 2, not 6.5 or the partially updated Q value.",
+      ],
+      sourceIds: ["S92", "S93", "S98", "S09"],
+    },
     blocks: [
       {
         id: "q-bandit-boundary",
@@ -1992,18 +2599,18 @@ LOG_THREE = log(3.0)
         checkpoint: {
           id: "q-terminal-prediction",
           prompt:
-            "A transition ends the episode with reward 2. What is its Q-learning target?",
+            "A transition ends the episode with reward -3. The discount is 0.8 and the largest listed next-state Q value is 7. What is the Q-learning target?",
           options: [
-            { id: "two", label: "2" },
-            { id: "six-five", label: "6.5" },
-            { id: "five", label: "5" },
+            { id: "negative-three", label: "-3" },
+            { id: "two-point-six", label: "2.6: -3 + 0.8 * 7" },
+            { id: "seven", label: "7" },
             { id: "zero", label: "0" },
           ],
-          correctOptionId: "two",
+          correctOptionId: "negative-three",
           supportedExplanation:
-            "Correct. A terminal transition has no bootstrapped next-state value, so target = reward.",
+            "Correct. Because the transition is terminal, no future decision exists and the target is the observed reward, -3. The listed next-state estimate is not used.",
           revisitExplanation:
-            "The future-value term is included only when another state follows.",
+            "Check the terminal flag before using gamma or any next-state Q value. A terminal target contains only the immediate reward.",
         },
       },
       {
@@ -2228,7 +2835,7 @@ def update_table(table, state, action, reward, next_state,
     question: "Which part of the pipeline failed after deployment?",
     summary:
       "Complete a fixed capstone diagnosis spanning distribution shift, operational-slice reliability, delayed outcomes, and monitoring.",
-    durationMinutes: 50,
+    durationMinutes: 65,
     revision: COURSE_REVISION,
     sourceIds: ["S94", "S95", "S99", "S01"],
     mechanism: {
@@ -2270,6 +2877,108 @@ def update_table(table, state, action, reward, next_state,
         requiredEvidenceKinds: ["code-check"],
       },
     ],
+    teaching: {
+      title: "Localize a deployment failure before changing the model",
+      introduction: [
+        "A deployed machine-learning system is more than model parameters. It includes an artifact, which is the exact packaged model; preprocessing code that converts raw inputs into model features; a decision threshold that turns a score into an action; and serving code that executes the pipeline. Deployment monitoring compares this live system with a reference period. Distribution shift means the statistical pattern of live inputs or outcomes differs from that reference.",
+        "Different evidence arrives at different times. Immediate monitors can check schemas, missing values, feature distributions, score distributions, model identity, latency, and decision rates. Outcome metrics such as accuracy or false-negative rate require reliable labels and may arrive later. A false negative is an actually positive case predicted negative. A slice is a named subset, such as day parcels or night parcels, examined separately because one overall average can hide a serious local failure.",
+        "Diagnosis begins by listing what changed and what remained fixed. An input alert establishes change but not root cause; the cause might be data collection, preprocessing, serving, model behavior, or delayed-label quality. Pinning versions narrows the search. A mitigation limits harm while evidence is gathered, and a release gate is a measurable condition that must pass before automation resumes. Retraining is only one possible response and should not precede checks of the measurement and evaluation boundaries.",
+      ],
+      vocabulary: [
+        {
+          term: "Model artifact",
+          definition:
+            "The exact immutable package of learned parameters and model structure used for a deployment.",
+        },
+        {
+          term: "Preprocessing",
+          definition:
+            "The code and rules that transform raw deployment inputs into the features expected by the model.",
+        },
+        {
+          term: "Distribution shift",
+          definition:
+            "A measurable difference between reference and live input, prediction, or outcome distributions.",
+        },
+        {
+          term: "Operational slice",
+          definition:
+            "A deployment subset defined by conditions such as device, site, or time and evaluated separately.",
+        },
+        {
+          term: "False-negative rate",
+          definition:
+            "False negatives divided by all actually positive cases in the evaluated group.",
+        },
+        {
+          term: "Release gate",
+          definition:
+            "A predeclared measurable condition that must pass before a system change or automation is released.",
+        },
+      ],
+      workedExample: {
+        title: "Diagnose the fixed Scanner B incident one evidence layer at a time",
+        setup:
+          `A package-damage model moves from mostly bright Scanner A images to a night facility using Scanner B. Model ${CAPSTONE_INCIDENT.model.version}, artifact ${CAPSTONE_ARTIFACT_DISPLAY_ID}, training trace ${CAPSTONE_TRAINING_DISPLAY_ID}, serving code ${CAPSTONE_INCIDENT.model.servingCodeVersion}, preprocessing ${CAPSTONE_INCIDENT.model.preprocessingVersion}, and threshold ${CAPSTONE_INCIDENT.model.decisionThreshold.toFixed(2)} are pinned.`,
+        steps: [
+          {
+            label: "Verify system identity",
+            explanation:
+              `The artifact, training trace, serving code, preprocessing version, and threshold are unchanged between reference and live observations. This does not prove correct behavior, but it makes an unexplained new optimizer update or model replacement an unsupported first hypothesis.`,
+          },
+          {
+            label: "Read immediate input evidence",
+            explanation:
+              `Mean brightness falls from ${CAPSTONE_INCIDENT.metrics.referenceBrightnessMean.toFixed(2)} to ${CAPSTONE_INCIDENT.metrics.liveBrightnessMean.toFixed(2)}, a shift of ${CAPSTONE_INCIDENT.metrics.brightnessMeanShift.toFixed(2)} that exceeds the ${CAPSTONE_INCIDENT.alertThresholds.brightnessMeanShift.toFixed(2)} alert threshold. Missing barcodes rise from ${(CAPSTONE_INCIDENT.reference.missingBarcodeRate * 100).toFixed(0)} percent to ${(CAPSTONE_INCIDENT.live.missingBarcodeRate * 100).toFixed(0)} percent.`,
+          },
+          {
+            label: "Add delayed outcome evidence",
+            explanation:
+              `When reviewed labels arrive, accuracy falls from ${(CAPSTONE_INCIDENT.reference.accuracy * 100).toFixed(0)} percent to ${(CAPSTONE_INCIDENT.metrics.liveAccuracy * 100).toFixed(0)} percent. This confirms outcome degradation, while the earlier input monitors show that measurement changes were already visible before labels.`,
+          },
+          {
+            label: "Expose the slice boundary",
+            explanation:
+              `Day false-negative rate is 8/(72 + 8) = ${(CAPSTONE_INCIDENT.metrics.dayFalseNegativeRate * 100).toFixed(0)} percent. Night false-negative rate is 6/(14 + 6) = ${(CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate * 100).toFixed(0)} percent. The ${(CAPSTONE_INCIDENT.metrics.falseNegativeRateGap * 100).toFixed(0)}-point gap exceeds the ${(CAPSTONE_INCIDENT.alertThresholds.falseNegativeRateGap * 100).toFixed(0)}-point alert threshold and would be blurred by one aggregate.`,
+          },
+          {
+            label: "Localize the first investigation",
+            explanation:
+              "Scanner conditions, brightness, and barcode missingness changed while the model and software identities stayed pinned. The first investigation should therefore compare deployment data and preprocessing for Scanner B, then replay the frozen model on matched scanner slices.",
+          },
+          {
+            label: "Mitigate and define verification",
+            explanation:
+              `Pause unsupported night automation, preserve logs, validate Scanner B inputs, and collect reviewed night labels. The current overall false-negative rate of ${(CAPSTONE_INCIDENT.metrics.overallFalseNegativeRate * 100).toFixed(0)} percent fails its ${(CAPSTONE_INCIDENT.releaseGates.overallFalseNegativeRate * 100).toFixed(0)} percent gate, and the ${(CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate * 100).toFixed(0)} percent night rate fails its ${(CAPSTONE_INCIDENT.releaseGates.nightFalseNegativeRate * 100).toFixed(0)} percent gate.`,
+          },
+        ],
+        takeaway:
+          "Identity evidence narrows what could have changed; immediate inputs detect the incident early; delayed labels and slices quantify harm; gates define what recovery must demonstrate.",
+      },
+      misconceptions: [
+        {
+          misconception: "A drift alert proves the model parameters failed.",
+          correction:
+            "An alert proves a monitored distribution changed. Root cause still requires identity checks, pipeline replay, slice evaluation, and incident context.",
+        },
+        {
+          misconception: "Good overall accuracy means every deployment slice is reliable.",
+          correction:
+            "An aggregate weights slices by their frequency. A smaller slice can have a much worse error rate while the overall number appears acceptable.",
+        },
+        {
+          misconception: "Retraining should be the first response to production degradation.",
+          correction:
+            "First contain harm and verify data collection, preprocessing, serving identity, labels, and evaluation coverage. Retrain only when evidence shows parameters should change.",
+        },
+      ],
+      summary: [
+        "Separate fixed system identity from changed observations before proposing a cause.",
+        "Use immediate input monitors for early detection and delayed labeled slices for outcome and reliability evidence.",
+        "When scanner measurements move sharply while the artifact and pipeline versions remain pinned, investigate deployment data and preprocessing first.",
+      ],
+      sourceIds: ["S94", "S95", "S99", "S01"],
+    },
     blocks: [
       {
         id: "shift-fixed-capstone",
@@ -2346,18 +3055,18 @@ def update_table(table, state, action, reward, next_state,
         checkpoint: {
           id: "shift-first-diagnosis-prediction",
           prompt:
-            `Artifact ${CAPSTONE_ARTIFACT_DISPLAY_ID}, training trace ${CAPSTONE_TRAINING_DISPLAY_ID}, threshold ${CAPSTONE_INCIDENT.model.decisionThreshold.toFixed(2)}, serving code ${CAPSTONE_INCIDENT.model.servingCodeVersion}, and preprocessing ${CAPSTONE_INCIDENT.model.preprocessingVersion} remain pinned while scanner brightness and missingness move sharply. Which layer should be investigated first?`,
+            "A deployed vibration model keeps the same artifact, serving code, preprocessing version, and threshold. After a factory replaces its accelerometer, mean amplitude changes from 0.8 to 7.6 and missing readings rise from 4% to 18%. Which layer should be investigated first?",
           options: [
-            { id: "data", label: "Deployment data and preprocessing" },
-            { id: "optimizer", label: "The old optimizer momentum" },
-            { id: "attention", label: "Transformer attention weights" },
-            { id: "course", label: "Generate a new lesson" },
+            { id: "data", label: "Sensor units, deployment data, and preprocessing" },
+            { id: "optimizer", label: "The optimizer used during old training" },
+            { id: "attention", label: "An unrelated attention mechanism" },
+            { id: "course", label: "Replace the diagnosis with new course material" },
           ],
           correctOptionId: "data",
           supportedExplanation:
-            "Correct. The changed scanner measurements and fixed artifact point first to data and preprocessing shift.",
+            "Correct. The hardware change, shifted amplitude scale, and increased missingness point first to sensor units, incoming data, and preprocessing while the deployed software identity remains fixed.",
           revisitExplanation:
-            "Start with what changed. The pinned artifact and training trace did not.",
+            "List changed and fixed evidence separately. Investigate the replaced sensor and its measurement path before mechanisms that did not change.",
         },
       },
       {

@@ -100,11 +100,10 @@ export function TutorPanel({
   const sourceFromChunk = (chunkId: string) => {
     const chunk = pageChunks.find((item) => item.id === chunkId);
     if (!chunk) return null;
-    const paragraph = chunk.id.split(":p")[1];
     return {
       id: chunk.id,
-      blockId: chunk.blockId,
-      label: `${chunk.heading} · paragraph ${paragraph}`,
+      anchorId: chunk.anchorId,
+      label: chunk.citationLabel,
     };
   };
   return (
@@ -247,12 +246,12 @@ export function TutorPanel({
                             <p>{claim.text}</p>
                             {source && (
                               <a
-                                href={`#${source.blockId}`}
+                                href={`#${source.anchorId}`}
                                 title={`Exact support: ${claim.quote}`}
                                 aria-label={`${source.label}. Exact support: ${claim.quote}`}
                                 onClick={(event) => {
                                   event.preventDefault();
-                                  onNavigateToBlock(source.blockId);
+                                  onNavigateToBlock(source.anchorId);
                                 }}
                               >
                                 <BookOpenText size={12} aria-hidden="true" />
@@ -270,11 +269,11 @@ export function TutorPanel({
                     <div className="message-sources">
                       {sources.map((source) => (
                         <a
-                          href={`#${source.blockId}`}
+                          href={`#${source.anchorId}`}
                           key={source.id}
                           onClick={(event) => {
                             event.preventDefault();
-                            onNavigateToBlock(source.blockId);
+                            onNavigateToBlock(source.anchorId);
                           }}
                         >
                           <BookOpenText size={12} aria-hidden="true" />

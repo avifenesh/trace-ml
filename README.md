@@ -42,13 +42,16 @@ retention or mastery and is excluded from lesson completion. It cannot change
 the rubric, lesson sequence, course material, helper conversation, or learner
 access.
 
-Each of the 195 authored page paragraphs carries source IDs from a
-103-source research registry. The compact editorial citations under reading
-blocks are separate from optional resources and never record learner activity.
+The 195 focused reading paragraphs and 476 new teaching chunks form 671
+source-linked page chunks backed by a 104-source research registry. Compact
+editorial citations under teaching and reading blocks are separate from
+optional resources and never record learner activity.
 
-Every lesson begins with an authored prediction before its mechanism and code
-labs are revealed. Committing either a supported or unsupported prediction
-enables those labs; correctness changes the feedback, not course access.
+Every lesson begins with its outcomes, an authored explanation, essential
+terms, one complete worked example, misconception corrections, and then an
+analogous prediction whose answer was not already shown. Committing either a
+supported or unsupported prediction enables the interactive mechanism and code
+labs; correctness changes the feedback, not course access.
 
 ## Page-Grounded Helper
 
@@ -234,7 +237,7 @@ launcher; startup diagnostics are written to
 
 The research synthesis is in
 [`agent-knowledge/ml-course-research.md`](agent-knowledge/ml-course-research.md).
-Its 103-source registry is
+Its 104-source registry is
 [`agent-knowledge/resources/ml-course-research-sources.json`](agent-knowledge/resources/ml-course-research-sources.json).
 Source IDs in lesson content resolve against that registry; the guide also
 records synthesized design decisions and known evidence gaps.

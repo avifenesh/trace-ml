@@ -18,12 +18,7 @@ const server = await createServer({
 function activityContext(activity) {
   switch (activity.kind) {
     case "prediction":
-      return [
-        `Prediction prompt: ${activity.checkpoint.prompt}`,
-        `Visible options: ${
-          activity.checkpoint.options.map((option) => option.label).join("; ")
-        }`,
-      ];
+      return [];
     case "text-response":
       return [
         `Explanation prompt: ${activity.prompt}`,
@@ -53,6 +48,9 @@ function activityContext(activity) {
 
 try {
   const { lessons } = await server.ssrLoadModule("/src/content/course.ts");
+  const { pageChunksForLesson } = await server.ssrLoadModule(
+    "/src/content/types.ts",
+  );
   const manifest = lessons.map((lesson) => ({
     lessonId: lesson.id,
     lessonRevision: lesson.revision ?? "unversioned",
@@ -61,15 +59,13 @@ try {
     lessonQuestion: lesson.question,
     lessonSummary: lesson.summary,
     mechanism: lesson.mechanism ?? null,
-    chunks: lesson.blocks.flatMap((block) =>
-      block.body.map((text, index) => ({
-        id: `${block.id}:p${index + 1}`,
-        blockId: block.id,
-        heading: block.heading,
-        text,
-        tags: block.tags,
-      }))
-    ),
+    chunks: pageChunksForLesson(lesson).map((chunk) => ({
+      id: chunk.id,
+      blockId: chunk.blockId,
+      heading: chunk.heading,
+      text: chunk.text,
+      tags: chunk.tags,
+    })),
     activityContext: lesson.activities.flatMap(activityContext),
   }));
 

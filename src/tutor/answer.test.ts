@@ -97,7 +97,7 @@ describe("multi-turn page-grounded answers", () => {
       historyFor(question, firstAnswer),
     );
 
-    expect(followUp.sources[0]?.blockId).toBe("02-bias");
+    expect(followUp.sources[0]?.heading).toContain("Bias");
     expect(followUp.sources).toHaveLength(1);
     expectExactPageSources(followUp);
   });

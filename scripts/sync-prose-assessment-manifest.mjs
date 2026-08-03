@@ -17,10 +17,11 @@ const server = await createServer({
 
 try {
   const { lessons } = await server.ssrLoadModule("/src/content/course.ts");
+  const { lessonContextForAssessment } = await server.ssrLoadModule(
+    "/src/content/types.ts",
+  );
   const manifest = lessons.flatMap((lesson) => {
-    const lessonContext = lesson.blocks
-      .map((block) => [block.heading, ...block.body].join("\n"))
-      .join("\n\n");
+    const lessonContext = lessonContextForAssessment(lesson);
 
     return lesson.activities
       .filter((activity) => activity.kind === "text-response")

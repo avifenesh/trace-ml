@@ -77,7 +77,7 @@ export const foundationLessons: Lesson[] = [
       "Can you trace Python state, array shape, plot axes, slope, and probability without guessing?",
     summary:
       "Use a compact diagnostic and repair lab for Python, NumPy, plot coordinates, the chain rule, and a probability baseline.",
-    durationMinutes: 32,
+    durationMinutes: 60,
     revision: PREREQUISITE_TRACE_REVISION,
     sourceIds: ["S43", "S48", "S58", "S76", "S85"],
     mechanism: {
@@ -120,6 +120,113 @@ export const foundationLessons: Lesson[] = [
         requiredEvidenceKinds: ["explanation", "transfer"],
       },
     ],
+    teaching: {
+      title: "Trace the quantities that machine learning reuses",
+      introduction: [
+        "Machine learning starts with recorded examples. An example is one case, such as one delivery or one sensor reading. A feature is a measured input about that case, and a target is the value or category to be predicted. Tracing matters because a plausible final number can hide a wrong array dimension, a swapped plot axis, or an arithmetic mistake.",
+        "An array is an ordered collection of values. Its shape lists the length of each axis: a 4 by 3 array has four rows and three columns. In a typical data table, rows hold examples and columns hold features. A batch is a group of examples processed together. An array operation may combine one axis while preserving another. If each plotted row stores two coordinates, the first column can supply horizontal x values and the second can supply vertical y values.",
+        "A slope measures how much one quantity changes when another changes. A derivative is the slope at a particular input. The notation dy/dx means the derivative of output y with respect to input x. This lesson uses two derivative rules: if y = u squared, then dy/du = 2u; if u = 2x + 1, then du/dx = 2. When one calculation feeds another, the chain rule multiplies those adjacent local derivatives. Probability supplies a different trace: a base rate is an observed fraction, and a majority-class baseline is the accuracy obtained by always predicting the most frequent target category.",
+      ],
+      vocabulary: [
+        {
+          term: "Program state",
+          definition:
+            "The current values held by variables at a specific point while a program runs.",
+        },
+        {
+          term: "NumPy array",
+          definition:
+            "An ordered, multidimensional collection of values whose axis lengths are reported by its shape.",
+        },
+        {
+          term: "Shape",
+          definition:
+            "The ordered list of axis lengths, such as 4 by 3 for four rows and three columns.",
+        },
+        {
+          term: "Derivative",
+          definition:
+            "The local rate at which one quantity changes with respect to another quantity.",
+        },
+        {
+          term: "Derivative notation",
+          definition:
+            "In dy/dx, the numerator names the changing output y and the denominator names the input x whose change is being considered.",
+        },
+        {
+          term: "Chain rule",
+          definition:
+            "The rule that multiplies adjacent local derivatives when one function is composed with another.",
+        },
+        {
+          term: "Majority-class baseline",
+          definition:
+            "The accuracy of a rule that always predicts the most frequent target category and uses no features.",
+        },
+      ],
+      workedExample: {
+        title: "Trace shape, slope, and probability without skipping steps",
+        setup:
+          "A batch contains four examples with three features each. A separate plotting table contains three x-y points. The function uses u = 2x + 1 and y = u squared at x = 1. A dataset with two target categories has 80 negative and 20 positive targets.",
+        steps: [
+          {
+            label: "Write the batch shape",
+            explanation:
+              "Four examples form the row axis and three features form the column axis, so the batch shape is 4 by 3.",
+          },
+          {
+            label: "Trace the matrix result",
+            explanation:
+              "Multiplying the batch by three weights combines each row's three feature values with the three weights. The feature axis is consumed, while the four-example axis remains, producing four scores.",
+          },
+          {
+            label: "Map the plot columns",
+            explanation:
+              "A 3 by 2 plotting table contains three rows and two values per row. Column zero supplies three x coordinates; column one supplies the matching three y coordinates.",
+          },
+          {
+            label: "Evaluate the composed function",
+            explanation:
+              "At x = 1, the inner value is u = 2(1) + 1 = 3. The outer derivative is 2u = 6, and the inner derivative is 2.",
+          },
+          {
+            label: "Multiply the local derivatives",
+            explanation:
+              "The chain rule gives dy/dx = (dy/du)(du/dx) = 6 times 2 = 12. Each factor belongs to one adjacent calculation.",
+          },
+          {
+            label: "Compute the baseline",
+            explanation:
+              "There are 100 targets in total. Always predicting the negative class is correct for 80 of them, so the majority-class baseline is 80/100 = 0.80, or 80 percent.",
+          },
+        ],
+        takeaway:
+          "A trustworthy result exposes which axis remains, which local slopes multiply, and which count produced a probability.",
+      },
+      misconceptions: [
+        {
+          misconception: "A 4 by 3 array contains only three examples.",
+          correction:
+            "Shape is ordered. Under the lesson's row-by-example convention, the first axis has four examples and the second has three features.",
+        },
+        {
+          misconception: "The derivative of a composed function is just the outer derivative.",
+          correction:
+            "The outer rate describes change with respect to the intermediate value u. Multiply it by the inner rate to obtain change with respect to x.",
+        },
+        {
+          misconception: "An 80 percent baseline means a model learned useful features.",
+          correction:
+            "The majority rule ignores every feature. It is a comparison floor created only by the 80-to-20 target counts.",
+        },
+      ],
+      summary: [
+        "Track array axes in order and state which axis an operation combines or preserves.",
+        "For a composition, evaluate the intermediate value and multiply the adjacent local derivatives.",
+        "Derive a majority baseline from class counts before judging a model's accuracy.",
+      ],
+      sourceIds: ["S43", "S48", "S58", "S76", "S85"],
+    },
     blocks: [
       {
         id: "00-diagnostic-contract",
@@ -188,16 +295,16 @@ export const foundationLessons: Lesson[] = [
       choicePrediction(
         "00-chain-prediction",
         ["slope-chain-rule"],
-        "For y = (2x + 1)^2, what is dy/dx at x = 1?",
+        "For y = (3x - 2)^2, what is dy/dx at x = 2?",
         [
-          { id: "6", label: "6" },
+          { id: "8", label: "8" },
           { id: "12", label: "12" },
-          { id: "18", label: "18" },
-          { id: "36", label: "36" },
+          { id: "24", label: "24" },
+          { id: "48", label: "48" },
         ],
-        "12",
-        "Correct. The outer slope is 2(3) = 6 and the inner slope is 2, so the product is 12.",
-        "Compute u = 2x + 1 first, then multiply dy/du by du/dx.",
+        "24",
+        "Correct. The inner value is 3(2) - 2 = 4, the outer slope is 2(4) = 8, and the inner slope is 3, so the product is 24.",
+        "Compute u = 3x - 2 first, then multiply dy/du by du/dx.",
       ),
       visualLab(
         "prerequisite-trace",
@@ -397,7 +504,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
     question: "What changes during training, and what exists at prediction time?",
     summary:
       "Separate features, targets, predictions, parameters, training, inference, and a baseline.",
-    durationMinutes: 26,
+    durationMinutes: 50,
     revision: COURSE_REVISION,
     sourceIds: ["S66", "S01", "S13"],
     mechanism: {
@@ -432,6 +539,103 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         requiredEvidenceKinds: ["explanation", "transfer"],
       },
     ],
+    teaching: {
+      title: "Give every quantity one job and one time of availability",
+      introduction: [
+        "Supervised learning uses recorded examples for which an outcome is known. An example is one row describing one case. A feature is an input available for that case, while a target is the outcome the model is asked to predict. The model produces a prediction, which is its estimate of the target. These names are not interchangeable: they describe when a value is available and what role it plays.",
+        "Training is the stage that uses recorded feature-target pairs to fit a rule. A parameter is an adjustable number stored in that rule, and fitting means choosing parameter values from training evidence. Inference is the later stage that applies the fitted rule to the features of a new case. The new target is not available during inference; it becomes known only after the real outcome occurs. Otherwise, the system would be reading the answer instead of predicting it.",
+        "A baseline is a simple comparison rule that the fitted model should improve upon. For a numeric target, one baseline predicts the mean, which is the sum of the training targets divided by their count. This baseline ignores all features. It matters because a complicated model can produce numbers without extracting useful information. Comparing against an explicit no-feature rule asks whether learning from features actually helped.",
+      ],
+      vocabulary: [
+        {
+          term: "Example",
+          definition:
+            "One recorded case containing feature values and, during training, a known target.",
+        },
+        {
+          term: "Feature",
+          definition:
+            "An input value available when the model must make a prediction.",
+        },
+        {
+          term: "Target",
+          definition:
+            "The outcome that training observes and inference attempts to predict before it is known.",
+        },
+        {
+          term: "Parameter",
+          definition:
+            "An adjustable number stored in the model and fitted from training examples.",
+        },
+        {
+          term: "Training and inference",
+          definition:
+            "Training fits parameters from known examples; inference applies the fixed fitted rule to new features.",
+        },
+        {
+          term: "Mean baseline",
+          definition:
+            "A no-feature rule that predicts the average training target for every case.",
+        },
+      ],
+      workedExample: {
+        title: "Predict delivery time and compare with a no-feature rule",
+        setup:
+          "Three completed deliveries took 8, 10, and 12 minutes. For a new delivery, distance x is 2. A fitted rule multiplies x by 4 and then adds 4, while the actual target will later be observed as 12 minutes.",
+        steps: [
+          {
+            label: "Assign the data roles",
+            explanation:
+              "Distance is a feature because it is known before delivery. Elapsed minutes is the target because that is the unknown outcome to predict.",
+          },
+          {
+            label: "Compute the training mean",
+            explanation:
+              "Add the three known targets: 8 + 10 + 12 = 30. Divide by three examples to obtain the mean 10.",
+          },
+          {
+            label: "State the baseline",
+            explanation:
+              "The mean baseline predicts 10 minutes for every new delivery. It does not inspect distance or any other feature.",
+          },
+          {
+            label: "Apply the fitted parameters",
+            explanation:
+              "The fitted rule calculates 4 times x plus 4. For x = 2, its prediction is 4(2) + 4 = 12 minutes.",
+          },
+          {
+            label: "Separate inference from later evaluation",
+            explanation:
+              "Inference may read x = 2 and the two stored parameters, but not the unknown target. After 12 minutes is observed, the fitted rule's residual is 12 - 12 = 0, while the baseline's residual is 10 - 12 = -2.",
+          },
+        ],
+        takeaway:
+          "The feature, target, parameters, and prediction have different roles; the baseline reveals whether using fitted feature information improved the result.",
+      },
+      misconceptions: [
+        {
+          misconception: "A target is another feature that inference can read.",
+          correction:
+            "The target is the unknown outcome. Training has past targets, but inference for a new case must operate before that case's target is known.",
+        },
+        {
+          misconception: "Parameters change whenever the input example changes.",
+          correction:
+            "Feature values vary across examples. Parameters belong to the fitted rule and change only when a training procedure updates them.",
+        },
+        {
+          misconception: "A baseline is acceptable only when it predicts accurately.",
+          correction:
+            "Its purpose is comparison. Even a simple mean can expose that a more complex model has failed to gain useful predictive value.",
+        },
+      ],
+      summary: [
+        "Features are known inputs, targets are outcomes, and predictions estimate those outcomes.",
+        "Training fits model parameters; inference applies the fitted parameters without reading or updating from the new target.",
+        "A numeric model should be compared with a mean baseline that uses no features.",
+      ],
+      sourceIds: ["S66", "S01", "S13"],
+    },
     blocks: [
       {
         id: "01-row-contract",
@@ -486,16 +690,16 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
       choicePrediction(
         "01-mean-prediction",
         ["baseline"],
-        "Training targets are 8, 10, and 12 minutes. What does the mean baseline predict for every new case?",
+        "A power-demand model has training targets of 18, 24, and 30 kilowatts. What does the mean baseline predict for every new interval?",
         [
-          { id: "8", label: "8 minutes" },
-          { id: "10", label: "10 minutes" },
-          { id: "12", label: "12 minutes" },
+          { id: "18", label: "18 kilowatts" },
+          { id: "24", label: "24 kilowatts" },
+          { id: "30", label: "30 kilowatts" },
           { id: "unknown", label: "It cannot predict" },
         ],
-        "10",
-        "Correct. The no-feature mean baseline is (8 + 10 + 12) / 3 = 10.",
-        "A mean baseline ignores the new case and reuses the average training target.",
+        "24",
+        "Correct. The no-feature mean baseline is (18 + 24 + 30) / 3 = 24 kilowatts.",
+        "A mean baseline ignores the new interval and reuses the average training target.",
       ),
       visualLab(
         "data-and-baseline",
@@ -632,7 +836,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
     question: "How do weight and bias change a one-feature prediction?",
     summary:
       "Connect y_hat = wx + b across equation, table, and graph views.",
-    durationMinutes: 25,
+    durationMinutes: 50,
     revision: COURSE_REVISION,
     sourceIds: ["S67", "S68", "S50"],
     mechanism: {
@@ -664,6 +868,103 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         requiredEvidenceKinds: ["explanation", "transfer"],
       },
     ],
+    teaching: {
+      title: "Read a linear prediction as two visible contributions",
+      introduction: [
+        "A one-feature linear model predicts a number from one numeric input. The input is written as x. The prediction is written as y_hat, read as 'y-hat,' to distinguish the model's estimate from the observed target y. The rule is y_hat = wx + b: multiply x by the weight w, then add the bias b. Both w and b are parameters fitted during training.",
+        "The weight controls how much the prediction changes for a one-unit change in x. This rate is the line's slope. If w = 3, then moving x upward by one changes y_hat by 3 while b remains fixed. The bias is the prediction when x = 0 because wx then equals zero. On a graph, that value is the intercept, the point where the line crosses the vertical prediction axis.",
+        "This separation matters because parameter changes do not have identical effects. Adding one to b raises every prediction by one. Adding one to w changes a particular prediction by x, so the effect is positive for positive x, zero at x = 0, and negative for negative x. Tracing multiplication before addition prevents the mistaken shortcut that a larger weight always raises every output.",
+      ],
+      vocabulary: [
+        {
+          term: "Linear model",
+          definition:
+            "A prediction rule whose graph is a straight line for one feature.",
+        },
+        {
+          term: "y_hat",
+          definition:
+            "The model's predicted value, kept distinct from the observed target y.",
+        },
+        {
+          term: "Weight",
+          definition:
+            "The parameter w multiplied by x; it gives the prediction change per one unit of input.",
+        },
+        {
+          term: "Bias",
+          definition:
+            "The parameter b added after multiplication; it equals the prediction at x = 0.",
+        },
+        {
+          term: "Slope",
+          definition:
+            "The change in the vertical prediction for a one-unit increase in the horizontal input.",
+        },
+        {
+          term: "Intercept",
+          definition:
+            "The vertical value where the line crosses x = 0, equal to the bias.",
+        },
+      ],
+      workedExample: {
+        title: "Trace a signed temperature input through one line",
+        setup:
+          "A thermostat predicts energy change with y_hat = 1.5x - 2. Here x is degrees relative to a reference temperature, so x can be positive, zero, or negative.",
+        steps: [
+          {
+            label: "Identify both parameters",
+            explanation:
+              "The weight is w = 1.5, meaning 1.5 units of predicted energy change per degree. The bias is b = -2.",
+          },
+          {
+            label: "Evaluate the reference point",
+            explanation:
+              "At x = 0, the weighted contribution is 1.5(0) = 0. Therefore y_hat = 0 - 2 = -2, which is the intercept.",
+          },
+          {
+            label: "Evaluate a positive input",
+            explanation:
+              "At x = 4, multiplication contributes 1.5(4) = 6. Adding the bias gives y_hat = 6 - 2 = 4.",
+          },
+          {
+            label: "Evaluate a negative input",
+            explanation:
+              "At x = -4, multiplication contributes 1.5(-4) = -6. Adding the bias gives y_hat = -6 - 2 = -8.",
+          },
+          {
+            label: "Change only the weight",
+            explanation:
+              "If w rises from 1.5 to 2 while x = -4 and b = -2 stay fixed, the prediction becomes 2(-4) - 2 = -10. The larger weight lowers this output because x is negative.",
+          },
+        ],
+        takeaway:
+          "The bias shifts every prediction equally, while the weight's effect depends on both its change and the signed input value.",
+      },
+      misconceptions: [
+        {
+          misconception: "The weight is the model's prediction.",
+          correction:
+            "The weight is only one parameter. A prediction also depends on the current input and the bias through y_hat = wx + b.",
+        },
+        {
+          misconception: "Increasing the bias makes the line steeper.",
+          correction:
+            "Changing b shifts the entire line vertically without changing its slope. Changing w alters the slope.",
+        },
+        {
+          misconception: "A larger positive weight always creates a larger prediction.",
+          correction:
+            "The prediction change caused by a weight change is multiplied by x. For a negative x, increasing w lowers y_hat.",
+        },
+      ],
+      summary: [
+        "Compute y_hat by multiplying x by w and then adding b.",
+        "Interpret w as slope and b as the prediction at x = 0.",
+        "Use the sign of x before predicting how a weight change will move the output.",
+      ],
+      sourceIds: ["S67", "S68", "S50"],
+    },
     blocks: [
       {
         id: "02-visible-rule",
@@ -788,36 +1089,36 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         "02-thermostat-transfer",
         "transfer",
         ["linear-parameters", "prediction-contract"],
-        "A thermostat predicts energy change as y_hat = 1.5x - 2, where x is degrees relative to a reference temperature. Interpret the weight and bias, then compute predictions for x = 0 and x = -4 and explain why the negative input reverses the weight contribution.",
-        "Map slope and intercept to this signed input rather than to the earlier distance example.",
+        "A delivery system predicts minutes relative to schedule as y_hat = -0.8x + 6, where x is hours relative to noon. Interpret the weight and bias, then compute predictions for x = 0 and x = -5 and explain why the two negative factors make the weighted contribution positive.",
+        "Map slope and intercept to this signed time input, substitute both x values, and keep multiplication separate from the bias.",
         [
           {
             id: "02-transfer-weight",
-            label: "interpret 1.5 as energy change per degree",
+            label: "interpret minus 0.8 as predicted minutes per hour",
             keywordGroups: [
-              ["1.5"],
-              ["per degree", "each degree", "slope", "weight"],
+              ["-0.8", "minus 0.8"],
+              ["per hour", "each hour", "slope", "weight"],
             ],
           },
           {
             id: "02-transfer-bias",
-            label: "compute minus 2 at the reference point",
+            label: "compute 6 at noon",
             keywordGroups: [
-              ["-2", "minus 2"],
-              ["x = 0", "x=0", "reference"],
+              ["6"],
+              ["x = 0", "x=0", "noon", "reference"],
             ],
           },
           {
             id: "02-transfer-negative",
-            label: "compute minus 8 at x equals minus 4",
+            label: "compute 10 at five hours before noon",
             keywordGroups: [
-              ["-8", "minus 8"],
-              ["-4", "minus 4"],
-              ["negative", "contribution"],
+              ["10"],
+              ["-5", "minus 5"],
+              ["negative", "positive", "contribution"],
             ],
           },
         ],
-        "The line mechanism transfers to a signed temperature feature.",
+        "The line mechanism transfers to a signed time feature with new parameters.",
         "Substitute each x explicitly before interpreting the direction.",
       ),
     ],
@@ -856,7 +1157,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
     question: "What exactly becomes smaller when a linear model improves?",
     summary:
       "Trace signed residuals into squared errors, mean squared error, and a parameter-indexed loss landscape.",
-    durationMinutes: 32,
+    durationMinutes: 55,
     revision: COURSE_REVISION,
     sourceIds: ["S55", "S67"],
     mechanism: {
@@ -891,6 +1192,108 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         requiredEvidenceKinds: ["explanation", "transfer", "code-check"],
       },
     ],
+    teaching: {
+      title: "Build one loss value from every prediction error",
+      introduction: [
+        "A model needs a numeric way to compare its predictions with known targets. For one example, a residual is prediction minus target. A negative residual means the prediction is below the target; a positive residual means it is above. The residual's magnitude is the size of the miss in target units. Keeping the sign at this stage makes the direction of each error visible.",
+        "A loss combines errors into a quantity that a training procedure can compare. Mean squared error, abbreviated MSE, first squares every residual, then adds those squared values, and finally divides by the number of examples. Squaring makes every contribution nonnegative, so misses on opposite sides cannot cancel. It also gives larger residuals disproportionately larger contributions: doubling a residual multiplies its square by four.",
+        "For a fixed dataset and fixed MSE definition, each candidate weight and bias produces one loss value. A loss landscape is the mapping from those parameter choices to their losses. A point on this landscape is not a separate observation; it summarizes all row-level squared errors for one parameter setting. This matters because model improvement means moving to parameters with lower loss, not merely making one selected prediction look better.",
+      ],
+      vocabulary: [
+        {
+          term: "Residual",
+          definition:
+            "Prediction minus target for one example; its sign gives direction and its magnitude gives miss size.",
+        },
+        {
+          term: "Squared error",
+          definition:
+            "A residual multiplied by itself, producing a nonnegative contribution to loss.",
+        },
+        {
+          term: "Mean squared error",
+          definition:
+            "The sum of all squared residuals divided by the number of examples.",
+        },
+        {
+          term: "Loss",
+          definition:
+            "A numeric summary used to compare how well parameter choices match known targets.",
+        },
+        {
+          term: "Loss landscape",
+          definition:
+            "The loss associated with every considered parameter position for fixed data and a fixed loss rule.",
+        },
+        {
+          term: "Outlier",
+          definition:
+            "An observation with a value or residual far from most others; under MSE, a large residual can contribute strongly.",
+        },
+      ],
+      workedExample: {
+        title: "Construct two points on a weight-to-MSE landscape",
+        setup:
+          "Three fixed examples are (x = 0, target = 1), (x = 1, target = 3), and (x = 2, target = 5). The model is y_hat = wx + 1, so the bias stays fixed at 1 while the candidate weight changes.",
+        steps: [
+          {
+            label: "Predict with weight 1",
+            explanation:
+              "For x values 0, 1, and 2, the predictions are 1, 2, and 3 because y_hat = 1x + 1.",
+          },
+          {
+            label: "Compute signed residuals",
+            explanation:
+              "Subtract each target from its prediction: 1 - 1 = 0, 2 - 3 = -1, and 3 - 5 = -2.",
+          },
+          {
+            label: "Square every residual",
+            explanation:
+              "The squared errors are 0 squared = 0, (-1) squared = 1, and (-2) squared = 4. The negative signs no longer permit cancellation.",
+          },
+          {
+            label: "Average the squares",
+            explanation:
+              "Add 0 + 1 + 4 = 5 and divide by three examples. The MSE is 5/3, approximately 1.667, at weight 1.",
+          },
+          {
+            label: "Evaluate weight 2",
+            explanation:
+              "With y_hat = 2x + 1, the predictions are 1, 3, and 5. Every residual and squared error is zero, so MSE is zero.",
+          },
+          {
+            label: "Place both landscape points",
+            explanation:
+              "The fixed data and bias therefore map weight 1 to MSE 1.667 and weight 2 to MSE 0. These are two points on the same weight-to-loss landscape.",
+          },
+        ],
+        takeaway:
+          "Every landscape point must be reconstructed through predictions, residuals, squared errors, and their mean.",
+      },
+      misconceptions: [
+        {
+          misconception: "Residuals should be averaged before they are squared.",
+          correction:
+            "MSE squares each residual first. Averaging signed residuals first lets positive and negative misses cancel.",
+        },
+        {
+          misconception: "A residual of -4 is a smaller error than a residual of +2.",
+          correction:
+            "The sign gives direction, not quality. Their magnitudes are 4 and 2, and their squared contributions are 16 and 4.",
+        },
+        {
+          misconception: "A large MSE proves an unusual row should be deleted.",
+          correction:
+            "MSE reveals strong influence from a large residual. Deletion requires separate evidence about measurement, scope, or the error costs being modeled.",
+        },
+      ],
+      summary: [
+        "Compute each residual as prediction minus target and interpret its sign before squaring.",
+        "MSE squares every residual and then averages, preventing cancellation and emphasizing large misses.",
+        "A parameter setting identifies one loss-landscape point only after all examples contribute.",
+      ],
+      sourceIds: ["S55", "S67"],
+    },
     blocks: [
       {
         id: "03-residual",
@@ -1160,7 +1563,7 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
     question: "How does a slope become a parameter update?",
     summary:
       "Predict a descent direction, execute the update equation, and diagnose a learning rate that overshoots.",
-    durationMinutes: 34,
+    durationMinutes: 60,
     revision: COURSE_REVISION,
     sourceIds: ["S54", "S56", "S69"],
     mechanism: {
@@ -1195,6 +1598,103 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
         requiredEvidenceKinds: ["explanation", "transfer", "code-check"],
       },
     ],
+    teaching: {
+      title: "Turn a local loss slope into a repeated update",
+      introduction: [
+        "Training seeks parameter values with lower loss. A gradient is a local slope: for one parameter, it measures how loss changes for a small increase in that parameter at its current value. A positive gradient means a small increase is locally uphill, while a negative gradient means a small increase is locally downhill. The word local is essential because the measurement describes the current neighborhood, not every distant parameter value.",
+        "Gradient descent updates a parameter in the direction opposite the gradient. Its rule is new parameter = old parameter - learning rate times gradient. The learning rate is a positive number that scales the update distance. The minus sign chooses the downhill direction; the learning rate chooses how far to move. Subtracting a negative gradient therefore increases the parameter, because a negative quantity is being subtracted.",
+        "One update does not finish the process. An iteration is one cycle of measuring the gradient, updating the parameter, and recomputing predictions and loss. After the parameter moves, the local slope can change, so the next iteration needs a new gradient. A learning rate that is too large can overshoot a low-loss region, causing loss to alternate or grow even though each step began in the locally correct direction.",
+      ],
+      vocabulary: [
+        {
+          term: "Gradient",
+          definition:
+            "The local slope of loss with respect to a parameter at its current value.",
+        },
+        {
+          term: "Gradient descent",
+          definition:
+            "A repeated procedure that moves parameters opposite the current gradient.",
+        },
+        {
+          term: "Learning rate",
+          definition:
+            "The positive multiplier that controls how far a gradient update moves.",
+        },
+        {
+          term: "Iteration",
+          definition:
+            "One measurement-update-recompute cycle in an optimization procedure.",
+        },
+        {
+          term: "Overshoot",
+          definition:
+            "A step that crosses a low-loss region because its distance is too large.",
+        },
+      ],
+      workedExample: {
+        title: "Follow two gradient updates from the same starting weight",
+        setup:
+          "The model predicts y_hat = 1 + wx for rows (1, 3), (2, 5), and (3, 7). It starts at weight w = 0 with gradient -18.666667 and uses learning rate 0.05.",
+        steps: [
+          {
+            label: "Read the first direction",
+            explanation:
+              "The gradient is negative, so increasing the weight is locally downhill. The update equation will subtract this negative value.",
+          },
+          {
+            label: "Scale the first gradient",
+            explanation:
+              "Multiply learning rate by gradient: 0.05(-18.666667) = -0.933333.",
+          },
+          {
+            label: "Apply the first update",
+            explanation:
+              "Compute new w = 0 - (-0.933333) = 0.933333. The parameter increases because subtracting a negative amount is addition.",
+          },
+          {
+            label: "Recompute at the new position",
+            explanation:
+              "At w = 0.933333, predictions and residuals have changed. The new gradient is approximately -9.955556, so reusing -18.666667 would describe the wrong position.",
+          },
+          {
+            label: "Apply the second update",
+            explanation:
+              "Compute w = 0.933333 - 0.05(-9.955556) = 1.431111. The loss after this second step is approximately 1.510, lower than the previous loss.",
+          },
+          {
+            label: "Interpret the trace",
+            explanation:
+              "The updates move toward weight 2, where these rows have zero loss. A larger learning rate must be tested by comparing the whole loss trace, because one locally correct direction can still overshoot.",
+          },
+        ],
+        takeaway:
+          "Direction comes from the gradient sign, distance comes from the learning rate, and every new position requires a fresh measurement.",
+      },
+      misconceptions: [
+        {
+          misconception: "A negative gradient means the parameter should decrease.",
+          correction:
+            "The gradient points toward increasing loss. Gradient descent uses its opposite, so subtracting a negative gradient increases the parameter.",
+        },
+        {
+          misconception: "The first gradient can be reused for every step.",
+          correction:
+            "Moving changes predictions, residuals, and the local slope. Recompute the gradient at each new parameter position.",
+        },
+        {
+          misconception: "The correct direction guarantees that the next loss is lower.",
+          correction:
+            "The direction is only local. An excessive learning rate can cross the low-loss region and land at a worse point.",
+        },
+      ],
+      summary: [
+        "Use the gradient sign to identify the locally uphill direction, then move in the opposite direction.",
+        "Apply new = old - learning rate times gradient and recompute the gradient after every move.",
+        "Diagnose overshoot from a complete loss trace while changing only the learning rate.",
+      ],
+      sourceIds: ["S54", "S56", "S69"],
+    },
     blocks: [
       {
         id: "04-local-slope",
@@ -1249,15 +1749,16 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
       choicePrediction(
         "04-direction-prediction",
         ["gradient-direction", "gradient-descent"],
-        "At the current weight, the loss gradient is -6. Which update direction is locally downhill?",
+        "At weight w = 2, the current loss gradient is +4 and the learning rate is 0.25. What is the updated weight after one gradient-descent step?",
         [
-          { id: "decrease", label: "Decrease the weight" },
-          { id: "increase", label: "Increase the weight" },
-          { id: "none", label: "Do not change the weight" },
+          { id: "one", label: "1" },
+          { id: "two", label: "2" },
+          { id: "three", label: "3" },
+          { id: "negative-one", label: "-1" },
         ],
-        "increase",
-        "Correct. Subtracting a negative gradient increases the parameter.",
-        "The gradient points uphill. Apply the minus sign in the update equation.",
+        "one",
+        "Correct. Apply w_new = 2 - 0.25(4) = 1.",
+        "Substitute the old weight, positive learning rate, and positive gradient into new = old - rate times gradient.",
       ),
       visualLab(
         "gradient-descent",
@@ -1462,7 +1963,7 @@ print("loss trace:", loss_history)
     question: "How does test information leak into a model choice?",
     summary:
       "Assign training, validation, and test data distinct jobs, then create and repair a controlled selection leak.",
-    durationMinutes: 34,
+    durationMinutes: 55,
     revision: COURSE_REVISION,
     sourceIds: ["S70", "S53"],
     mechanism: {
@@ -1497,6 +1998,108 @@ print("loss trace:", loss_history)
         requiredEvidenceKinds: ["explanation", "transfer"],
       },
     ],
+    teaching: {
+      title: "Protect model decisions with three separate data roles",
+      introduction: [
+        "Evaluating a model requires data that did not determine the result being evaluated. A data split is a partition of recorded examples into groups with different jobs. The training split fits model parameters. A candidate is one possible fitted model or setting under consideration. The validation split compares candidates and supports development choices. The test split evaluates the frozen choice only after fitting and selection are complete.",
+        "Leakage is an information path from data into a decision that the data was supposed to evaluate independently. Test leakage occurs if test values or test results influence fitting, preprocessing, stopping, feature choices, threshold choices, or candidate selection. No gradient needs to read test rows for leakage to occur. If a developer sees a test score and changes the chosen model, that score has entered the development process.",
+        "Generalization is performance on cases beyond those used to fit the model. An untouched test result estimates generalization only for cases represented by the same sampling and measurement process. Independence and coverage answer different questions: independence asks whether test information influenced the model, while coverage asks whether the evaluated cases represent the situations named in the claim. A clean test from one factory cannot establish performance at every factory.",
+      ],
+      vocabulary: [
+        {
+          term: "Training split",
+          definition:
+            "The examples used to fit model parameters.",
+        },
+        {
+          term: "Validation split",
+          definition:
+            "Separate examples used to compare candidates and make development choices.",
+        },
+        {
+          term: "Test split",
+          definition:
+            "Examples reserved for final evaluation after the model and procedure are frozen.",
+        },
+        {
+          term: "Candidate",
+          definition:
+            "One model, parameter setting, threshold, or other authored option being compared during selection.",
+        },
+        {
+          term: "Leakage",
+          definition:
+            "A path by which evaluation information influences fitting or model-development decisions.",
+        },
+        {
+          term: "Generalization",
+          definition:
+            "Performance on relevant cases that were not used to fit the model.",
+        },
+      ],
+      workedExample: {
+        title: "Select with validation, then evaluate once with test data",
+        setup:
+          "Training targets are 8, 10, and 12. Validation targets are 9 and 13. Test targets are 20 and 22. Three constant-prediction candidates output 10, 11, or 12, and all comparisons use MSE.",
+        steps: [
+          {
+            label: "Fit the training baseline",
+            explanation:
+              "The training mean is (8 + 10 + 12) / 3 = 10. This fit uses only the training split.",
+          },
+          {
+            label: "Score candidate 10 on validation",
+            explanation:
+              "Its residuals are 10 - 9 = 1 and 10 - 13 = -3. MSE is (1 squared + (-3) squared) / 2 = 5.",
+          },
+          {
+            label: "Score the other candidates",
+            explanation:
+              "Candidate 11 has validation MSE ((2 squared) + (-2 squared)) / 2 = 4. Candidate 12 has MSE ((3 squared) + (-1 squared)) / 2 = 5.",
+          },
+          {
+            label: "Freeze the validation choice",
+            explanation:
+              "Candidate 11 has the lowest validation MSE, so select it and stop changing the model or selection procedure before opening the test result.",
+          },
+          {
+            label: "Evaluate on test once",
+            explanation:
+              "Candidate 11 has test residuals -9 and -11. Its final test MSE is (81 + 121) / 2 = 101.",
+          },
+          {
+            label: "Expose the leakage alternative",
+            explanation:
+              "If the candidates were selected by test MSE, candidate 12 would look best with MSE 82. Reporting that same 82 as an untouched test estimate would be invalid because test feedback chose the candidate.",
+          },
+        ],
+        takeaway:
+          "A split's role is determined by how its information changes decisions, not by the label attached to the file.",
+      },
+      misconceptions: [
+        {
+          misconception: "Test leakage happens only when test rows are used in gradient updates.",
+          correction:
+            "Any test-informed development choice creates a path into the selected result, including preprocessing, thresholds, stopping, or candidate selection.",
+        },
+        {
+          misconception: "Looking at the test score repeatedly is harmless if the score is not stored.",
+          correction:
+            "Human decisions can carry the information. Once a test result changes development, those rows no longer provide an untouched final estimate.",
+        },
+        {
+          misconception: "An untouched test result applies to every future population.",
+          correction:
+            "Untouched data protects against selection feedback. The claim still remains limited to populations, locations, times, and measurements represented by the test process.",
+        },
+      ],
+      summary: [
+        "Fit on training data, select among candidates with validation data, and evaluate the frozen choice on test data.",
+        "Trace leakage through every decision influenced by test information, not only through parameter updates.",
+        "Keep an independent test estimate separate from the coverage limits of the sampled cases.",
+      ],
+      sourceIds: ["S70", "S53"],
+    },
     blocks: [
       {
         id: "05-three-jobs",
@@ -1551,15 +2154,15 @@ print("loss trace:", loss_history)
       choicePrediction(
         "05-split-prediction",
         ["data-split", "leakage"],
-        "You compare three candidate models using test loss, choose the lowest, and report that same test loss. What happened?",
+        "A team evaluates its frozen pipeline on the test set once, changes the missing-value rule because of that score, and evaluates again on the same test rows. What is true of the second score?",
         [
-          { id: "valid", label: "The test remains independent" },
-          { id: "leak", label: "Test feedback leaked into selection" },
-          { id: "training", label: "The test became training data only if gradients used it" },
+          { id: "leak", label: "Test feedback entered development, so the score is no longer an untouched estimate" },
+          { id: "valid", label: "The score remains untouched because no test row entered a gradient update" },
+          { id: "validation", label: "Only the validation set became contaminated" },
         ],
         "leak",
-        "Correct. Selection used test feedback, so the reported value is no longer an untouched final estimate.",
-        "Leakage includes model choice, not only gradient updates.",
+        "Correct. The first test result changed preprocessing, so the repeated score evaluates a test-informed procedure.",
+        "Trace whether information from the first test result changed any later development choice, including preprocessing.",
       ),
       visualLab(
         "split-and-leakage",
@@ -1773,7 +2376,7 @@ print("final test loss:", mean_squared_error(TEST_ROWS, selected_prediction))
       "How do fixed train-held-out comparisons separate underfit from overfit?",
     summary:
       "Compare authored polynomial capacities on fixed data states, and keep that evidence distinct from a learning curve.",
-    durationMinutes: 35,
+    durationMinutes: 60,
     revision: COURSE_REVISION,
     sourceIds: ["S71", "S72", "S10"],
     mechanism: {
@@ -1815,6 +2418,108 @@ print("final test loss:", mean_squared_error(TEST_ROWS, selected_prediction))
         requiredEvidenceKinds: ["explanation", "transfer", "code-check"],
       },
     ],
+    teaching: {
+      title: "Diagnose capacity with paired training and held-out evidence",
+      introduction: [
+        "Model capacity is the range of rules a model family can represent. A polynomial combines powers of an input, such as a constant, x, x squared, and higher powers. Its degree is the highest power included. A degree-one polynomial can draw a line; adding squared and higher-power terms allows more varied curves. Greater capacity expands what can be fitted, but it does not guarantee better predictions on new cases.",
+        "Training loss measures errors on examples used to fit the model. Held-out loss measures errors on separate examples not used for that fit. Underfitting occurs when the current procedure cannot capture the relevant pattern, often appearing as high training and held-out losses that are both similar. Overfitting occurs when the fitted rule follows details specific to the training sample, appearing as very low training loss with substantially higher held-out loss.",
+        "A learning curve is a sequence of training and validation scores obtained by refitting the same procedure across several training-set sizes under one fixed validation protocol. It is not any graph with two loss bars. Learning curves matter because they can show how fit and held-out behavior change as more training examples are used. The test set still remains outside repeated diagnosis and model selection.",
+      ],
+      vocabulary: [
+        {
+          term: "Model capacity",
+          definition:
+            "The set of input-to-prediction rules that a model family can represent.",
+        },
+        {
+          term: "Polynomial degree",
+          definition:
+            "The highest input power in a polynomial rule; higher degrees permit a wider family of curves.",
+        },
+        {
+          term: "Held-out loss",
+          definition:
+            "Loss measured on separate examples that were not used to fit the evaluated model.",
+        },
+        {
+          term: "Underfitting",
+          definition:
+            "Failure to capture the pattern, supported by high, similar training and held-out losses under a fixed protocol.",
+        },
+        {
+          term: "Overfitting",
+          definition:
+            "Fitting training-sample details that do not transfer, supported by low training loss and much higher held-out loss.",
+        },
+        {
+          term: "Learning curve",
+          definition:
+            "Training and validation performance measured after refitting across multiple training sizes with one fixed validation protocol.",
+        },
+      ],
+      workedExample: {
+        title: "Compare a matching quadratic with a high-degree interpolator",
+        setup:
+          "Training rows follow y = x squared at x values -2, -1, 0, 1, and 2. Validation rows use x values -1.5, 0.5, and 1.5 with targets 2.25, 0.25, and 2.25.",
+        steps: [
+          {
+            label: "Evaluate the quadratic rule",
+            explanation:
+              "The degree-two rule y_hat = x squared predicts 4, 1, 0, 1, and 4 on training. Every residual is zero, so training MSE is zero.",
+          },
+          {
+            label: "Check the quadratic on validation",
+            explanation:
+              "At -1.5, 0.5, and 1.5, x squared gives 2.25, 0.25, and 2.25. Validation MSE is also zero for these authored points.",
+          },
+          {
+            label: "Introduce the higher-capacity rule",
+            explanation:
+              "Using coefficients in ascending powers [constant, x, x squared, x cubed, x to the fourth, x to the fifth], [0, 8, 1, -10, 0, 2] means y_hat = 8x + x squared - 10x cubed + 2x to the fifth. It also predicts every training target exactly, so its training MSE is zero.",
+          },
+          {
+            label: "Trace one held-out miss",
+            explanation:
+              "At x = -1.5, the degree-five rule predicts 8.8125 instead of 2.25. Its residual is 6.5625, whose squared contribution is about 43.066.",
+          },
+          {
+            label: "Compare the complete held-out result",
+            explanation:
+              "Across all three validation rows, the degree-five rule has MSE about 31.348. Equal zero training loss therefore hides very different held-out behavior.",
+          },
+          {
+            label: "State the protocol boundary",
+            explanation:
+              "This is a capacity comparison on one fixed train-validation split. It is not a learning curve because the models were not refitted across several nested training sizes.",
+          },
+        ],
+        takeaway:
+          "Capacity diagnoses require both training and held-out loss, while a learning-curve claim additionally requires repeated fits across controlled training sizes.",
+      },
+      misconceptions: [
+        {
+          misconception: "The model with the lowest training loss is automatically best.",
+          correction:
+            "Training loss shows fit to seen examples. Compare held-out loss to determine whether that fit transfers under the evaluation protocol.",
+        },
+        {
+          misconception: "A high held-out loss always proves overfitting.",
+          correction:
+            "Use the pair. High training and held-out losses support underfit; low training loss with a large held-out gap supports overfit.",
+        },
+        {
+          misconception: "Two models trained on different data amounts form a learning curve.",
+          correction:
+            "A valid learning curve uses several training sizes and preserves one validation protocol so the size trend is interpretable.",
+        },
+      ],
+      summary: [
+        "Higher polynomial degree expands the family of representable curves but does not guarantee lower held-out loss.",
+        "Diagnose underfit or overfit from training loss, held-out loss, and the gap between them.",
+        "Reserve the term learning curve for repeated fits across multiple training sizes under one fixed evaluation protocol.",
+      ],
+      sourceIds: ["S71", "S72", "S10"],
+    },
     blocks: [
       {
         id: "06-capacity",

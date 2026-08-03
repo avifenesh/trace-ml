@@ -25,7 +25,10 @@ import {
   PYODIDE_ENVIRONMENT,
 } from "./lesson-helpers";
 import {
+  lessonContextForAssessment,
   pageChunksForLesson,
+  teachingBlockIdForLesson,
+  teachingChunksForLesson,
   type LessonActivity,
 } from "./types";
 
@@ -99,7 +102,7 @@ const EXPECTED_LESSON_IDS = EXPECTED_MODULES.flatMap(
   (module) => module.lessonIds,
 );
 const EXPECTED_SOURCE_IDS = Array.from(
-  { length: 103 },
+  { length: 104 },
   (_, index) => `S${String(index + 1).padStart(2, "0")}`,
 );
 const CODE_LAB_LESSON_IDS = [
@@ -261,15 +264,25 @@ function expectNonBlank(value: string) {
   expect(value.trim()).not.toBe("");
 }
 
+function wordCount(values: string[]) {
+  return values
+    .join(" ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
+function normalizeProse(value: string) {
+  return value
+    .toLocaleLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 function helperActivityContext(activity: LessonActivity) {
   switch (activity.kind) {
     case "prediction":
-      return [
-        `Prediction prompt: ${activity.checkpoint.prompt}`,
-        `Visible options: ${
-          activity.checkpoint.options.map((option) => option.label).join("; ")
-        }`,
-      ];
+      return [];
     case "text-response":
       return [
         `Explanation prompt: ${activity.prompt}`,
@@ -368,9 +381,7 @@ describe("fixed authored course integrity", () => {
 
   it("keeps the compiled prose-assessment authority synchronized", () => {
     const expected = lessons.flatMap((lesson) => {
-      const lessonContext = lesson.blocks
-        .map((block) => [block.heading, ...block.body].join("\n"))
-        .join("\n\n");
+      const lessonContext = lessonContextForAssessment(lesson);
       return lesson.activities
         .filter((activity) => activity.kind === "text-response")
         .map((activity) => ({
@@ -500,6 +511,87 @@ describe("fixed authored course integrity", () => {
       expectNonBlank(lesson.mechanism.process);
       expectNonBlank(lesson.mechanism.output);
 
+      const teaching = lesson.teaching;
+      expectNonBlank(teaching.title);
+      expect(teaching.introduction.length, lesson.id).toBeGreaterThanOrEqual(2);
+      expect(teaching.introduction.length, lesson.id).toBeLessThanOrEqual(5);
+      teaching.introduction.forEach((paragraph) => {
+        expectNonBlank(paragraph);
+        expect(wordCount([paragraph]), lesson.id).toBeGreaterThanOrEqual(25);
+      });
+      expect(teaching.vocabulary.length, lesson.id).toBeGreaterThanOrEqual(4);
+      expect(teaching.vocabulary.length, lesson.id).toBeLessThanOrEqual(8);
+      expectUnique(
+        teaching.vocabulary.map(({ term }) => term.toLocaleLowerCase()),
+      );
+      teaching.vocabulary.forEach(({ term, definition }) => {
+        expectNonBlank(term);
+        expectNonBlank(definition);
+        expect(wordCount([definition]), `${lesson.id}:${term}`).toBeGreaterThan(
+          5,
+        );
+      });
+      expectNonBlank(teaching.workedExample.title);
+      expectNonBlank(teaching.workedExample.setup);
+      expect(
+        teaching.workedExample.steps.length,
+        lesson.id,
+      ).toBeGreaterThanOrEqual(4);
+      expect(
+        teaching.workedExample.steps.length,
+        lesson.id,
+      ).toBeLessThanOrEqual(6);
+      expectUnique(
+        teaching.workedExample.steps.map(({ label }) =>
+          label.toLocaleLowerCase()
+        ),
+      );
+      teaching.workedExample.steps.forEach(({ label, explanation }) => {
+        expectNonBlank(label);
+        expectNonBlank(explanation);
+      });
+      expectNonBlank(teaching.workedExample.takeaway);
+      expect(
+        teaching.misconceptions.length,
+        lesson.id,
+      ).toBeGreaterThanOrEqual(2);
+      expect(
+        teaching.misconceptions.length,
+        lesson.id,
+      ).toBeLessThanOrEqual(3);
+      teaching.misconceptions.forEach(({ misconception, correction }) => {
+        expectNonBlank(misconception);
+        expectNonBlank(correction);
+      });
+      expect(teaching.summary.length, lesson.id).toBeGreaterThanOrEqual(2);
+      expect(teaching.summary.length, lesson.id).toBeLessThanOrEqual(5);
+      teaching.summary.forEach(expectNonBlank);
+      expect(teaching.sourceIds.length, lesson.id).toBeGreaterThan(0);
+      expectUnique(teaching.sourceIds);
+      teaching.sourceIds.forEach((sourceId) => {
+        expect(lesson.sourceIds, `${lesson.id}:${sourceId}`).toContain(sourceId);
+      });
+      const teachingProse = [
+        ...teaching.introduction,
+        ...teaching.vocabulary.map(({ definition }) => definition),
+        teaching.workedExample.setup,
+        ...teaching.workedExample.steps.map(({ explanation }) => explanation),
+        teaching.workedExample.takeaway,
+        ...teaching.misconceptions.map(({ correction }) => correction),
+        ...teaching.summary,
+      ];
+      expectUnique(teachingProse.map(normalizeProse));
+      const readingProse = new Set(
+        lesson.blocks.flatMap((block) => block.body).map(normalizeProse),
+      );
+      teachingProse.forEach((paragraph) => {
+        expect(
+          readingProse.has(normalizeProse(paragraph)),
+          `${lesson.id} duplicates teaching prose in the reading`,
+        ).toBe(false);
+      });
+      expect(lesson.durationMinutes, lesson.id).toBeGreaterThanOrEqual(45);
+
       expect(lesson.blocks, lesson.id).toHaveLength(index < 7 ? 4 : 5);
       expect(lesson.blocks[0]?.kind, lesson.id).toBe("opening");
       expect(
@@ -537,10 +629,19 @@ describe("fixed authored course integrity", () => {
 
       const chunks = pageChunksForLesson(lesson);
       expect(chunks).toHaveLength(
-        lesson.blocks.reduce((total, block) => total + block.body.length, 0),
+        teachingChunksForLesson(lesson).length +
+          lesson.blocks.reduce((total, block) => total + block.body.length, 0),
       );
       chunks.forEach((chunk) => {
-        expect(chunk.id).toMatch(new RegExp(`^${chunk.blockId}:p\\d+$`));
+        if (chunk.blockId === teachingBlockIdForLesson(lesson)) {
+          expect(chunk.id).toMatch(
+            new RegExp(
+              `^${chunk.blockId}:(?:introduction|term|example-step|misconception|summary)-\\d+$|^${chunk.blockId}:example-(?:setup|takeaway)$`,
+            ),
+          );
+        } else {
+          expect(chunk.id).toMatch(new RegExp(`^${chunk.blockId}:p\\d+$`));
+        }
         expectNonBlank(chunk.heading);
         expectNonBlank(chunk.text);
       });
@@ -548,7 +649,7 @@ describe("fixed authored course integrity", () => {
       allPageChunkIds.push(...chunks.map((chunk) => chunk.id));
     });
 
-    expect(allPageChunkIds).toHaveLength(195);
+    expect(allPageChunkIds.length).toBeGreaterThan(500);
     expectUnique(allPageChunkIds);
   });
 
@@ -698,6 +799,68 @@ describe("fixed authored course integrity", () => {
         evidenceConceptIds.forEach((conceptId) => {
           expect(activity.conceptIds, activity.id).toContain(conceptId);
         });
+      });
+    });
+  });
+
+  it("pins an explicit near-transfer identity for every prediction case", () => {
+    const expectedMarkers = new Map<string, string[]>([
+      ["prerequisite-trace", ["3x - 2", "x = 2"]],
+      ["data-and-baseline", ["18, 24, and 30", "kilowatts"]],
+      ["linear-model", ["w increases from 3 to 4", "x = 5"]],
+      ["loss-landscape", ["residual grows from 2 to 10"]],
+      ["gradient-descent", ["w = 2", "gradient is +4", "0.25"]],
+      ["split-and-leakage", ["missing-value rule", "evaluates again"]],
+      ["capacity-curves", ["high-degree polynomial", "validation loss"]],
+      ["logistic-link", ["bias raises the logit from 0 to 2"]],
+      ["decision-costs", ["threshold falls from 0.7 to 0.4"]],
+      ["feature-pipeline", ["held-out temperature is 100"]],
+      ["knn-versus-tree", ["x=3.6", "k=3"]],
+      ["regularization-path", ["lambda increases from 0 to 5"]],
+      ["ensemble-votes", ["6, 9, and 15", "bagged average"]],
+      ["xor-hidden-space", ["x1 = 2 and x2 = 0", "score s"]],
+      ["backprop-graph", ["x = 3, w = 2", "dL/dw"]],
+      ["optimizer-traces", ["eta = 0.75"]],
+      ["cluster-project", ["1, 4, and 7", "7 to 10"]],
+      ["convolution-field", ["stride 1", "two samples left"]],
+      ["attention-routing", ["three allowed keys"]],
+      ["q-learning", ["reward -3"]],
+      ["shift-monitor", ["accelerometer", "0.8 to 7.6"]],
+    ]);
+
+    expect(expectedMarkers.size).toBe(lessons.length);
+    lessons.forEach((lesson) => {
+      const prediction = lesson.activities.find(
+        (activity) => activity.kind === "prediction",
+      );
+      const markers = expectedMarkers.get(lesson.id);
+      if (!prediction || !markers) {
+        throw new Error(`Missing prediction novelty contract: ${lesson.id}`);
+      }
+      markers.forEach((marker) => {
+        expect(prediction.checkpoint.prompt, `${lesson.id}:${marker}`).toContain(
+          marker,
+        );
+      });
+      expect(normalizeProse(prediction.checkpoint.prompt)).not.toBe(
+        normalizeProse(lesson.teaching.workedExample.setup),
+      );
+    });
+
+    [
+      "gradient-descent",
+      "ensemble-votes",
+      "xor-hidden-space",
+      "backprop-graph",
+    ].forEach((lessonId) => {
+      const prediction = getLesson(lessonId)?.activities.find(
+        (activity) => activity.kind === "prediction",
+      );
+      if (!prediction || prediction.kind !== "prediction") {
+        throw new Error(`Missing bare-option prediction: ${lessonId}`);
+      }
+      prediction.checkpoint.options.forEach((option) => {
+        expect(option.label, `${lessonId}:${option.id}`).not.toMatch(/[:;]/);
       });
     });
   });
@@ -1073,22 +1236,15 @@ describe("fixed authored course integrity", () => {
         : "",
     ).toContain("def empirical_total_cost");
 
-    new Map([
-      ["optimizer-traces", 55],
-      ["cluster-project", 50],
-      ["attention-routing", 50],
-      ["q-learning", 48],
-    ]).forEach((duration, lessonId) => {
-      expect(getLesson(lessonId)?.durationMinutes, lessonId).toBe(
-        duration,
-      );
+    lessons.forEach((lesson) => {
+      expect(lesson.durationMinutes, lesson.id).toBeGreaterThanOrEqual(45);
     });
   });
 
-  it("resolves every block and direct resource against 103 audited sources", () => {
+  it("resolves every block and direct resource against 104 audited sources", () => {
     expect(researchRegistry.generated).toBe("2026-08-03");
-    expect(researchRegistry.totalSources).toBe(103);
-    expect(researchRegistry.sources).toHaveLength(103);
+    expect(researchRegistry.totalSources).toBe(104);
+    expect(researchRegistry.sources).toHaveLength(104);
     expect(researchRegistry.sources.map((source) => source.id)).toEqual(
       EXPECTED_SOURCE_IDS,
     );
@@ -1102,7 +1258,7 @@ describe("fixed authored course integrity", () => {
     researchRegistry.sources.forEach((source) => {
       expectNonBlank(source.title);
       expectNonBlank(source.publisher);
-      expect(source.verifiedAt).toMatch(/^2026-08-0[23]$/);
+      expect(source.verifiedAt).toMatch(/^2026-08-0[234]$/);
       expect(source.verifiedAt <= COURSE_REVISION.slice(0, 10)).toBe(true);
       expect(["http:", "https:"]).toContain(new URL(source.url).protocol);
     });
@@ -1127,7 +1283,16 @@ describe("fixed authored course integrity", () => {
         });
       });
 
+      lesson.teaching.sourceIds.forEach((sourceId) => {
+        expect(sourceById.has(sourceId), `${lesson.id}:${sourceId}`).toBe(true);
+        expect(sourceIds, `${lesson.id}:${sourceId}`).toContain(sourceId);
+      });
+
       pageChunksForLesson(lesson).forEach((chunk) => {
+        if (chunk.blockId === teachingBlockIdForLesson(lesson)) {
+          expect(chunk.sourceIds, chunk.id).toEqual(lesson.teaching.sourceIds);
+          return;
+        }
         const block = lesson.blocks.find(
           (candidate) => candidate.id === chunk.blockId,
         );

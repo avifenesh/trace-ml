@@ -3,8 +3,8 @@
   "slug": "ml-course-research",
   "generated": "2026-08-03",
   "depth": "deep",
-  "totalSources": 103,
-  "verificationNote": "The original 95 URLs were reported live with HTTP 200 by one of five research lanes or three direct-resource audits on 2026-08-02. Eight claim-specific correction sources were live-validated on 2026-08-03. This registry preserves report-level metadata; unknown exact dates are null or qualified rather than inferred.",
+  "totalSources": 104,
+  "verificationNote": "The original 95 URLs were reported live with HTTP 200 by one of five research lanes or three direct-resource audits on 2026-08-02. Nine claim-specific correction and teaching-design sources were live-validated on 2026-08-03. This registry preserves report-level metadata; unknown exact dates are null or qualified rather than inferred.",
   "qualityScoring": {
     "method": "learn skill weighted rubric",
     "formula": "authority*3 + recency*2 + depth*2 + examples*2 + uniqueness",
@@ -1475,6 +1475,20 @@
       "keyInsights": ["Defines scaled dot-product attention as softmax of scaled query-key products applied to value vectors."],
       "limitations": ["The operation specifies intermediate routing, not a causal explanation of a final prediction or a complete modern transformer implementation."],
       "designImplications": ["Use for Q-K-softmax-V mechanics and keep interpretability claims separately bounded by intervention evidence."]
+    },
+    {
+      "id": "S104",
+      "url": "https://doi.org/10.1016/j.learninstruc.2025.102196",
+      "title": "Retrieval Practice in Stepwise Worked Examples Improves Learning",
+      "publisher": "Learning and Instruction / Elsevier",
+      "type": "peer-reviewed primary research",
+      "publicationOrUpdateDate": "2025-12",
+      "dateNote": "The DOI, Crossref record, OpenAlex record, and open Utrecht University repository abstract were live-validated on 2026-08-04.",
+      "verifiedAt": "2026-08-04",
+      "qualityScores": {"authority": 9, "recency": 10, "depth": 8, "examples": 8, "uniqueness": 9, "total": 87},
+      "keyInsights": ["In a randomized study of 164 adults, prompting learners to retrieve each upcoming step in later isomorphic worked examples improved one-week recall and problem-solving performance relative to stepwise example study without retrieval prompts."],
+      "limitations": ["The study used two triplets of isomorphic examples with adult online participants; it does not validate Trace ML's complete lesson sequence or immediate choice questions."],
+      "designImplications": ["Present a complete worked mechanism, then require retrieval on an analogous case whose decisive values and answer were not already disclosed."]
     }
   ]
 }

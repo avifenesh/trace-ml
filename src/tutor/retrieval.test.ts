@@ -31,7 +31,24 @@ describe("page-context retrieval", () => {
   it("does not use case mode without page grounding", () => {
     const answer = answerFromLesson(
       "How does the weight affect the line?",
-      { ...lesson, blocks: [] },
+      {
+        ...lesson,
+        teaching: {
+          title: "",
+          introduction: [],
+          vocabulary: [],
+          workedExample: {
+            title: "",
+            setup: "",
+            steps: [],
+            takeaway: "",
+          },
+          misconceptions: [],
+          summary: [],
+          sourceIds: [],
+        },
+        blocks: [],
+      },
     );
     expect(answer.matchedCaseId).toBeUndefined();
     expect(answer.retrievalMode).toBe("page-context");
@@ -112,14 +129,16 @@ describe("page-context retrieval", () => {
     }
   });
 
-  it("cites the inference paragraph for the authored availability question", () => {
+  it("cites the teaching summary for the authored availability question", () => {
     const dataLesson = requireLesson("data-and-baseline");
     const results = retrieveLessonContext(
       "Which values exist when a new prediction is requested?",
       dataLesson,
     );
 
-    expect(results[0]?.chunkId).toBe("01-row-contract:p2");
+    expect(results[0]?.chunkId).toBe(
+      "data-and-baseline-teaching:summary-2",
+    );
   });
 
   it("explains the classes named by the 80-to-20 baseline", () => {

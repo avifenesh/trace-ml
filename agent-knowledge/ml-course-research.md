@@ -2,7 +2,7 @@
 
 **Research date:** 2026-08-02, with claim-specific corrections validated 2026-08-03  
 **Depth:** Deep  
-**Sources:** 103 live-validated resources  
+**Sources:** 104 live-validated resources
 **Product:** Fixed, authored 21-lesson machine-learning course  
 **Source registry:** `resources/ml-course-research-sources.json`
 
@@ -96,7 +96,7 @@ Summaries are original, short, and copyright-safe. They capture implications rat
 |---|---|---|
 | Retrieval and prequestions | Retrieval can improve delayed retention; prequestions chiefly benefit the specifically questioned material and may disengage some learners. `[S16-S20]` | Ask a narrow prediction tied to the next mechanism. A wrong prediction diagnoses a model; it does not itself block the learner. |
 | Error generation and feedback | Generating an error followed by corrective feedback can outperform reading; useful feedback is specific, task-focused, actionable, and sensitive to prior knowledge. `[S21-S22] [S29-S30]` | Commit predictions before reveal, then show the discrepancy and require a corrected explanation. |
-| Worked examples and fading | Integrated worked examples support novices; support should change with expertise and may need to return. Generic self-explanation prompts can add load. `[S23-S27] [S44]` | Begin with an analogous worked specimen, fade selected steps, and restore scaffolds when the evidence warrants it. |
+| Worked examples and fading | Integrated worked examples support novices; support should change with expertise and may need to return. Generic self-explanation prompts can add load. A 2025 randomized study found better delayed recall and problem solving when later isomorphic examples prompted retrieval of each upcoming step before reveal. `[S23-S27] [S44] [S104]` | Begin with a complete worked specimen, then retrieve the same mechanism on an analogous case whose answer was not already shown. Fade selected steps and restore scaffolds when needed. |
 | Self-explanation | Prompted self-explanation generally improves learning, but effects vary by prompt and context. `[S27-S28]` | Ask targeted causal prompts, not generic "explain your thinking." |
 | Guided manipulation | Guided inquiry and supported simulation outperform unaided discovery; simulation activity alone is not understanding. `[S34-S35]` | Every lab names the intervention, holds other variables fixed, and requires before/after comparison. |
 | Interleaving and discrimination | Interleaving has positive average effects when similar categories must be discriminated, but is not uniformly beneficial. `[S31]` | Interleave nearby mechanisms after initial schema formation, not during first exposure. |

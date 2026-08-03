@@ -649,6 +649,260 @@
   color: #59616f;
 }
 
+/* Authored teaching */
+
+.lesson-teaching {
+  width: min(900px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 58px 0 64px;
+  scroll-margin-top: 76px;
+}
+
+.lesson-teaching > .lesson-outcomes {
+  margin-bottom: 42px;
+}
+
+.teaching-introduction {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 46px;
+  padding-bottom: 42px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.teaching-introduction h2 {
+  margin: 10px 0 0;
+  color: var(--ink);
+  font-size: 30px;
+  font-weight: 640;
+  line-height: 1.16;
+  letter-spacing: 0;
+}
+
+.teaching-prose {
+  display: grid;
+  gap: 14px;
+}
+
+.teaching-prose p,
+.teaching-example header > p,
+.teaching-example li p,
+.teaching-takeaway,
+.teaching-misconceptions p {
+  margin: 0;
+  color: #414650;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.72;
+}
+
+.teaching-vocabulary,
+.teaching-example,
+.teaching-misconceptions,
+.teaching-summary {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 46px;
+  padding: 38px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.teaching-vocabulary h3,
+.teaching-misconceptions h3,
+.teaching-summary h3,
+.teaching-example h3 {
+  margin: 0;
+  color: #242830;
+  font-size: 20px;
+  font-weight: 630;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.teaching-vocabulary dl {
+  margin: 0;
+}
+
+.teaching-vocabulary dl > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.35fr) minmax(0, 1fr);
+  gap: 18px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e4e6ea;
+}
+
+.teaching-vocabulary dl > div:first-child {
+  padding-top: 0;
+}
+
+.teaching-vocabulary dl > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.teaching-vocabulary dt {
+  color: #244a9d;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.teaching-vocabulary dd {
+  margin: 0;
+  color: #464b55;
+  font-size: 14px;
+  line-height: 1.58;
+}
+
+.teaching-example {
+  grid-template-columns: 1fr;
+  gap: 26px;
+  padding-top: 46px;
+}
+
+.teaching-example > header {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 8px 46px;
+}
+
+.teaching-example > header .eyebrow {
+  grid-row: 1 / span 3;
+}
+
+.teaching-example > header h3,
+.teaching-example > header > p {
+  grid-column: 2;
+}
+
+.teaching-example ol {
+  margin: 0 0 0 256px;
+  padding: 0;
+  list-style: none;
+  counter-reset: teaching-step;
+}
+
+.teaching-example li {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px 0 18px;
+  border-bottom: 1px solid #e1e3e7;
+}
+
+.teaching-example li > span {
+  color: #a34232;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.teaching-example li strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #2b2f37;
+  font-size: 14px;
+}
+
+.teaching-takeaway {
+  display: grid;
+  gap: 6px;
+  margin-left: 256px;
+  padding: 18px 20px;
+  border-left: 3px solid var(--coral);
+  background: var(--coral-soft);
+}
+
+.teaching-takeaway strong {
+  color: #8b3d31;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+.teaching-field-label {
+  display: block;
+  margin-bottom: 5px;
+  color: #6b707a;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.teaching-example header > p > .teaching-field-label {
+  color: #244a9d;
+}
+
+.teaching-misconceptions ul,
+.teaching-summary ul {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.teaching-misconceptions li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  padding: 15px 0 17px;
+  border-bottom: 1px solid #e4e6ea;
+}
+
+.teaching-misconceptions li:first-child {
+  padding-top: 0;
+}
+
+.teaching-misconceptions li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.teaching-misconceptions svg {
+  margin-top: 2px;
+  color: #a34232;
+}
+
+.teaching-misconceptions strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #66362f;
+  font-size: 14px;
+}
+
+.teaching-misconceptions p > .teaching-field-label {
+  margin-top: 10px;
+  color: #2f806d;
+}
+
+.teaching-summary {
+  border-bottom: 0;
+}
+
+.teaching-summary li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  color: #344a44;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.teaching-summary svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #2f806d;
+}
+
+.teaching-sources {
+  margin-top: 6px;
+}
+
 /* Reading */
 
 .reading-column {
@@ -2692,6 +2946,10 @@
     width: calc(100% - 68px);
   }
 
+  .lesson-teaching {
+    width: calc(100% - 68px);
+  }
+
   .self-explanation,
   .choice-prediction,
   .visual-mechanism-lab,
@@ -2932,6 +3190,66 @@
 
   .mechanism-strip svg {
     transform: rotate(90deg);
+  }
+
+  .lesson-teaching {
+    width: auto;
+    padding: 42px 20px 48px;
+  }
+
+  .teaching-introduction,
+  .teaching-vocabulary,
+  .teaching-misconceptions,
+  .teaching-summary {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .teaching-introduction {
+    padding-bottom: 32px;
+  }
+
+  .teaching-introduction h2 {
+    font-size: 26px;
+  }
+
+  .teaching-vocabulary,
+  .teaching-example,
+  .teaching-misconceptions,
+  .teaching-summary {
+    padding: 30px 0;
+  }
+
+  .teaching-vocabulary dl > div {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .teaching-example > header {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .teaching-example > header .eyebrow {
+    grid-row: auto;
+  }
+
+  .teaching-example > header h3,
+  .teaching-example > header > p {
+    grid-column: 1;
+  }
+
+  .teaching-example ol,
+  .teaching-takeaway {
+    margin-left: 0;
+  }
+
+  .teaching-prose p,
+  .teaching-example header > p,
+  .teaching-example li p,
+  .teaching-takeaway,
+  .teaching-misconceptions p {
+    font-size: 16px;
   }
 
   .reading-column {

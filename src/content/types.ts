@@ -22,9 +22,41 @@ export interface LessonBlock {
   sourceIds: string[];
 }
 
+export interface TeachingTerm {
+  term: string;
+  definition: string;
+}
+
+export interface TeachingStep {
+  label: string;
+  explanation: string;
+}
+
+export interface TeachingMisconception {
+  misconception: string;
+  correction: string;
+}
+
+export interface LessonTeachingGuide {
+  title: string;
+  introduction: string[];
+  vocabulary: TeachingTerm[];
+  workedExample: {
+    title: string;
+    setup: string;
+    steps: TeachingStep[];
+    takeaway: string;
+  };
+  misconceptions: TeachingMisconception[];
+  summary: string[];
+  sourceIds: string[];
+}
+
 export interface PageChunk {
   id: string;
   blockId: string;
+  anchorId: string;
+  citationLabel: string;
   heading: string;
   text: string;
   conceptIds: ConceptId[];
@@ -202,10 +234,114 @@ export interface Lesson {
   starterQuestions?: string[];
   prerequisiteConceptIds: ConceptId[];
   outcomes: LearningOutcome[];
+  teaching: LessonTeachingGuide;
   blocks: LessonBlock[];
   activities: LessonActivity[];
   resources: LessonResource[];
   checkpoint?: LessonCheckpoint;
+}
+
+export function teachingBlockIdForLesson(lesson: Lesson) {
+  return `${lesson.id}-teaching`;
+}
+
+type TeachingChunkKind =
+  | "introduction"
+  | "term"
+  | "example-setup"
+  | "example-step"
+  | "example-takeaway"
+  | "misconception"
+  | "summary";
+
+export function teachingChunkIdForLesson(
+  lesson: Lesson,
+  kind: TeachingChunkKind,
+  index?: number,
+) {
+  const suffix = index === undefined ? kind : `${kind}-${index + 1}`;
+  return `${teachingBlockIdForLesson(lesson)}:${suffix}`;
+}
+
+export function teachingChunksForLesson(lesson: Lesson): PageChunk[] {
+  const blockId = teachingBlockIdForLesson(lesson);
+  const conceptIds = lesson.outcomes.map((outcome) => outcome.conceptId);
+  const shared = {
+    blockId,
+    conceptIds,
+    sourceIds: lesson.teaching.sourceIds,
+  };
+  return [
+    ...lesson.teaching.introduction.map((text, index) => ({
+      ...shared,
+      id: teachingChunkIdForLesson(lesson, "introduction", index),
+      anchorId: teachingChunkIdForLesson(lesson, "introduction", index),
+      citationLabel:
+        `${lesson.teaching.title} · introduction ${index + 1}`,
+      heading: lesson.teaching.title,
+      text,
+      tags: ["teaching", "mental model", "introduction"],
+    })),
+    ...lesson.teaching.vocabulary.map(({ term, definition }, index) => ({
+      ...shared,
+      id: teachingChunkIdForLesson(lesson, "term", index),
+      anchorId: teachingChunkIdForLesson(lesson, "term", index),
+      citationLabel: `Terms you need · ${term}`,
+      heading: `Terms you need · ${term}`,
+      text: definition,
+      tags: ["teaching", "definition", term],
+    })),
+    {
+      ...shared,
+      id: teachingChunkIdForLesson(lesson, "example-setup"),
+      anchorId: teachingChunkIdForLesson(lesson, "example-setup"),
+      citationLabel: `${lesson.teaching.workedExample.title} · given`,
+      heading: lesson.teaching.workedExample.title,
+      text: lesson.teaching.workedExample.setup,
+      tags: ["teaching", "worked example", "setup"],
+    },
+    ...lesson.teaching.workedExample.steps.map(
+      ({ label, explanation }, index) => ({
+        ...shared,
+        id: teachingChunkIdForLesson(lesson, "example-step", index),
+        anchorId: teachingChunkIdForLesson(lesson, "example-step", index),
+        citationLabel:
+          `${lesson.teaching.workedExample.title} · step ${index + 1}`,
+        heading: `${lesson.teaching.workedExample.title} · ${label}`,
+        text: explanation,
+        tags: ["teaching", "worked example", "step"],
+      }),
+    ),
+    {
+      ...shared,
+      id: teachingChunkIdForLesson(lesson, "example-takeaway"),
+      anchorId: teachingChunkIdForLesson(lesson, "example-takeaway"),
+      citationLabel: `${lesson.teaching.workedExample.title} · takeaway`,
+      heading: lesson.teaching.workedExample.title,
+      text: lesson.teaching.workedExample.takeaway,
+      tags: ["teaching", "worked example", "takeaway"],
+    },
+    ...lesson.teaching.misconceptions.map(
+      ({ correction }, index) => ({
+        ...shared,
+        id: teachingChunkIdForLesson(lesson, "misconception", index),
+        anchorId: teachingChunkIdForLesson(lesson, "misconception", index),
+        citationLabel: `Common confusions · correction ${index + 1}`,
+        heading: "Common confusions",
+        text: correction,
+        tags: ["teaching", "misconception", "correction"],
+      }),
+    ),
+    ...lesson.teaching.summary.map((text, index) => ({
+      ...shared,
+      id: teachingChunkIdForLesson(lesson, "summary", index),
+      anchorId: teachingChunkIdForLesson(lesson, "summary", index),
+      citationLabel: `Before you predict · point ${index + 1}`,
+      heading: "Before you predict",
+      text,
+      tags: ["teaching", "summary", "prediction preparation"],
+    })),
+  ];
 }
 
 export interface CourseModule {
@@ -217,15 +353,30 @@ export interface CourseModule {
 }
 
 export function pageChunksForLesson(lesson: Lesson): PageChunk[] {
-  return lesson.blocks.flatMap((block) =>
-    block.body.map((text, index) => ({
-      id: `${block.id}:p${index + 1}`,
-      blockId: block.id,
-      heading: block.heading,
-      text,
-      conceptIds: block.conceptIds,
-      tags: block.tags,
-      sourceIds: block.sourceIds,
-    })),
+  return [
+    ...teachingChunksForLesson(lesson),
+    ...lesson.blocks.flatMap((block) =>
+      block.body.map((text, index) => ({
+        id: `${block.id}:p${index + 1}`,
+        blockId: block.id,
+        anchorId: `${block.id}:p${index + 1}`,
+        citationLabel: `${block.heading} · paragraph ${index + 1}`,
+        heading: block.heading,
+        text,
+        conceptIds: block.conceptIds,
+        tags: block.tags,
+        sourceIds: block.sourceIds,
+      })),
+    ),
+  ];
+}
+
+export function lessonContextForAssessment(lesson: Lesson) {
+  const teachingSections = teachingChunksForLesson(lesson).map(
+    (chunk) => `${chunk.heading}\n${chunk.text}`,
   );
+  const readingSections = lesson.blocks.map(
+    (block) => [block.heading, ...block.body].join("\n"),
+  );
+  return [...teachingSections, ...readingSections].join("\n\n");
 }

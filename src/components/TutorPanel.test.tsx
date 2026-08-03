@@ -99,8 +99,8 @@ describe("TutorPanel citations", () => {
     renderPanel(tutorMessage([chunk.blockId], [chunk.id]));
 
     const link = screen.getByRole("link");
-    expect(link.getAttribute("href")).toBe(`#${chunk.blockId}`);
-    expect(link.textContent).toContain(`${chunk.heading} · paragraph`);
+    expect(link.getAttribute("href")).toBe(`#${chunk.anchorId}`);
+    expect(link.textContent).toContain(chunk.citationLabel);
   });
 
   it("renders every semantic claim beside its exact citation", () => {
@@ -119,8 +119,22 @@ describe("TutorPanel citations", () => {
     const claimText = screen.getByText(claim.text);
     const link = claimText.parentElement?.querySelector("a");
     expect(link).not.toBeNull();
-    expect(link?.getAttribute("href")).toBe(`#${chunk.blockId}`);
+    expect(link?.getAttribute("href")).toBe(`#${chunk.anchorId}`);
     expect(link?.getAttribute("title")).toContain(claim.quote);
+  });
+
+  it("labels a teaching citation without an undefined paragraph", () => {
+    const chunk = pageChunksForLesson(lesson).find(
+      (candidate) => candidate.id.includes(":term-"),
+    );
+    if (!chunk) throw new Error("Missing authored teaching chunk");
+
+    renderPanel(tutorMessage([chunk.blockId], [chunk.id]));
+
+    const link = screen.getByRole("link");
+    expect(link.getAttribute("href")).toBe(`#${chunk.anchorId}`);
+    expect(link.textContent).toContain(chunk.citationLabel);
+    expect(link.textContent).not.toContain("undefined");
   });
 
   it("discloses that store false is not a zero-retention guarantee", () => {

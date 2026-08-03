@@ -20,9 +20,116 @@ export const modelLessons: Lesson[] = [
     question: "How can a linear model express a binary probability?",
     summary:
       "Trace a feature through a logit and sigmoid, then use log loss to measure a probabilistic prediction.",
-    durationMinutes: 30,
+    durationMinutes: 50,
     revision: COURSE_REVISION,
     sourceIds: ["S73", "S74", "S13"],
+    teaching: {
+      title: "From a weighted score to a modeled probability",
+      introduction: [
+        "Binary classification means choosing between two possible target classes, such as failure and no failure. A feature is an input measurement, a weight says how strongly that feature contributes, and a bias is an adjustable starting value. Logistic regression first combines them exactly as a linear model does: multiply each feature by its weight, add those products, and add the bias.",
+        "That result is called the logit. A logit can be any real number, so it is not itself a probability. The sigmoid function converts the logit to a number between zero and one using exp, where exp(a) means the constant e raised to power a. A zero logit maps to 0.5, positive logits map above 0.5, and negative logits map below 0.5. Because sigmoid preserves order, it changes the scale without changing which example has the larger score.",
+        "Training needs a loss that judges the probability against what actually happened. The natural logarithm ln reverses exp: exp(ln(a)) = a for positive a. Binary log loss reads the probability assigned to the observed target and takes its negative natural logarithm. Assigning a large probability to the observed class gives a small loss; assigning it a tiny probability gives a large loss. Training adjusts weights and bias to reduce average training loss, while held-out data is still needed to check whether the rule generalizes.",
+      ],
+      vocabulary: [
+        {
+          term: "Binary target",
+          definition:
+            "The observed outcome with two allowed classes, conventionally written as 0 and 1.",
+        },
+        {
+          term: "Feature",
+          definition:
+            "An input value supplied to the model, such as temperature or vibration.",
+        },
+        {
+          term: "Weight and bias",
+          definition:
+            "Learned numbers that scale feature contributions and shift the overall score.",
+        },
+        {
+          term: "Logit",
+          definition:
+            "The unbounded weighted sum z = w dot x + b produced before conversion to a probability.",
+        },
+        {
+          term: "Sigmoid",
+          definition:
+            "The function p = 1 / (1 + exp(-z)) that maps a finite logit to a mathematical probability strictly between zero and one.",
+        },
+        {
+          term: "Log loss",
+          definition:
+            "The negative natural logarithm of the probability assigned to the class that was actually observed.",
+        },
+        {
+          term: "Exponential exp",
+          definition:
+            "The operation exp(a) = e raised to power a; sigmoid uses exp(-z) to convert a logit.",
+        },
+        {
+          term: "Natural logarithm ln",
+          definition:
+            "The inverse of exp for positive values, so exp(ln(a)) = a and ln(exp(a)) = a.",
+        },
+      ],
+      workedExample: {
+        title: "Score one machine outcome from beginning to end",
+        setup:
+          "A bearing model produces logit z = ln(3) for the target class failure. Trace that one score into both possible target losses.",
+        steps: [
+          {
+            label: "Keep the raw score",
+            explanation:
+              "The model's weighted feature calculation has produced z = ln(3), about 1.099. This is a positive logit, but it is not yet a probability or a final class.",
+          },
+          {
+            label: "Apply sigmoid",
+            explanation:
+              "Substitute z into p = 1 / (1 + exp(-z)). Because -ln(3) = ln(1/3), exp(-ln(3)) = 1/3. Therefore p(failure) = 1 / (1 + 1/3) = 1 / (4/3) = 0.75.",
+          },
+          {
+            label: "Find the other class probability",
+            explanation:
+              "The two binary probabilities must add to one, so p(no failure) = 1 - 0.75 = 0.25.",
+          },
+          {
+            label: "Score an observed failure",
+            explanation:
+              "If the target is 1, log loss reads p(failure): -ln(0.75), which is about 0.288.",
+          },
+          {
+            label: "Score an observed non-failure",
+            explanation:
+              "If the target is 0, log loss reads p(no failure): -ln(0.25), which is about 1.386. The same prediction is penalized more because it assigned less probability to what happened.",
+          },
+        ],
+        takeaway:
+          "The calculation has three distinct objects: an unrestricted linear score, a bounded probability, and a target-dependent loss. Keeping them separate makes both prediction and training easier to trace.",
+      },
+      misconceptions: [
+        {
+          misconception: "A positive logit is already a probability.",
+          correction:
+            "A positive logit only places the example on one side of logit zero. Sigmoid must still convert that unrestricted score to a probability.",
+        },
+        {
+          misconception: "Sigmoid makes the decision boundary curved.",
+          correction:
+            "At a 0.5 cutoff, sigmoid maps back to logit zero, so the boundary remains w dot x + b = 0 in the original feature space.",
+        },
+        {
+          misconception: "A probability has one fixed loss.",
+          correction:
+            "Loss also depends on the observed target: p is read for target 1, while 1 - p is read for target 0.",
+        },
+      ],
+      summary: [
+        "First recompute the logit from the contributions that changed; do not treat the old probability as an input.",
+        "Use logit zero and probability 0.5 as the shared reference point when reasoning about sigmoid.",
+        "After finding a probability, identify the observed target before deciding which probability log loss will read.",
+      ],
+      sourceIds: ["S73", "S74", "S13"],
+    },
     mechanism: {
       input: "Feature values, weights, a bias, and a binary target",
       process:
@@ -219,37 +326,38 @@ export const modelLessons: Lesson[] = [
         "logistic-sensor-transfer",
         "transfer",
         ["logit", "sigmoid", "log-loss"],
-        "A factory sensor predicts whether a bearing will fail. For one machine its logit is ln(3), so p(failure) = 0.75. Explain what probability the model assigns to no failure, which side of the 0.5 boundary it occupies, and why observing no failure produces a larger log loss than observing failure.",
-        "Use the complementary probability and compare the probability assigned to each possible observed target.",
+        "A quality-control model predicts whether a part is defective. For one part its defect logit is ln(1/4). Derive p(defect) and p(no defect), place the defect probability relative to 0.5, and explain why observing a defect produces the larger log loss.",
+        "Use exp(-ln(1/4)) = 4, compute both class probabilities, and compare the probability assigned to each possible observed target.",
         [
           {
             id: "transfer-complement",
-            label: "compute the no-failure probability as 0.25",
+            label: "compute defect probability 0.2 and no-defect probability 0.8",
             keywordGroups: [
-              ["0.25", "25%"],
-              ["no failure", "not fail", "complement"],
+              ["0.2", "20%"],
+              ["0.8", "80%"],
+              ["defect", "no defect", "complement"],
             ],
           },
           {
             id: "transfer-boundary",
-            label: "place 0.75 on the positive side of the 0.5 boundary",
+            label: "place 0.2 below the 0.5 boundary",
             keywordGroups: [
-              ["0.75", "75%"],
-              ["above", "greater", "positive side"],
+              ["0.2", "20%"],
+              ["below", "less", "negative side"],
               ["0.5", "threshold", "boundary"],
             ],
           },
           {
             id: "transfer-loss-comparison",
-            label: "explain that no failure receives the smaller assigned probability",
+            label: "explain that a defect receives the smaller assigned probability",
             keywordGroups: [
-              ["no failure", "target 0"],
-              ["0.25", "smaller probability", "less probability"],
+              ["defect", "target 1"],
+              ["0.2", "smaller probability", "less probability"],
               ["larger loss", "higher loss", "negative log"],
             ],
           },
         ],
-        "You transferred the logit, complementary probability, boundary, and target-dependent loss to a new domain.",
+        "You transferred sigmoid and target-dependent loss to a new domain, sign, and probability pair.",
         "Compute both class probabilities first, then ask which probability the loss reads after each possible outcome.",
       ),
       pythonLab(
@@ -362,9 +470,106 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
     question: "Which mistakes should a classifier be designed to make?",
     summary:
       "Hold scores fixed while a threshold changes the confusion matrix, precision, recall, and empirical total validation cost.",
-    durationMinutes: 32,
+    durationMinutes: 55,
     revision: COURSE_REVISION,
     sourceIds: ["S75", "S76", "S96", "S13"],
+    teaching: {
+      title: "Turn fixed probabilities into accountable decisions",
+      introduction: [
+        "A classifier can produce a probability without making an operational decision. A decision threshold is the rule that converts the probability into a predicted class. Under the convention used in this lesson, a score at or above the threshold becomes positive and a lower score becomes negative. Moving the threshold changes decisions even when every model score stays fixed.",
+        "Each decision is compared with the observed target and placed in one of four confusion-matrix cells. A true positive and true negative are correct. A false positive calls a negative case positive, while a false negative calls a positive case negative. Precision asks how reliable the positive decisions were; recall asks how many actual positive cases were recovered. Their denominators differ, so they answer different questions.",
+        "The preferred threshold depends on the cost of mistakes, not on a universal rule that 0.5 is best. Threshold selection should use validation cases while the final test set remains untouched. Calibration is a separate property: among cases assigned a probability such as 0.8, about 80 percent should actually be positive under the evaluation conditions. A model can rank cases well without its probability values having that frequency meaning.",
+      ],
+      vocabulary: [
+        {
+          term: "Decision threshold",
+          definition:
+            "The cutoff that converts a numeric score or probability into a positive or negative decision.",
+        },
+        {
+          term: "Confusion matrix",
+          definition:
+            "The four counts formed by crossing predicted class with observed class: TP, FP, TN, and FN.",
+        },
+        {
+          term: "Precision",
+          definition:
+            "TP / (TP + FP), the fraction of positive decisions that were truly positive.",
+        },
+        {
+          term: "Recall",
+          definition:
+            "TP / (TP + FN), the fraction of actual positive cases that the policy found.",
+        },
+        {
+          term: "Decision cost",
+          definition:
+            "A stated consequence assigned to an error type and used to compare candidate operating policies.",
+        },
+        {
+          term: "Calibration",
+          definition:
+            "Agreement between predicted probabilities and observed outcome frequencies across comparable cases.",
+        },
+      ],
+      workedExample: {
+        title: "Audit one threshold on five validation cases",
+        setup:
+          "Use scores [0.9, 0.7, 0.6, 0.4, 0.2], targets [1, 0, 1, 0, 1], threshold 0.5, false-positive cost 1, and false-negative cost 5.",
+        steps: [
+          {
+            label: "Create the decisions",
+            explanation:
+              "Scores at or above 0.5 become positive, giving predictions [1, 1, 1, 0, 0]. The scores themselves have not changed.",
+          },
+          {
+            label: "Place every case",
+            explanation:
+              "The five prediction-target pairs are TP, FP, TP, TN, and FN. Therefore TP = 2, FP = 1, TN = 1, and FN = 1.",
+          },
+          {
+            label: "Compute precision",
+            explanation:
+              "There are three positive decisions and two are true positives, so precision = 2 / (2 + 1) = 2/3, about 0.667.",
+          },
+          {
+            label: "Compute recall",
+            explanation:
+              "There are three actual positives and two were found, so recall = 2 / (2 + 1) = 2/3, about 0.667.",
+          },
+          {
+            label: "Compute empirical cost",
+            explanation:
+              "The validation cost is 1 x FP + 5 x FN = 1 x 1 + 5 x 1 = 6 units. Other candidate thresholds must be evaluated on the same fixed cases and costs.",
+          },
+        ],
+        takeaway:
+          "A threshold is a policy choice whose consequences can be counted. Precision, recall, and cost are derived from the same four cells, but they summarize those cells for different purposes.",
+      },
+      misconceptions: [
+        {
+          misconception: "The model changes when the threshold moves.",
+          correction:
+            "Changing only the threshold leaves all learned parameters and probabilities fixed; it changes the labels assigned by the policy.",
+        },
+        {
+          misconception: "High accuracy or ranking proves good calibration.",
+          correction:
+            "Ranking concerns order, while calibration compares probability values with observed frequencies. One does not establish the other.",
+        },
+        {
+          misconception: "The threshold with the highest recall is automatically best.",
+          correction:
+            "Recall ignores false positives. A defensible operating point must consider stated costs and constraints on fixed validation data.",
+        },
+      ],
+      summary: [
+        "When a threshold changes, begin by listing which fixed scores are now called positive.",
+        "Rebuild the four confusion counts before calculating any metric or cost.",
+        "Keep score ordering, probability calibration, and the final decision policy as three separate questions.",
+      ],
+      sourceIds: ["S75", "S76", "S96", "S13"],
+    },
     mechanism: {
       input: "Fixed probabilities, binary targets, a threshold, and mistake costs",
       process:
@@ -744,9 +949,106 @@ print("chosen:", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))
     question: "How does raw data become model input without leaking the answer?",
     summary:
       "Fit numeric, categorical, and missing-value transformations on training data, then replay them unchanged.",
-    durationMinutes: 34,
+    durationMinutes: 55,
     revision: COURSE_REVISION,
     sourceIds: ["S77", "S78", "S07"],
+    teaching: {
+      title: "Build one feature definition and replay it everywhere",
+      introduction: [
+        "Models need numeric feature vectors, but raw rows may contain measurements in different units, named categories, and missing values. Preprocessing turns those raw fields into model inputs. Some preprocessing operations learn values from data, such as a mean, scale, imputation value, or category vocabulary. Those learned values are called fitted state.",
+        "Fit and transform are different operations. Fit estimates preprocessing state from training rows. Transform applies already fitted state to a row without changing it. Validation, test, and future rows may be transformed, but they must not influence the fitted state. Otherwise information from held-out data changes the representation used by the model, which is a form of leakage.",
+        "A pipeline records the ordered transformation steps, their fitted state, and the positions of the resulting features. Numeric values can be imputed and scaled; categories can be assigned stable one-hot positions; a missing indicator can preserve the fact that a raw value was absent. Replaying the same fitted pipeline gives the same raw row the same feature meaning across training and deployment.",
+      ],
+      vocabulary: [
+        {
+          term: "Fitted state",
+          definition:
+            "Values learned by preprocessing from data, such as a mean, scale, fill value, or category vocabulary.",
+        },
+        {
+          term: "Fit",
+          definition:
+            "The operation that estimates transformation state, using training rows only.",
+        },
+        {
+          term: "Transform",
+          definition:
+            "The operation that applies frozen fitted state to rows without estimating it again.",
+        },
+        {
+          term: "Imputation",
+          definition:
+            "Replacing a missing input with a defined value, such as the mean computed from observed training values.",
+        },
+        {
+          term: "One-hot encoding",
+          definition:
+            "Representing each known category with its own position, containing one 1 and zeros elsewhere.",
+        },
+        {
+          term: "Pipeline",
+          definition:
+            "An ordered contract that stores transformations, fitted state, and stable output feature positions.",
+        },
+      ],
+      workedExample: {
+        title: "Fit on three rows, then transform a new night row",
+        setup:
+          "Training rows contain temperatures [10, missing, 30] and shifts [day, night, day]. Transform a complete new row [40, night] without refitting.",
+        steps: [
+          {
+            label: "Fit the numeric fill value",
+            explanation:
+              "Use only observed training temperatures: (10 + 30) / 2 = 20. The stored imputation value is 20.",
+          },
+          {
+            label: "Prepare the training numeric column",
+            explanation:
+              "Imputation changes the training values to [10, 20, 30]. A separate missing indicator is [0, 1, 0], preserving which raw row lacked a temperature.",
+          },
+          {
+            label: "Fit the numeric reference",
+            explanation:
+              "The imputed values [10, 20, 30] differ from mean 20 by [-10, 0, 10]. Their squared deviations are [100, 0, 100], whose mean is population variance (100 + 0 + 100) / 3 = 200 / 3. The fitted scale is its square root, about 8.165.",
+          },
+          {
+            label: "Fit stable category positions",
+            explanation:
+              "The training vocabulary [day, night] assigns day to [1, 0] and night to [0, 1]. Those positions cannot move when a later row arrives.",
+          },
+          {
+            label: "Transform the new row",
+            explanation:
+              "Temperature 40 becomes (40 - 20) / 8.165, about 2.449. It was observed, so its missing indicator is 0; night becomes [day = 0, night = 1]. In the fixed order [scaled temperature, missing-temperature indicator, day, night], the final vector is [2.449, 0, 0, 1].",
+          },
+        ],
+        takeaway:
+          "The new row contributes values to its output vector but contributes nothing to fitted state. That one-way boundary is what keeps preprocessing reproducible and held-out evaluation meaningful.",
+      },
+      misconceptions: [
+        {
+          misconception: "Using a validation value during scaling is harmless because it is not a target.",
+          correction:
+            "Validation features still contain held-out information. Letting them alter a mean or scale changes the representation before evaluation.",
+        },
+        {
+          misconception: "Mean imputation says the missing measurement was average.",
+          correction:
+            "Imputation supplies a usable numeric placeholder. A separate indicator records absence; neither operation recovers the unknown measurement.",
+        },
+        {
+          misconception: "Category numbers such as day = 1 and night = 2 are equivalent to one-hot encoding.",
+          correction:
+            "Ordinary numeric codes introduce an order and distance. One-hot positions let the model assign separate effects without inventing that geometry.",
+        },
+      ],
+      summary: [
+        "For every preprocessing step, ask whether it learns state or only applies state.",
+        "Any learned mean, scale, fill value, or vocabulary belongs to the training split.",
+        "Held-out rows travel through the frozen pipeline in the same order and cannot redefine its feature positions.",
+      ],
+      sourceIds: ["S77", "S78", "S07"],
+    },
     mechanism: {
       input: "Raw numeric and categorical fields with possible missing values",
       process:
@@ -1120,9 +1422,106 @@ print("feature names:", PREPROCESSOR.get_feature_names_out().tolist())
     question: "What assumptions do k-nearest neighbors and decision trees make?",
     summary:
       "Compare a distance-based vote with recursive axis-aligned splits and expose the inductive bias of each.",
-    durationMinutes: 32,
+    durationMinutes: 50,
     revision: COURSE_REVISION,
     sourceIds: ["S79", "S51", "S07", "S14"],
+    teaching: {
+      title: "Compare a neighborhood vote with a learned rule path",
+      introduction: [
+        "A model contains assumptions about which patterns should be easy to learn. These assumptions are called inductive bias. k-nearest neighbors, or kNN, assumes that nearby examples often share a target. It stores labeled training points and waits until a new query arrives before computing distances, selecting the closest k points, and combining their labels.",
+        "A decision tree learns a different structure. During fitting, it chooses feature-threshold questions that divide training rows into branches. During prediction, a query follows those questions until it reaches a leaf, which returns a prediction. A standard numeric split examines one feature at a time, so repeated splits form axis-aligned, block-like regions.",
+        "Neither assumption is universally better. kNN depends directly on the distance definition, feature scales, and chosen k. A tree depends on which splits were learned and how deeply it was allowed to grow. A small k or deep tree can follow training detail closely; a larger k or shallow tree can smooth over real detail. Compare them with the same preprocessing, split, and held-out criterion.",
+      ],
+      vocabulary: [
+        {
+          term: "Query point",
+          definition:
+            "The new example whose target the fitted model must predict.",
+        },
+        {
+          term: "k-nearest neighbors",
+          definition:
+            "A predictor that finds the k closest stored training examples and combines their labels.",
+        },
+        {
+          term: "Distance",
+          definition:
+            "A numeric measure of separation between feature vectors, meaningful only relative to the chosen representation and scale.",
+        },
+        {
+          term: "Decision tree",
+          definition:
+            "A predictor that routes an example through learned feature-threshold questions to a leaf.",
+        },
+        {
+          term: "Leaf",
+          definition:
+            "A terminal tree region that returns a class or numeric prediction.",
+        },
+        {
+          term: "Inductive bias",
+          definition:
+            "The structural preference a learning method uses to extend from training examples to unseen cases.",
+        },
+      ],
+      workedExample: {
+        title: "Send one query through both models",
+        setup:
+          "Training points are (1, class 0), (3, class 0), (6, class 1), and (8, class 1). Predict query x = 5 with k = 3, then with a fitted tree split x < 5.5 whose left leaf predicts 0 and right leaf predicts 1.",
+        steps: [
+          {
+            label: "Measure every kNN distance",
+            explanation:
+              "The absolute distances from x = 5 are 4 to x = 1, 2 to x = 3, 1 to x = 6, and 3 to x = 8.",
+          },
+          {
+            label: "Select exactly k neighbors",
+            explanation:
+              "Sorting by distance gives x = 6 with class 1, x = 3 with class 0, and x = 8 with class 1 as the closest three.",
+          },
+          {
+            label: "Take the neighbor vote",
+            explanation:
+              "The selected labels are [1, 0, 1]. Two of three are class 1, so this kNN configuration predicts class 1.",
+          },
+          {
+            label: "Route through the tree",
+            explanation:
+              "The tree asks whether 5 < 5.5. The answer is yes, so the query follows the left branch to the leaf that predicts class 0.",
+          },
+          {
+            label: "Explain the disagreement",
+            explanation:
+              "kNN used a local majority around the query. The tree used one previously learned threshold region. Different inductive biases can therefore assign different labels to the same input.",
+          },
+        ],
+        takeaway:
+          "A prediction is not just a label: it has a trace. For kNN, inspect distances, selected neighbors, and votes. For a tree, inspect threshold questions, branch directions, and the reached leaf.",
+      },
+      misconceptions: [
+        {
+          misconception: "kNN learns a set of threshold rules during training.",
+          correction:
+            "kNN mainly stores labeled examples; the neighborhood calculation happens when a query is predicted.",
+        },
+        {
+          misconception: "A larger numeric feature should naturally matter more in distance.",
+          correction:
+            "A larger unit can dominate distance without being more informative. Scaling defines a comparable numeric geometry before kNN is used.",
+        },
+        {
+          misconception: "A tree that perfectly fits training rows has discovered the true rule.",
+          correction:
+            "A deep tree can isolate individual rows. Its usefulness must be checked on previously unseen data under the same evaluation protocol.",
+        },
+      ],
+      summary: [
+        "For kNN, write the distance to every candidate before selecting the closest k.",
+        "For a tree, evaluate one threshold at a time and follow only the resulting branch.",
+        "When predictions differ, explain the local-neighborhood assumption and threshold-partition assumption before judging either model.",
+      ],
+      sourceIds: ["S79", "S51", "S07", "S14"],
+    },
     mechanism: {
       input: "Labeled feature points and one query point",
       process:
@@ -1457,9 +1856,111 @@ print("stump error:", stump_error(POINTS, 3.0, 0, 1))
     question: "How do regularization and cross-validation constrain model selection?",
     summary:
       "Predict coefficient shrinkage, compare L1 with L2, and select a penalty from validation folds while preserving a final test.",
-    durationMinutes: 34,
+    durationMinutes: 55,
     revision: COURSE_REVISION,
     sourceIds: ["S81", "S82", "S07"],
+    teaching: {
+      title: "Constrain fitting, compare settings, and protect the final test",
+      introduction: [
+        "A flexible model can lower training loss by using large or finely tuned coefficients, yet those details may not repeat on new data. Regularization changes the fitting objective by adding a cost for coefficient size. The regularization strength, usually written lambda, controls how strongly that cost competes with fitting the training targets.",
+        "L2 regularization penalizes the sum of squared coefficients and generally spreads shrinkage across them. L1 regularization penalizes the sum of absolute coefficients and can make some fitted coefficients exactly zero. Neither pattern proves that a retained feature is causal or that a zeroed feature is useless. The penalty is a modeling preference, and lambda is a setting that must be selected from evidence.",
+        "Cross-validation supplies that evidence by rotating a validation role through the available development data. For each candidate lambda, fit on all but one fold and evaluate on the held-out fold, repeating until every fold has been held out. Average the fold losses, select the setting by that predefined criterion, then freeze it. The separate final test remains unopened until preprocessing, model family, and lambda are fixed.",
+      ],
+      vocabulary: [
+        {
+          term: "Regularization",
+          definition:
+            "A modification of the training objective that charges for coefficient complexity in addition to data loss.",
+        },
+        {
+          term: "Lambda",
+          definition:
+            "The hyperparameter that sets the strength of the regularization penalty.",
+        },
+        {
+          term: "L1 penalty",
+          definition:
+            "Lambda times the sum of absolute coefficient values, a shape that can produce exact zeros.",
+        },
+        {
+          term: "L2 penalty",
+          definition:
+            "Lambda times the sum of squared coefficients, which encourages distributed shrinkage toward zero.",
+        },
+        {
+          term: "Cross-validation fold",
+          definition:
+            "One partition that serves as validation while the remaining development partitions are used for fitting.",
+        },
+        {
+          term: "Hyperparameter",
+          definition:
+            "A setting such as lambda chosen around model fitting rather than optimized as a coefficient within one fit.",
+        },
+      ],
+      workedExample: {
+        title: "Choose one lambda from three validation folds",
+        setup:
+          "Keep the final test sealed. Three candidate lambdas have fold losses: 0.0 -> [0.52, 0.66, 0.61], 0.5 -> [0.48, 0.51, 0.50], and 2.0 -> [0.62, 0.57, 0.65]. Lower loss is better.",
+        steps: [
+          {
+            label: "Preserve comparable folds",
+            explanation:
+              "Every candidate uses the same three held-out folds, and preprocessing is fitted again inside each corresponding training-fold set.",
+          },
+          {
+            label: "Average lambda 0.0",
+            explanation:
+              "Its mean validation loss is (0.52 + 0.66 + 0.61) / 3 = 1.79 / 3, about 0.597.",
+          },
+          {
+            label: "Average lambda 0.5",
+            explanation:
+              "Its mean is (0.48 + 0.51 + 0.50) / 3 = 1.49 / 3, about 0.497.",
+          },
+          {
+            label: "Average lambda 2.0",
+            explanation:
+              "Its mean is (0.62 + 0.57 + 0.65) / 3 = 1.84 / 3, about 0.613.",
+          },
+          {
+            label: "Select by the stated rule",
+            explanation:
+              "Lambda 0.5 has the lowest mean fold loss, so it is selected. No test outcome participated in that comparison.",
+          },
+          {
+            label: "Refit and evaluate once",
+            explanation:
+              "Refit the complete pipeline and regularized model on all development data with lambda fixed at 0.5, then use the final test once to estimate the frozen procedure.",
+          },
+        ],
+        takeaway:
+          "Regularization controls fitting, while cross-validation controls selection. Keeping those roles distinct prevents the final test from quietly becoming another tuning fold.",
+      },
+      misconceptions: [
+        {
+          misconception: "Stronger regularization must improve every loss.",
+          correction:
+            "It constrains fitting and can raise training loss. Validation loss may improve if reduced overfitting outweighs the lost flexibility, but that must be measured.",
+        },
+        {
+          misconception: "An L1 zero proves a feature has no relationship with the target.",
+          correction:
+            "The selected pattern depends on penalty strength, sample, scaling, and correlated alternatives. A zero is a fitted model result, not a causal conclusion.",
+        },
+        {
+          misconception: "Checking the test after each lambda gives more reliable selection.",
+          correction:
+            "Repeated test-guided changes tune to the test. Selection belongs inside development data, with the final test reserved for the frozen procedure.",
+        },
+      ],
+      summary: [
+        "Hold the data fit fixed in your reasoning and inspect how the penalty term changes as lambda changes.",
+        "Compare candidate settings with all of their validation folds, not one convenient fold.",
+        "Separate coefficient fitting, hyperparameter selection, final refitting, and one-time testing into distinct stages.",
+      ],
+      sourceIds: ["S81", "S82", "S07"],
+    },
     mechanism: {
       input: "Training folds, candidate penalty strengths, model coefficients, and validation losses",
       process:
@@ -1846,9 +2347,106 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
     question: "When do bagging, random forests, and boosting improve a predictor?",
     summary:
       "Separate parallel averaging from sequential correction and identify whether each ensemble attacks variance or bias.",
-    durationMinutes: 33,
+    durationMinutes: 50,
     revision: COURSE_REVISION,
     sourceIds: ["S83", "S84", "S07"],
+    teaching: {
+      title: "Combine different learners for a specific reason",
+      introduction: [
+        "An ensemble combines predictions from multiple base learners. The combination helps only when the learners contribute meaningfully different errors or corrections. Repeating one deterministic model with identical data and settings merely repeats the same output. The design question is therefore not just how many models to train, but how they differ and how their outputs are combined.",
+        "Bagging creates parallel learners by fitting each one on a bootstrap sample: a same-sized sample drawn from training rows with replacement. Regression outputs are averaged and class outputs can be voted. This is especially useful for unstable learners such as deep trees, whose fitted structure can change when training rows change. A random forest adds random feature subsets at candidate splits to reduce similarity among its trees.",
+        "Boosting uses a different timeline. It builds learners sequentially, with each new stage aimed at error left by the current ensemble. Under squared error, that remaining error can be written as the residual target minus current prediction. A learning rate scales how much of the new correction is added. Bagging and forests primarily target sample-driven instability, while boosting can reduce systematic underfit; validation is still required for either choice.",
+      ],
+      vocabulary: [
+        {
+          term: "Ensemble",
+          definition:
+            "A predictor formed by combining outputs from multiple fitted base learners.",
+        },
+        {
+          term: "Base learner",
+          definition:
+            "One component model whose output contributes to the ensemble.",
+        },
+        {
+          term: "Bootstrap sample",
+          definition:
+            "A same-sized training sample drawn with replacement, so rows can repeat and others can be absent.",
+        },
+        {
+          term: "Bagging",
+          definition:
+            "Training diverse learners on bootstrap samples in parallel and aggregating their outputs.",
+        },
+        {
+          term: "Random forest",
+          definition:
+            "A tree ensemble that combines bootstrap variation with random feature subsets during split selection.",
+        },
+        {
+          term: "Boosting",
+          definition:
+            "Building an ensemble in sequence so each added learner addresses error remaining from earlier stages.",
+        },
+      ],
+      workedExample: {
+        title: "Trace parallel averaging and sequential correction",
+        setup:
+          "For one regression case with target 12, three bootstrap-fitted trees predict 8, 11, and 14. Separately, a boosting model currently predicts 2 for a different case whose target is 4, with learning rate 0.5.",
+        steps: [
+          {
+            label: "Aggregate the bagged trees",
+            explanation:
+              "The regression ensemble prediction is their mean: (8 + 11 + 14) / 3 = 33 / 3 = 11.",
+          },
+          {
+            label: "Compare component errors",
+            explanation:
+              "Using prediction minus target, the three errors are -4, -1, and 2. They are not identical, so averaging allows some disagreement to offset.",
+          },
+          {
+            label: "Keep the bagging timeline parallel",
+            explanation:
+              "Each tree was fitted from its own bootstrap sample without receiving another tree's residual. Their interaction occurs only when outputs are aggregated.",
+          },
+          {
+            label: "Compute the boosting residual",
+            explanation:
+              "For the second case, residual target = target - current prediction = 4 - 2 = 2. The next base learner g is fitted across the training rows to predict residual targets; assume its fitted prediction for this case is g(x) = 2.",
+          },
+          {
+            label: "Scale and add the correction",
+            explanation:
+              "The ensemble update is F_new(x) = F(x) + learning_rate * g(x) = 2 + 0.5(2) = 3. The fitted learner's prediction, not the raw residual copied directly, supplies the correction.",
+          },
+        ],
+        takeaway:
+          "Bagging combines independently varied fits after training; boosting changes what the next learner is asked to correct. The arithmetic may involve addition in both cases, but the training procedures are different.",
+      },
+      misconceptions: [
+        {
+          misconception: "More copies of the same model automatically reduce variance.",
+          correction:
+            "Identical outputs have perfectly aligned errors, so their average is unchanged. Stabilization requires useful diversity.",
+        },
+        {
+          misconception: "A random forest is just one very deep tree.",
+          correction:
+            "It aggregates many trees and deliberately varies both sampled rows and candidate features to reduce tree correlation.",
+        },
+        {
+          misconception: "Boosting trains all learners independently and then votes.",
+          correction:
+            "Boosting is sequential: each stage depends on error left by the current ensemble, and its contribution is scaled before being added.",
+        },
+      ],
+      summary: [
+        "Before averaging, ask what created differences among the component learners.",
+        "Keep parallel bootstrap fitting separate from sequential residual correction.",
+        "Match the proposed ensemble to observed instability or underfit, then require held-out evidence rather than assuming improvement.",
+      ],
+      sourceIds: ["S83", "S84", "S07"],
+    },
     mechanism: {
       input: "Training rows, base learners, resampled datasets or residual errors",
       process:
@@ -1958,17 +2556,18 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
         checkpoint: {
           id: "ensemble-diversity-prediction",
           prompt:
-            "Ten trees use identical rows, features, and deterministic fitting. Their predictions are identical. What does averaging them change?",
+            "Three regression trees fitted on different bootstrap samples predict 6, 9, and 15 for one case. What is their simple bagged average?",
           options: [
-            { id: "nothing", label: "Nothing; the average is the same prediction" },
-            { id: "variance-zero", label: "It guarantees zero test error" },
-            { id: "boosting", label: "It becomes boosting" },
+            { id: "six", label: "6" },
+            { id: "nine", label: "9" },
+            { id: "ten", label: "10" },
+            { id: "fifteen", label: "15" },
           ],
-          correctOptionId: "nothing",
+          correctOptionId: "ten",
           supportedExplanation:
-            "Correct. Averaging identical outputs cannot cancel any component-specific error.",
+            "Correct. The simple average is (6 + 9 + 15) / 3 = 30 / 3 = 10.",
           revisitExplanation:
-            "Write the average of ten copies of the same number.",
+            "Add the three predictions and divide by the number of trees.",
         },
       },
       {
@@ -2204,9 +2803,106 @@ print("boosted:", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))
     question: "How can nonlinear composition solve XOR?",
     summary:
       "Construct two nonlinear hidden features that turn XOR into a linearly separable hidden representation.",
-    durationMinutes: 34,
+    durationMinutes: 50,
     revision: COURSE_REVISION,
     sourceIds: ["S80", "S49", "S15"],
+    teaching: {
+      title: "Create new coordinates before drawing the final boundary",
+      introduction: [
+        "XOR, short for exclusive OR, is a binary rule that returns 1 when exactly one of two inputs is 1. Its four cases are 0 for (0,0), 1 for (1,0), 1 for (0,1), and 0 for (1,1). Plotted as four corners of a square, the two positive cases sit at opposite corners, so one straight line cannot place both positives on one side and both negatives on the other.",
+        "A neural layer first forms weighted sums plus biases. If one such linear calculation feeds directly into another, substitution collapses them into another single linear calculation. More layers alone therefore do not change the kind of boundary available. An activation function inserts a nonlinear operation between layers. ReLU, the rectified linear unit, returns max(0, a): it keeps a positive input and replaces a negative input with zero.",
+        "A hidden unit is an intermediate calculation, and the values produced by hidden units form a hidden representation. For XOR, two directed differences can create useful new coordinates: h1 = ReLU(x1 - x2) and h2 = ReLU(x2 - x1). Equal inputs map to (0,0), while the two unequal cases activate different coordinates. A final linear sum can then separate the hidden representations with a simple threshold.",
+      ],
+      vocabulary: [
+        {
+          term: "XOR",
+          definition:
+            "A two-input binary rule whose output is 1 exactly when the input values differ.",
+        },
+        {
+          term: "Linear boundary",
+          definition:
+            "A straight dividing line in a two-feature plane, produced by thresholding one weighted sum.",
+        },
+        {
+          term: "Hidden unit",
+          definition:
+            "An intermediate weighted calculation followed here by an activation function.",
+        },
+        {
+          term: "Activation function",
+          definition:
+            "A transformation applied between layers that can make their composition nonlinear.",
+        },
+        {
+          term: "ReLU",
+          definition:
+            "The nonlinear function ReLU(a) = max(0, a), which clips negative values to zero.",
+        },
+        {
+          term: "Hidden representation",
+          definition:
+            "The new coordinate values computed by hidden units and supplied to the output layer.",
+        },
+      ],
+      workedExample: {
+        title: "Trace all four XOR cases through two hidden units",
+        setup:
+          "Use h1 = ReLU(x1 - x2), h2 = ReLU(x2 - x1), output score s = h1 + h2, and predicted class 1 when s is at least 0.5.",
+        steps: [
+          {
+            label: "Trace input (0,0)",
+            explanation:
+              "Both differences are 0, so the hidden pair is (0,0). The score is 0 + 0 = 0, which is below 0.5 and produces class 0.",
+          },
+          {
+            label: "Trace input (1,0)",
+            explanation:
+              "The directed differences are 1 and -1. ReLU produces hidden pair (1,0); the score is 1, so the output is class 1.",
+          },
+          {
+            label: "Trace input (0,1)",
+            explanation:
+              "The directed differences are -1 and 1. ReLU produces hidden pair (0,1); the score is again 1, so the output is class 1.",
+          },
+          {
+            label: "Trace input (1,1)",
+            explanation:
+              "Both differences are 0, giving hidden pair (0,0), score 0, and class 0.",
+          },
+          {
+            label: "Read the new geometry",
+            explanation:
+              "Equal inputs share hidden point (0,0). Unequal inputs have hidden sums of 1. The final threshold is linear in hidden space because the nonlinear work already happened in the ReLU features.",
+          },
+        ],
+        takeaway:
+          "The network does not force one line to solve the original corner pattern. It first computes a representation in which equal and unequal inputs have a simple numeric separation, then applies a linear output rule.",
+      },
+      misconceptions: [
+        {
+          misconception: "Two weighted-sum layers automatically make a nonlinear model.",
+          correction:
+            "Without an activation between them, substituting the first affine expression into the second yields another affine expression.",
+        },
+        {
+          misconception: "ReLU is a threshold that directly returns the XOR label.",
+          correction:
+            "Each ReLU hidden unit returns a numeric coordinate. The output layer combines both coordinates and applies the final decision threshold.",
+        },
+        {
+          misconception: "Every learned hidden unit has a stable human-readable meaning.",
+          correction:
+            "These two formulas are deliberately constructed and transparent. Hidden coordinates learned in larger networks need not match named human concepts.",
+        },
+      ],
+      summary: [
+        "Write the four input-target pairs before reasoning about any proposed XOR model.",
+        "When layers are composed, inspect whether a nonlinear activation actually sits between their weighted sums.",
+        "Trace input coordinates, hidden coordinates, output score, and threshold as separate stages.",
+      ],
+      sourceIds: ["S80", "S49", "S15"],
+    },
     mechanism: {
       input: "Two binary inputs, hidden weights and biases, and an output rule",
       process:
@@ -2316,17 +3012,18 @@ print("boosted:", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))
         checkpoint: {
           id: "xor-linear-prediction",
           prompt:
-            "Two layers contain only weighted sums and biases, with no activation between them. Can their composition separate XOR?",
+            "Use h1 = ReLU(x1 - x2), h2 = ReLU(x2 - x1), and score s = h1 + h2. What score is produced for x1 = 2 and x2 = 0?",
           options: [
-            { id: "no", label: "No; the composition is still linear" },
-            { id: "yes-depth", label: "Yes; two layers always curve the boundary" },
-            { id: "yes-bias", label: "Yes; adding any bias solves XOR" },
+            { id: "zero", label: "0" },
+            { id: "one", label: "1" },
+            { id: "two", label: "2" },
+            { id: "negative-two", label: "-2" },
           ],
-          correctOptionId: "no",
+          correctOptionId: "two",
           supportedExplanation:
-            "Correct. Substituting one affine map into the next produces another affine map.",
+            "Correct. h1 = ReLU(2) = 2, h2 = ReLU(-2) = 0, and s = 2 + 0 = 2.",
           revisitExplanation:
-            "Write h = A x + a inside z = B h + b and simplify.",
+            "Compute both directed differences, apply ReLU to each, and then add the two hidden values.",
         },
       },
       {

@@ -18,7 +18,10 @@ import { CourseNav } from "./components/CourseNav";
 import { LessonArticle } from "./components/LessonArticle";
 import { TutorPanel } from "./components/TutorPanel";
 import { lessons, requireLesson } from "./content/course";
-import type { LessonActivity } from "./content/types";
+import {
+  teachingBlockIdForLesson,
+  type LessonActivity,
+} from "./content/types";
 import {
   hasActivityAttempt,
   hasResourceAttempt,
@@ -172,7 +175,9 @@ function App() {
     lessonId: lesson.id,
     lessonRevision: lesson.revision ?? "unversioned",
   };
-  const [activeBlockId, setActiveBlockId] = useState(lesson.blocks[0]?.id ?? "");
+  const [activeBlockId, setActiveBlockId] = useState(
+    teachingBlockIdForLesson(lesson),
+  );
   const [navOpen, setNavOpen] = useState(false);
   const [tutorOpen, setTutorOpen] = useState(false);
   const isDrawerMode = useMediaQuery(DRAWER_MEDIA_QUERY);
@@ -185,7 +190,32 @@ function App() {
   const pendingLessonFocusRef = useRef(false);
   const learner = useLearnerRecord();
   const activityStates = useActivityStateStore();
-  const tutor = useTutorThreads(lesson, activeBlockId);
+  const committedActivityIds = useMemo(
+    () =>
+      new Set(
+        lesson.activities
+          .filter((activity) =>
+            hasActivityAttempt(
+              learner.record,
+              lesson.id,
+              evidenceScope.lessonRevision,
+              activity.id,
+            )
+          )
+          .map((activity) => activity.id),
+      ),
+    [
+      evidenceScope.lessonRevision,
+      learner.record,
+      lesson.activities,
+      lesson.id,
+    ],
+  );
+  const tutor = useTutorThreads(
+    lesson,
+    activeBlockId,
+    committedActivityIds,
+  );
   const persistenceStatus =
     learner.persistenceStatus === "memory-only" ||
       activityStates.persistenceStatus === "memory-only" ||

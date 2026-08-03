@@ -14,6 +14,7 @@ import type {
   LessonActivity,
   LessonResource,
 } from "../content/types";
+import { teachingBlockIdForLesson } from "../content/types";
 import { researchSourcesForIds } from "../content/research-sources";
 import type { RecordActivityInput } from "../learning/evidence";
 import {
@@ -25,6 +26,7 @@ import { openExternalLink } from "../open-external";
 import { ChoicePredictionGate } from "./ChoicePredictionGate";
 import { PythonCodeLab } from "./PythonCodeLab";
 import { SelfExplanationGate } from "./SelfExplanationGate";
+import { LessonTeachingGuide } from "./LessonTeachingGuide";
 import { VisualMechanismLab } from "./VisualMechanismLab";
 
 interface LessonArticleProps {
@@ -97,7 +99,12 @@ export function LessonArticle({
   );
   const objectiveCheckpointCount =
     objectiveCheckpointActivities(lesson).length;
+  const teachingBlockId = teachingBlockIdForLesson(lesson);
   const sequence = [
+    {
+      label: "LEARN",
+      targetId: teachingBlockId,
+    },
     predictionActivity && {
       label: "PREDICT",
       targetId: predictionActivity.id,
@@ -138,9 +145,8 @@ export function LessonArticle({
   useEffect(() => {
     const article = articleRef.current;
     const scrollRoot = article?.closest(".lesson-scroll");
-    const firstBlockId = lesson.blocks[0]?.id;
     if (!article || !(scrollRoot instanceof HTMLElement)) return;
-    if (firstBlockId) onBlockActive(firstBlockId);
+    onBlockActive(teachingBlockId);
     if (typeof IntersectionObserver === "undefined") return;
 
     const visibleBlocks = new Map<Element, IntersectionObserverEntry>();
@@ -166,12 +172,15 @@ export function LessonArticle({
         if (nearest?.target instanceof HTMLElement) {
           const nearestTarget = nearest.target;
           const sequenceTarget = nearestTarget.classList.contains(
-            "reading-block",
-          )
+              "reading-block",
+            )
             ? lesson.blocks[0]?.id
             : nearestTarget.id;
           if (sequenceTarget) setActiveSequenceTarget(sequenceTarget);
-          if (nearestTarget.classList.contains("reading-block")) {
+          if (
+            nearestTarget.classList.contains("reading-block") ||
+            nearestTarget.classList.contains("lesson-teaching")
+          ) {
             onBlockActive(nearestTarget.id);
           }
         }
@@ -184,11 +193,11 @@ export function LessonArticle({
     );
 
     const sections = article.querySelectorAll<HTMLElement>(
-      ".reading-block, .lesson-activity",
+      ".lesson-teaching, .reading-block, .lesson-activity",
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
-  }, [lesson.id, lesson.blocks, onBlockActive]);
+  }, [lesson.id, lesson.blocks, onBlockActive, teachingBlockId]);
 
   useEffect(() => {
     setActiveSequenceTarget(firstSequenceTarget);
@@ -387,8 +396,14 @@ export function LessonArticle({
         </div>
         <div>
           <h2>{block.heading}</h2>
-          {block.body.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+          {block.body.map((paragraph, paragraphIndex) => (
+            <p
+              id={`${block.id}:p${paragraphIndex + 1}`}
+              key={paragraph}
+              tabIndex={-1}
+            >
+              {paragraph}
+            </p>
           ))}
           {block.id === "the-visible-rule" && (
             <div className="worked-equation">
@@ -479,7 +494,7 @@ export function LessonArticle({
             </span>
           </aside>
         </div>
-        {lesson.mechanism && predictionCommitted && (
+        {lesson.mechanism && (
           <div className="mechanism-strip" aria-label="Mechanism in this lesson">
             <div>
               <span>INPUT</span>
@@ -497,15 +512,9 @@ export function LessonArticle({
             </div>
           </div>
         )}
-        {lesson.mechanism && !predictionCommitted && (
-          <div className="mechanism-strip mechanism-locked">
-            <div>
-              <span>MECHANISM TRACE</span>
-              <strong>Commit the prediction below to reveal the authored trace.</strong>
-            </div>
-          </div>
-        )}
       </header>
+
+      <LessonTeachingGuide lesson={lesson} onActive={onBlockActive} />
 
       {predictionActivity && (
         <Fragment key={predictionActivity.id}>
@@ -521,18 +530,6 @@ export function LessonArticle({
       )}
 
       <div className="reading-column">
-        <aside className="lesson-outcomes" aria-label="Lesson outcomes">
-          <span>LESSON OUTCOMES</span>
-          <ul>
-            {lesson.outcomes.map((outcome) => (
-              <li key={outcome.id}>
-                <ArrowRight size={12} aria-hidden="true" />
-                <span>{outcome.text}</span>
-              </li>
-            ))}
-          </ul>
-        </aside>
-
         {lesson.blocks.map((block, index) => renderBlock(block, index))}
       </div>
 

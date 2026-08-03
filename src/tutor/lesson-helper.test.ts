@@ -1,10 +1,32 @@
-import { describe, expect, it } from "vitest";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { requireLesson } from "../content/course";
 import type { TutorMessage } from "./conversations";
-import { lessonHelperInternals } from "./lesson-helper";
+import {
+  answerLessonQuestion,
+  lessonHelperInternals,
+} from "./lesson-helper";
+
+const { invokeMock } = vi.hoisted(() => ({
+  invokeMock: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: invokeMock,
+  isTauri: () => true,
+}));
 
 const lesson = requireLesson("prerequisite-trace");
 const baseRateChunk = pageChunk();
+
+beforeEach(() => {
+  invokeMock.mockReset();
+});
 
 function pageChunk() {
   const chunk = lesson.blocks
@@ -33,6 +55,50 @@ function history(): TutorMessage[] {
 }
 
 describe("native lesson helper boundary", () => {
+  it("blocks an unfinished prediction before invoking Bedrock", async () => {
+    const prediction = lesson.activities.find(
+      (activity) => activity.kind === "prediction",
+    );
+    if (!prediction) throw new Error("Missing prediction");
+
+    const answer = await answerLessonQuestion(
+      lesson,
+      prediction.checkpoint.prompt,
+      [],
+      "request-protected",
+      new Set(),
+    );
+
+    expect(answer.status).toBe("boundary");
+    expect(answer.text).toContain("unfinished prediction");
+    expect(invokeMock).not.toHaveBeenCalled();
+  });
+
+  it("permits the native path after the prediction is committed", async () => {
+    const prediction = lesson.activities.find(
+      (activity) => activity.kind === "prediction",
+    );
+    if (!prediction) throw new Error("Missing prediction");
+    invokeMock.mockResolvedValue({
+      status: "boundary",
+      text: "The committed prediction can now be discussed.",
+      claims: [],
+    });
+
+    await answerLessonQuestion(
+      lesson,
+      prediction.checkpoint.prompt,
+      [],
+      "request-committed",
+      new Set([prediction.id]),
+    );
+
+    expect(invokeMock).toHaveBeenCalledWith(
+      "answer_lesson_question",
+      expect.any(Object),
+    );
+  });
+
   it("sends only authored identity, bounded history, and the question", () => {
     const request = lessonHelperInternals.requestFor(
       lesson,

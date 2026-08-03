@@ -7,6 +7,10 @@ import type {
   TutorClaim,
   TutorMessage,
 } from "./conversations";
+import {
+  unfinishedPredictionBoundary,
+  unfinishedPredictionTargeted,
+} from "./checkpoint-guard";
 
 export type LessonHelperStatus = "answered" | "unsupported" | "boundary";
 
@@ -185,7 +189,15 @@ export async function answerLessonQuestion(
   question: string,
   history: readonly TutorMessage[],
   requestId: string,
+  committedActivityIds: ReadonlySet<string> = new Set(),
 ) {
+  if (unfinishedPredictionTargeted(question, lesson, committedActivityIds)) {
+    return {
+      status: "boundary",
+      text: unfinishedPredictionBoundary,
+      claims: [],
+    } satisfies LessonHelperAnswer;
+  }
   const result = await invoke<unknown>("answer_lesson_question", {
     request: requestFor(lesson, question, history, requestId),
   });

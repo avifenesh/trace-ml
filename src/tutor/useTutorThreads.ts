@@ -35,6 +35,7 @@ const STORAGE_KEY = "trace-ml:tutor-threads:v1";
 const ACTIVE_THREAD_KEY = "trace-ml:active-thread:v1";
 const LEGACY_REVISION = "legacy-unversioned";
 const MAX_THREADS_PER_LESSON = 8;
+const EMPTY_COMMITTED_ACTIVITY_IDS = new Set<string>();
 
 interface StoredThreads {
   version: 1;
@@ -268,7 +269,11 @@ function loadState(lesson: Lesson): TutorState {
   };
 }
 
-export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
+export function useTutorThreads(
+  lesson: Lesson,
+  activeBlockId?: string,
+  committedActivityIds: ReadonlySet<string> = EMPTY_COMMITTED_ACTIVITY_IDS,
+) {
   const lessonRevision = revisionForLesson(lesson);
   const [state, setState] = useState<TutorState>(() => loadState(lesson));
   const stateRef = useRef(state);
@@ -491,6 +496,7 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
           lesson,
           activeBlockId,
           activeThread.messages,
+          committedActivityIds,
         );
         const tutorMessage: TutorMessage = {
           id: tutorMessageId,
@@ -595,6 +601,7 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
         trimmed,
         activeThread.messages,
         requestId,
+        committedActivityIds,
       )
         .then((answer) => {
           if (pendingAnswerRef.current?.requestId !== requestId) return;
@@ -615,6 +622,7 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
             lesson,
             activeBlockId,
             activeThread.messages,
+            committedActivityIds,
           );
           appendAnswer(
             fallback.text,
@@ -628,7 +636,13 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
           setPendingAnswer(null);
         });
     },
-    [activeBlockId, helperMode, lesson, lessonRevision],
+    [
+      activeBlockId,
+      committedActivityIds,
+      helperMode,
+      lesson,
+      lessonRevision,
+    ],
   );
 
   const cancelAnswer = useCallback(() => {

@@ -26,6 +26,8 @@ const LESSONS = [
 
 const ACTIVE_LESSON_KEY = "trace-ml:active-lesson:v1";
 const LEARNER_RECORD_LOCK = "trace-ml:learner-record:v1:write";
+const PREREQUISITE_PREDICTION =
+  "For y = (3x - 2)^2, what is dy/dx at x = 2?";
 const RESPONSIVE_VIEWPORTS = [
   ["phone", 390, 844],
   ["compact breakpoint", 720, 900],
@@ -199,10 +201,10 @@ test("prediction choices form one keyboard-operable radio group", async ({
   page,
 }) => {
   const prediction = page.getByRole("region", {
-    name: "For y = (2x + 1)^2, what is dy/dx at x = 1?",
+    name: PREREQUISITE_PREDICTION,
   });
   const group = prediction.getByRole("radiogroup", {
-    name: "For y = (2x + 1)^2, what is dy/dx at x = 1?",
+    name: PREREQUISITE_PREDICTION,
   });
   const options = group.getByRole("radio");
 
@@ -388,7 +390,7 @@ test("authored evidence requires a recorded comparison and survives reload", asy
   page,
 }) => {
   const prediction = page.getByRole("region", {
-    name: "For y = (2x + 1)^2, what is dy/dx at x = 1?",
+    name: PREREQUISITE_PREDICTION,
   });
   const visualLab = page.getByRole("region", {
     name: "Keep three traces synchronized",
@@ -397,10 +399,9 @@ test("authored evidence requires a recorded comparison and survives reload", asy
     name: "Rebuild the mechanism in Python.",
   });
   await expect(
-    page.getByText(
-      "Commit the prediction below to reveal the authored trace.",
-      { exact: true },
-    ),
+    page.getByRole("heading", {
+      name: "Trace the quantities that machine learning reuses",
+    }),
   ).toBeVisible();
   await expect(
     visualLab.getByRole("button", { name: "Capture baseline" }),
@@ -411,12 +412,15 @@ test("authored evidence requires a recorded comparison and survives reload", asy
     .toBeDisabled();
   expect(
     await page.evaluate(() => {
+      const teaching = document.querySelector(".lesson-teaching");
       const predictionElement = document.querySelector(".choice-prediction");
       const reading = document.querySelector(".reading-column");
-      if (!predictionElement || !reading) return false;
+      if (!teaching || !predictionElement || !reading) return false;
       return Boolean(
-        predictionElement.compareDocumentPosition(reading) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
+        teaching.compareDocumentPosition(predictionElement) &
+          Node.DOCUMENT_POSITION_FOLLOWING &&
+          predictionElement.compareDocumentPosition(reading) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
       );
     }),
   ).toBe(true);
@@ -438,12 +442,12 @@ test("authored evidence requires a recorded comparison and survives reload", asy
   expect(exposureOnly.events).toHaveLength(1);
   expect(exposureOnly.evidence).toEqual([]);
 
-  await prediction.getByRole("radio", { name: "12", exact: true }).click();
+  await prediction.getByRole("radio", { name: "24", exact: true }).click();
   await prediction
     .getByRole("button", { name: "Commit prediction" })
     .click();
   await expect(prediction.getByRole("status")).toContainText(
-    "The outer slope is 2(3) = 6 and the inner slope is 2",
+    "The inner value is 3(2) - 2 = 4, the outer slope is 2(4) = 8",
   );
 
   await expect(
@@ -542,13 +546,13 @@ test("concurrent windows merge durable evidence before either reloads", async ({
     .toBe(true);
 
   const chainPrediction = page.getByRole("region", {
-    name: "For y = (2x + 1)^2, what is dy/dx at x = 1?",
+    name: PREREQUISITE_PREDICTION,
   });
   const lossPrediction = second.getByRole("region", {
     name: "One residual grows from 2 to 10 while all others stay fixed. By what factor does that row's squared-error contribution grow?",
   });
   await Promise.all([
-    chainPrediction.getByRole("radio", { name: "12", exact: true }).click(),
+    chainPrediction.getByRole("radio", { name: "24", exact: true }).click(),
     lossPrediction
       .getByRole("radio", { name: "25 times", exact: true })
       .click(),
@@ -609,9 +613,9 @@ test("authored remediation supports prediction, explanation, and code retries", 
 }) => {
   test.setTimeout(90_000);
   const prediction = page.getByRole("region", {
-    name: "For y = (2x + 1)^2, what is dy/dx at x = 1?",
+    name: PREREQUISITE_PREDICTION,
   });
-  await prediction.getByRole("radio", { name: "6", exact: true }).click();
+  await prediction.getByRole("radio", { name: "8", exact: true }).click();
   await prediction
     .getByRole("button", { name: "Commit prediction" })
     .click();
@@ -619,12 +623,12 @@ test("authored remediation supports prediction, explanation, and code retries", 
     "AUTHORED REMEDIATION · REVIEW THE FEEDBACK AND RETRY",
   );
   await expect(prediction.getByRole("status")).toContainText(
-    "Compute u = 2x + 1 first",
+    "Compute u = 3x - 2 first",
   );
   await prediction
     .getByRole("button", { name: "Retry prediction" })
     .click();
-  await prediction.getByRole("radio", { name: "12", exact: true }).click();
+  await prediction.getByRole("radio", { name: "24", exact: true }).click();
   await prediction
     .getByRole("button", { name: "Commit prediction" })
     .click();
@@ -691,9 +695,9 @@ test("text submissions and Python drafts restore from the authored activity snap
   page,
 }) => {
   const prediction = page.getByRole("region", {
-    name: "For y = (2x + 1)^2, what is dy/dx at x = 1?",
+    name: PREREQUISITE_PREDICTION,
   });
-  await prediction.getByRole("radio", { name: "12", exact: true }).click();
+  await prediction.getByRole("radio", { name: "24", exact: true }).click();
   await prediction
     .getByRole("button", { name: "Commit prediction" })
     .click();
@@ -740,9 +744,7 @@ test("Q&A stays page-grounded, refuses unrelated teaching, and resumes threads",
   const helper = page.locator("#lesson-helper-panel");
   const groundedQuestion = "Which dimensions survive a matrix operation?";
 
-  await expect(helper).toContainText(
-    "Answers are limited to this authored page and saved thread.",
-  );
+  await expect(helper).toContainText("Local exact-page matching is active.");
   await helper.getByRole("button", { name: groundedQuestion }).click();
 
   const tutorMessages = helper.locator("article.tutor-message.tutor");
@@ -1062,9 +1064,9 @@ test("storage failure remains visible in the compact toolbar", async ({
   await page.reload();
 
   const prediction = page.getByRole("region", {
-    name: "For y = (2x + 1)^2, what is dy/dx at x = 1?",
+    name: PREREQUISITE_PREDICTION,
   });
-  await prediction.getByRole("radio", { name: "12", exact: true }).click();
+  await prediction.getByRole("radio", { name: "24", exact: true }).click();
   await prediction
     .getByRole("button", { name: "Commit prediction" })
     .click();
