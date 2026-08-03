@@ -55,6 +55,20 @@ function stringMetric(
   return value;
 }
 
+function optionalNumberMetric(
+  observation: VisualMechanismObservation,
+  key: string,
+) {
+  const value = metric(observation, key);
+  if (value === "undefined") return undefined;
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(
+      `Mechanism metric "${key}" must be a finite number or undefined.`,
+    );
+  }
+  return value;
+}
+
 function numberArrayMetric(
   observation: VisualMechanismObservation,
   key: string,
@@ -1806,57 +1820,93 @@ function QLearningView({ observation }: ObservationViewProps) {
       <text x="38" y="26" fill={BLUE} fontSize="11" fontWeight="700">
         one fixed Q-learning transition
       </text>
-      <FormulaNode
-        x={38}
-        y={49}
-        width={145}
-        title="CURRENT Q(s,a)"
-        value={formatNumber(currentQ)}
-      />
-      <path d="M183 81H260" stroke={GREEN} strokeWidth="3" />
-      <text x="195" y="70" fill={GREEN} fontSize="10">
-        reward {formatNumber(reward)}
-      </text>
-      <FormulaNode
-        x={260}
-        y={49}
-        width={154}
-        title="BEST NEXT Q"
-        value={formatNumber(bestNextQ)}
-      />
-      <path d="M414 81H461" stroke={YELLOW} strokeWidth="3" />
-      <FormulaNode
-        x={461}
-        y={49}
-        width={141}
-        title="TARGET"
-        value={formatNumber(nonterminalTarget)}
-        accent={YELLOW}
-      />
-
-      <rect x="38" y="143" width="564" height="87" rx="5" fill={PANEL} stroke={GRID} />
-      <text x="54" y="166" fill={MUTED} fontSize="10">
-        BOOTSTRAP
-      </text>
-      <text x="54" y="187" fill={INK} fontSize="11">
+      <g data-q-node="reward">
+        <FormulaNode
+          x={28}
+          y={38}
+          width={110}
+          title="REWARD"
+          value={formatNumber(reward)}
+          accent={GREEN}
+        />
+      </g>
+      <g data-q-node="discounted-best-next">
+        <FormulaNode
+          x={28}
+          y={134}
+          width={170}
+          title="DISCOUNTED BEST NEXT"
+          value={`${formatNumber(discount)} x ${formatNumber(bestNextQ)}`}
+        />
+      </g>
+      <g data-q-node="target">
+        <FormulaNode
+          x={244}
+          y={50}
+          width={145}
+          title="TARGET"
+          value={formatNumber(nonterminalTarget)}
+          accent={YELLOW}
+        />
+      </g>
+      <g data-q-node="current-q">
+        <FormulaNode
+          x={244}
+          y={146}
+          width={145}
+          title="CURRENT Q(s,a)"
+          value={formatNumber(currentQ)}
+        />
+      </g>
+      <g data-q-node="updated-q">
+        <FormulaNode
+          x={470}
+          y={98}
+          width={142}
+          title="UPDATED Q(s,a)"
+          value={formatNumber(updatedQ)}
+          accent={GREEN}
+        />
+      </g>
+      {[
+        ["reward", "target", "M138 70C188 70 199 76 244 76", GREEN],
+        [
+          "discounted-best-next",
+          "target",
+          "M198 166C228 166 211 96 244 96",
+          BLUE,
+        ],
+        ["target", "updated-q", "M389 82C431 82 432 118 470 118", YELLOW],
+        [
+          "current-q",
+          "updated-q",
+          "M389 178C431 178 432 142 470 142",
+          BLUE,
+        ],
+      ].map(([source, target, path, color]) => (
+        <path
+          key={`${source}-${target}`}
+          d={path}
+          fill="none"
+          stroke={color}
+          strokeWidth="3"
+          data-q-edge
+          data-source={source}
+          data-target={target}
+        />
+      ))}
+      <text x="28" y="224" fill={INK} fontSize="10">
         {formatNumber(reward)} + gamma {formatNumber(discount)} x{" "}
         {formatNumber(bestNextQ)} = {formatNumber(nonterminalTarget)}
       </text>
-      <text x="54" y="213" fill={MUTED} fontSize="10">
-        terminal target {formatNumber(terminalTarget)}
-      </text>
-      <path d="M318 158V216" stroke={GRID} />
-      <text x="338" y="166" fill={MUTED} fontSize="10">
+      <text x="330" y="224" fill={MUTED} fontSize="10">
         UPDATE WITH alpha {formatNumber(learningRate)}
       </text>
-      <text x="338" y="191" fill={INK} fontSize="11">
-        Q: {formatNumber(currentQ)} -&gt;{" "}
-        <tspan fill={GREEN} fontSize="16" fontWeight="700">
-          {formatNumber(updatedQ)}
-        </tspan>
+      <text x="28" y="245" fill={MUTED} fontSize="10">
+        terminal target {formatNumber(terminalTarget)}
       </text>
-      <text x="338" y="213" fill={MUTED} fontSize="10">
-        gamma {formatNumber(discount)} / alpha {formatNumber(learningRate)}
+      <text x="330" y="245" fill={INK} fontSize="10">
+        Q: {formatNumber(currentQ)} -&gt; {formatNumber(updatedQ)}
       </text>
     </>
   );
@@ -1883,15 +1933,18 @@ function ShiftMonitorView({ observation }: ObservationViewProps) {
     observation,
     "nightActualPositiveSupport",
   );
-  const dayRate = numberMetric(
+  const dayRate = optionalNumberMetric(
     observation,
     "dayFalseNegativeRate",
   );
-  const nightRate = numberMetric(
+  const nightRate = optionalNumberMetric(
     observation,
     "nightFalseNegativeRate",
   );
-  const gap = numberMetric(observation, "falseNegativeRateGap");
+  const gap = optionalNumberMetric(
+    observation,
+    "falseNegativeRateGap",
+  );
   const aggregate = numberMetric(
     observation,
     "aggregateFalseNegativeRate",
@@ -1909,7 +1962,12 @@ function ShiftMonitorView({ observation }: ObservationViewProps) {
     "falseNegatives",
   );
   const shareWidth = 544;
-  const rateMaximum = Math.max(0.01, dayRate, nightRate, aggregate);
+  const rateMaximum = Math.max(
+    0.01,
+    dayRate ?? 0,
+    nightRate ?? 0,
+    aggregate,
+  );
   const rates = [
     ["day slice", dayRate, BLUE],
     ["night slice", nightRate, CORAL],
@@ -1930,20 +1988,29 @@ function ShiftMonitorView({ observation }: ObservationViewProps) {
         fill="#4a302e"
         stroke={CORAL}
       />
-      <text x="59" y="72" fill={INK} fontSize="10">
-        day {formatNumber(daySupport)} ({formatPercent(dayShare, 0)})
-      </text>
       <text
-        x={48 + shareWidth * dayShare + 10}
+        x="59"
         y="72"
         fill={INK}
         fontSize="10"
+        data-testid="shift-day-share-label"
+      >
+        day {formatNumber(daySupport)} ({formatPercent(dayShare, 0)})
+      </text>
+      <text
+        x="581"
+        y="72"
+        fill={INK}
+        fontSize="10"
+        textAnchor="end"
+        data-testid="shift-night-share-label"
       >
         night {formatNumber(nightSupport)} ({formatPercent(nightShare, 0)})
       </text>
 
       {rates.map(([label, rate, color], index) => {
-        const width = (rate / rateMaximum) * 390;
+        const width =
+          rate === undefined ? 0 : (rate / rateMaximum) * 390;
         const y = 119 + index * 39;
         const falseNegativeCount =
           index === 0
@@ -1956,16 +2023,42 @@ function ShiftMonitorView({ observation }: ObservationViewProps) {
             <text x="48" y={y + 13} fill={MUTED} fontSize="10">
               {label}
             </text>
-            <rect x="142" y={y} width={Math.max(2, width)} height="17" fill={color} />
-            <text x={151 + width} y={y + 13} fill={INK} fontSize="10">
-              {formatPercent(rate, 1)} / {formatNumber(falseNegativeCount, 1)} FN
+            {rate !== undefined && (
+              <rect
+                x="142"
+                y={y}
+                width={Math.max(2, width)}
+                height="17"
+                fill={color}
+              />
+            )}
+            <text
+              x={151 + width}
+              y={y + 13}
+              fill={INK}
+              fontSize="10"
+              data-testid={`shift-${index === 0 ? "day" : index === 1 ? "night" : "aggregate"}-rate-label`}
+            >
+              {rate === undefined
+                ? "undefined"
+                : formatPercent(rate, 1)}{" "}
+              / {formatNumber(falseNegativeCount, 1)} FN
             </text>
           </g>
         );
       })}
       <rect x="48" y="227" width="544" height="1" fill={GRID} />
-      <text x="48" y="248" fill={CORAL} fontSize="10">
-        slice gap {formatNumber(gap * 100, 1)} percentage points
+      <text
+        x="48"
+        y="248"
+        fill={CORAL}
+        fontSize="10"
+        data-testid="shift-gap-label"
+      >
+        slice gap{" "}
+        {gap === undefined
+          ? "undefined"
+          : `${formatNumber(gap * 100, 1)} percentage points`}
       </text>
       <text x="411" y="248" fill={YELLOW} fontSize="10" fontWeight="700">
         aggregate {formatPercent(aggregate, 1)}

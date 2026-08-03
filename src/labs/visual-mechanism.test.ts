@@ -510,12 +510,6 @@ describe("visual mechanism observations", () => {
       expect(
         numberMetric(state, "totalActualPositiveSupport"),
       ).toBe(CAPSTONE_INCIDENT.metrics.totalActualPositiveSupport);
-      expect(numberMetric(state, "dayFalseNegativeRate")).toBe(
-        CAPSTONE_INCIDENT.metrics.dayFalseNegativeRate,
-      );
-      expect(numberMetric(state, "nightFalseNegativeRate")).toBe(
-        CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate,
-      );
       expect(
         numberMetric(state, "dayActualPositiveSupport") +
           numberMetric(state, "nightActualPositiveSupport"),
@@ -526,10 +520,6 @@ describe("visual mechanism observations", () => {
       expect(numberMetric(state, "dayShare")).toBe(
         numberMetric(state, "dayShareAmongActualPositives"),
       );
-      expect(numberMetric(state, "falseNegativeRateGap")).toBeCloseTo(
-        CAPSTONE_INCIDENT.metrics.falseNegativeRateGap,
-        12,
-      );
       expect(
         numberMetric(state, "aggregateFalseNegativeRate"),
       ).toBeCloseTo(
@@ -538,6 +528,17 @@ describe("visual mechanism observations", () => {
         12,
       );
     }
+    expect(numberMetric(minimum, "dayFalseNegativeRate")).toBe(
+      CAPSTONE_INCIDENT.metrics.dayFalseNegativeRate,
+    );
+    expect(stringMetric(minimum, "nightFalseNegativeRate")).toBe(
+      "undefined",
+    );
+    expect(stringMetric(minimum, "falseNegativeRateGap")).toBe(
+      "undefined",
+    );
+    expect(minimum.secondary).toContain("night undefined");
+    expect(minimum.secondary).toContain("gap undefined");
     expect(numberMetric(minimum, "falseNegatives")).toBe(
       CAPSTONE_INCIDENT.metrics.totalActualPositiveSupport *
         CAPSTONE_INCIDENT.metrics.dayFalseNegativeRate,
@@ -555,6 +556,16 @@ describe("visual mechanism observations", () => {
     ).toBe(
       CAPSTONE_INCIDENT.live.slices.night.truePositives +
         CAPSTONE_INCIDENT.live.slices.night.falseNegatives,
+    );
+    expect(numberMetric(initial, "dayFalseNegativeRate")).toBe(
+      CAPSTONE_INCIDENT.metrics.dayFalseNegativeRate,
+    );
+    expect(numberMetric(initial, "nightFalseNegativeRate")).toBe(
+      CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate,
+    );
+    expect(numberMetric(initial, "falseNegativeRateGap")).toBeCloseTo(
+      CAPSTONE_INCIDENT.metrics.falseNegativeRateGap,
+      12,
     );
     expect(numberMetric(initial, "falseNegatives")).toBe(
       CAPSTONE_INCIDENT.live.slices.day.falseNegatives +
@@ -574,6 +585,17 @@ describe("visual mechanism observations", () => {
         CAPSTONE_INCIDENT.metrics.totalActualPositiveSupport,
       12,
     );
+    expect(stringMetric(maximum, "dayFalseNegativeRate")).toBe(
+      "undefined",
+    );
+    expect(numberMetric(maximum, "nightFalseNegativeRate")).toBe(
+      CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate,
+    );
+    expect(stringMetric(maximum, "falseNegativeRateGap")).toBe(
+      "undefined",
+    );
+    expect(maximum.secondary).toContain("day undefined");
+    expect(maximum.secondary).toContain("gap undefined");
     expect(numberMetric(maximum, "falseNegatives")).toBe(
       CAPSTONE_INCIDENT.metrics.totalActualPositiveSupport *
         CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate,
@@ -581,5 +603,14 @@ describe("visual mechanism observations", () => {
     expect(
       numberMetric(maximum, "aggregateFalseNegativeRate"),
     ).toBe(CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate);
+
+    const interiorAfterEndpoints = observe(
+      "shift-monitor",
+      controlFor("shift-monitor").initial,
+    );
+    expect(interiorAfterEndpoints).toEqual(initial);
+    expect(
+      numberMetric(interiorAfterEndpoints, "falseNegativeRateGap"),
+    ).toBeCloseTo(CAPSTONE_INCIDENT.metrics.falseNegativeRateGap, 12);
   });
 });

@@ -254,6 +254,19 @@ export const CODE_LAB_BYPASS_PROBES: BypassProbe[] = [
     rejectedBy: ["q-table-mutation", "q-terminal-table-mutation"],
   },
   {
+    id: "q-bellman-hard-codes-discount",
+    activityId: "q-learning-python-lab",
+    replacements: [
+      {
+        before:
+          "return reward if terminal else reward + discount * max(next_values)",
+        after:
+          "return reward if terminal else reward + 0.9 * max(next_values)",
+      },
+    ],
+    rejectedBy: ["q-bellman-continuing"],
+  },
+  {
     id: "q-terminal-reads-next-state",
     activityId: "q-learning-python-lab",
     replacements: [

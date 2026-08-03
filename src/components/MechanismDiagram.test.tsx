@@ -89,7 +89,10 @@ describe("MechanismDiagram", () => {
         const value = Array.isArray(metric) ? metric.join(", ") : String(metric);
         expect(first).toContain(escapedMarkup(value));
       }
-      expect(first).not.toMatch(/NaN|Infinity|undefined/);
+      expect(first).not.toMatch(/NaN|Infinity/);
+      if (labId !== "shift-monitor") {
+        expect(first).not.toContain("undefined");
+      }
     }
   });
 
@@ -403,6 +406,82 @@ describe("MechanismDiagram", () => {
     expect(text).toContain("UPDATE WITH alpha 0.5");
     expect(text).toContain("Q: 1 -> 3.75");
     expect(text).toContain("terminal target 2");
+    expect(
+      Array.from(
+        container.querySelectorAll("[data-q-edge]"),
+        (edge) => [
+          edge.getAttribute("data-source"),
+          edge.getAttribute("data-target"),
+        ],
+      ),
+    ).toEqual([
+      ["reward", "target"],
+      ["discounted-best-next", "target"],
+      ["target", "updated-q"],
+      ["current-q", "updated-q"],
+    ]);
+  });
+
+  it("renders undefined zero-support shift rates with safe endpoint labels", () => {
+    const control = activityFor("shift-monitor").control;
+    const rendered = render(
+      <MechanismDiagram
+        labId="shift-monitor"
+        observation={observationFor("shift-monitor", control.min)}
+      />,
+    );
+    const endpointLabels = () => {
+      const day = screen.getByTestId("shift-day-share-label");
+      const night = screen.getByTestId("shift-night-share-label");
+      expect(day.getAttribute("x")).toBe("59");
+      expect(night.getAttribute("x")).toBe("581");
+      expect(night.getAttribute("text-anchor")).toBe("end");
+    };
+
+    expect(screen.getByTestId("shift-day-rate-label").textContent).toContain(
+      "10%",
+    );
+    expect(screen.getByTestId("shift-night-rate-label").textContent).toContain(
+      "undefined",
+    );
+    expect(screen.getByTestId("shift-gap-label").textContent).toContain(
+      "undefined",
+    );
+    endpointLabels();
+
+    rendered.rerender(
+      <MechanismDiagram
+        labId="shift-monitor"
+        observation={observationFor("shift-monitor", control.initial)}
+      />,
+    );
+    expect(screen.getByTestId("shift-day-rate-label").textContent).toContain(
+      "10%",
+    );
+    expect(screen.getByTestId("shift-night-rate-label").textContent).toContain(
+      "30%",
+    );
+    expect(screen.getByTestId("shift-gap-label").textContent).toContain(
+      "20 percentage points",
+    );
+    endpointLabels();
+
+    rendered.rerender(
+      <MechanismDiagram
+        labId="shift-monitor"
+        observation={observationFor("shift-monitor", control.max)}
+      />,
+    );
+    expect(screen.getByTestId("shift-day-rate-label").textContent).toContain(
+      "undefined",
+    );
+    expect(screen.getByTestId("shift-night-rate-label").textContent).toContain(
+      "30%",
+    );
+    expect(screen.getByTestId("shift-gap-label").textContent).toContain(
+      "undefined",
+    );
+    endpointLabels();
   });
 
   it("plots the exact observation traces without regenerating them", () => {

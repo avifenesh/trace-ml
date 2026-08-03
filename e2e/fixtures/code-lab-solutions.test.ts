@@ -63,4 +63,15 @@ describe("authored code-lab solution fixtures", () => {
       rejectedBy: ["00-code-held-out-coordinates"],
     });
   });
+
+  it("pins the Q-learning hard-coded discount bypass", () => {
+    expect(
+      CODE_LAB_BYPASS_PROBES.find(
+        (probe) => probe.id === "q-bellman-hard-codes-discount",
+      ),
+    ).toMatchObject({
+      activityId: "q-learning-python-lab",
+      rejectedBy: ["q-bellman-continuing"],
+    });
+  });
 });

@@ -6,6 +6,7 @@ import {
   createLearnerRecord,
 } from "../learning/evidence";
 import {
+  activityEvidenceConceptIds,
   lessonState,
 } from "../learning/progression";
 import type {
@@ -271,9 +272,16 @@ function supportsEvidence(
   const lesson = lessons[lessonIndex];
   if (!lesson) return false;
   return lesson.activities.some(
-    (activity) =>
-      activity.evidenceKind === kind &&
-      activity.conceptIds.includes(conceptId),
+    (activity) => {
+      const conceptIds =
+        activity.kind === "code-lab"
+          ? activity.conceptIds
+          : activityEvidenceConceptIds(activity);
+      return (
+        activity.evidenceKind === kind &&
+        conceptIds.includes(conceptId)
+      );
+    },
   );
 }
 
@@ -573,7 +581,7 @@ describe("fixed authored course integrity", () => {
 
       lesson.activities.forEach((activity) => {
         const evidenceConceptIds =
-          activity.evidenceConceptIds ?? activity.conceptIds;
+          activityEvidenceConceptIds(activity);
         expect(evidenceConceptIds.length, activity.id).toBeGreaterThan(0);
         expectUnique(evidenceConceptIds);
         evidenceConceptIds.forEach((conceptId) => {
@@ -581,6 +589,26 @@ describe("fixed authored course integrity", () => {
         });
       });
     });
+  });
+
+  it("pins narrowed Module VII activity evidence mappings", () => {
+    const qPrediction = getLesson("q-learning")?.activities.find(
+      (activity) => activity.id === "q-terminal-prediction",
+    );
+    const shiftVisual = getLesson("shift-monitor")?.activities.find(
+      (activity) => activity.id === "shift-monitor-lab",
+    );
+    if (!qPrediction || !shiftVisual) {
+      throw new Error("Missing Module VII evidence activities.");
+    }
+
+    expect(activityEvidenceConceptIds(qPrediction)).toEqual([
+      "bellman-update",
+    ]);
+    expect(activityEvidenceConceptIds(shiftVisual)).toEqual([
+      "distribution-shift",
+      "monitoring",
+    ]);
   });
 
   it("pins all 19 staged Python labs and their 93 executable checks", () => {

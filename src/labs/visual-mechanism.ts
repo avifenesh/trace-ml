@@ -1106,11 +1106,37 @@ export function visualMechanismObservation(
         dayFalseNegatives + nightFalseNegatives;
       const aggregateFalseNegativeRate =
         falseNegatives / totalActualPositiveSupport;
+      const displayedDayFalseNegativeRate =
+        dayActualPositiveSupport > 0
+          ? dayFalseNegativeRate
+          : "undefined";
+      const displayedNightFalseNegativeRate =
+        nightActualPositiveSupport > 0
+          ? nightFalseNegativeRate
+          : "undefined";
+      const falseNegativeRateGap =
+        typeof displayedDayFalseNegativeRate === "number" &&
+        typeof displayedNightFalseNegativeRate === "number"
+          ? displayedNightFalseNegativeRate -
+            displayedDayFalseNegativeRate
+          : "undefined";
+      const dayRateLabel =
+        typeof displayedDayFalseNegativeRate === "number"
+          ? `${formatNumber(displayedDayFalseNegativeRate * 100)}%`
+          : displayedDayFalseNegativeRate;
+      const nightRateLabel =
+        typeof displayedNightFalseNegativeRate === "number"
+          ? `${formatNumber(displayedNightFalseNegativeRate * 100)}%`
+          : displayedNightFalseNegativeRate;
+      const gapLabel =
+        typeof falseNegativeRateGap === "number"
+          ? `${formatNumber(falseNegativeRateGap * 100)} points`
+          : falseNegativeRateGap;
       return {
         ...base,
         primary: `${formatNumber(falseNegatives, 1)} / ${formatNumber(totalActualPositiveSupport)} actual positives -> aggregate FNR ${formatNumber(aggregateFalseNegativeRate * 100, 1)}%`,
-        secondary: `day ${formatNumber(dayFalseNegativeRate * 100)}%; night ${formatNumber(nightFalseNegativeRate * 100)}%; gap ${formatNumber((nightFalseNegativeRate - dayFalseNegativeRate) * 100)} points`,
-        explanation: `The cohort stays fixed at ${formatNumber(totalActualPositiveSupport)} actual positives. The control reallocates that positive support between day and night, and aggregate FNR is total false negatives divided by total actual positives; it does not represent overall parcel share.`,
+        secondary: `day ${dayRateLabel}; night ${nightRateLabel}; gap ${gapLabel}`,
+        explanation: `The cohort stays fixed at ${formatNumber(totalActualPositiveSupport)} actual positives. The control reallocates that positive support between day and night, and aggregate FNR is total false negatives divided by total actual positives. A slice FNR and its gap are undefined when that slice has no actual-positive support; the control does not represent overall parcel share.`,
         metrics: {
           nightShareAmongActualPositives: boundedValue,
           dayShareAmongActualPositives: 1 - boundedValue,
@@ -1119,13 +1145,12 @@ export function visualMechanismObservation(
           totalActualPositiveSupport,
           dayActualPositiveSupport,
           nightActualPositiveSupport,
-          dayFalseNegativeRate,
-          nightFalseNegativeRate,
+          dayFalseNegativeRate: displayedDayFalseNegativeRate,
+          nightFalseNegativeRate: displayedNightFalseNegativeRate,
           dayFalseNegatives,
           nightFalseNegatives,
           falseNegatives,
-          falseNegativeRateGap:
-            nightFalseNegativeRate - dayFalseNegativeRate,
+          falseNegativeRateGap,
           aggregateFalseNegativeRate,
         },
       };
