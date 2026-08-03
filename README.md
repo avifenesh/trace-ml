@@ -35,7 +35,7 @@ code activities. The prose surface exposes the authored review criteria and
 can point out missing terms, but it records at most partial evidence because a
 deterministic keyword matcher cannot judge causal meaning.
 
-Each of the 194 authored page paragraphs carries source IDs from a
+Each of the 195 authored page paragraphs carries source IDs from a
 103-source research registry. The compact editorial citations under reading
 blocks are separate from optional resources and never record learner activity.
 
