@@ -156,6 +156,9 @@ describe("visual mechanism observations", () => {
   it("changes only the split used to select a fixed prediction candidate", () => {
     const validation = observe("split-and-leakage", 0);
     const test = observe("split-and-leakage", 1);
+    expect(arrayMetric(validation, "candidatePredictions")).toEqual([
+      10, 11, 12,
+    ]);
     expect(numberMetric(validation, "selectedPrediction")).toBe(11);
     expect(numberMetric(validation, "finalTestLoss")).toBe(101);
     expect(numberMetric(validation, "testIndependent")).toBe(1);
@@ -379,31 +382,98 @@ describe("visual mechanism observations", () => {
     );
   });
 
-  it("rescales only the second coordinate before k-means and PCA", () => {
-    const result = observe("cluster-project", 1);
-    expect(arrayMetric(result, "assignments")).toEqual([0, 0, 1, 1]);
-    expect(arrayMetric(result, "centroidZero")).toEqual([0, 1]);
-    expect(arrayMetric(result, "centroidOne")).toEqual([9, 8]);
+  it("exposes assignment, centroid, and PCA consequences across the scale range", () => {
+    const { minimum, initial, maximum } = authoredStates(
+      "cluster-project",
+    );
+    expect(arrayMetric(minimum, "scaledPoints")).toEqual([
+      0, 0, 8, 0.25, 2, 1.5, 10, 2.5,
+    ]);
+    expect(arrayMetric(initial, "scaledPoints")).toEqual([
+      0, 0, 8, 1, 2, 6, 10, 10,
+    ]);
+    expect(arrayMetric(maximum, "scaledPoints")).toEqual([
+      0, 0, 8, 4, 2, 24, 10, 40,
+    ]);
+    expect(arrayMetric(minimum, "assignments")).toEqual([0, 1, 0, 1]);
+    expect(arrayMetric(initial, "assignments")).toEqual([0, 0, 0, 1]);
+    expect(arrayMetric(maximum, "assignments")).toEqual([0, 0, 1, 1]);
+    expect(arrayMetric(minimum, "centroidZero")).toEqual([1, 0.75]);
+    expect(arrayMetric(minimum, "centroidOne")).toEqual([9, 1.375]);
+    expect(arrayMetric(initial, "centroidZero")).toEqual([
+      10 / 3,
+      7 / 3,
+    ]);
+    expect(arrayMetric(initial, "centroidOne")).toEqual([10, 10]);
+    expect(arrayMetric(maximum, "centroidZero")).toEqual([4, 2]);
+    expect(arrayMetric(maximum, "centroidOne")).toEqual([6, 32]);
+    expect(arrayMetric(minimum, "dataCenter")).toEqual([5, 1.0625]);
+    expect(arrayMetric(initial, "dataCenter")).toEqual([5, 4.25]);
+    expect(arrayMetric(maximum, "dataCenter")).toEqual([5, 17]);
     expect(
-      Number.isFinite(numberMetric(result, "principalAngleDegrees")),
-    ).toBe(true);
+      numberMetric(minimum, "principalAngleDegrees"),
+    ).toBeLessThan(numberMetric(initial, "principalAngleDegrees"));
+    expect(
+      numberMetric(initial, "principalAngleDegrees"),
+    ).toBeLessThan(numberMetric(maximum, "principalAngleDegrees"));
   });
 
-  it("translates a fixed pattern under one shared 2 by 2 kernel", () => {
-    const result = observe("convolution-field", 3);
-    expect(arrayMetric(result, "kernelValues")).toEqual([1, 0, 0, -1]);
-    expect(numberMetric(result, "peakPosition")).toBe(3);
-    expect(numberMetric(result, "peakActivation")).toBe(2);
-    expect(numberMetric(result, "stride")).toBe(1);
-    expect(numberMetric(result, "padding")).toBe(0);
+  it("translates one unchanged convolution response across every authored state", () => {
+    const { minimum, initial, maximum } = authoredStates(
+      "convolution-field",
+    );
+    for (const [state, position] of [
+      [minimum, 0],
+      [initial, 1],
+      [maximum, 4],
+    ] as const) {
+      expect(arrayMetric(state, "kernelValues")).toEqual([1, 0, 0, -1]);
+      expect(numberMetric(state, "peakPosition")).toBe(position);
+      expect(numberMetric(state, "peakActivation")).toBe(2);
+      expect(numberMetric(state, "stride")).toBe(1);
+      expect(numberMetric(state, "padding")).toBe(0);
+      expect(arrayMetric(state, "outputValues")).toEqual(
+        Array.from({ length: 5 }, (_unused, index) =>
+          index === position ? 2 : 0,
+        ),
+      );
+    }
   });
 
-  it("normalizes both attention scores once and mixes fixed values", () => {
-    const result = observe("attention-routing", 0);
-    expect(numberMetric(result, "otherWeight")).toBe(0.5);
-    expect(numberMetric(result, "selectedWeight")).toBe(0.5);
-    expect(numberMetric(result, "weightSum")).toBe(1);
-    expect(numberMetric(result, "output")).toBe(6);
+  it("routes monotonically toward the selected value as its score rises", () => {
+    const { minimum, initial, maximum } = authoredStates(
+      "attention-routing",
+    );
+    for (const state of [minimum, initial, maximum]) {
+      expect(
+        numberMetric(state, "otherWeight") +
+          numberMetric(state, "selectedWeight"),
+      ).toBeCloseTo(1, 12);
+      expect(numberMetric(state, "weightSum")).toBe(1);
+      expect(numberMetric(state, "valueZero")).toBe(2);
+      expect(numberMetric(state, "valueOne")).toBe(10);
+    }
+    expect(numberMetric(initial, "otherWeight")).toBe(0.5);
+    expect(numberMetric(initial, "selectedWeight")).toBe(0.5);
+    expect(numberMetric(initial, "output")).toBe(6);
+    expect(numberMetric(minimum, "selectedWeight")).toBeLessThan(
+      numberMetric(initial, "selectedWeight"),
+    );
+    expect(numberMetric(initial, "selectedWeight")).toBeLessThan(
+      numberMetric(maximum, "selectedWeight"),
+    );
+    expect(numberMetric(minimum, "otherWeight")).toBeGreaterThan(
+      numberMetric(initial, "otherWeight"),
+    );
+    expect(numberMetric(initial, "otherWeight")).toBeGreaterThan(
+      numberMetric(maximum, "otherWeight"),
+    );
+    expect(numberMetric(minimum, "output")).toBeLessThan(
+      numberMetric(initial, "output"),
+    );
+    expect(numberMetric(initial, "output")).toBeLessThan(
+      numberMetric(maximum, "output"),
+    );
   });
 
   it("computes continuing, terminal, and updated Q values separately", () => {

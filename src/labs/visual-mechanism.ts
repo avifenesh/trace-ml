@@ -459,9 +459,9 @@ function optimizerTrace(learningRate: number) {
 
 const CLUSTER_POINTS = [
   [0, 0],
-  [0, 2],
-  [8, 8],
-  [10, 8],
+  [8, 1],
+  [2, 6],
+  [10, 10],
 ] as const;
 const CLUSTER_START = [
   [0, 0],
@@ -526,7 +526,13 @@ function clusterState(secondCoordinateScale: number) {
       ) *
       180) /
     Math.PI;
-  return { assignments, centroids, principalAngle };
+  return {
+    points,
+    assignments,
+    centroids,
+    center,
+    principalAngle,
+  };
 }
 
 const CONVOLUTION_KERNEL = [
@@ -714,6 +720,7 @@ export function visualMechanismObservation(
             : "Test loss now chooses the candidate, so that same test result is selection feedback rather than an independent estimate.",
         metrics: {
           selectionSource: source,
+          candidatePredictions: SPLIT_CANDIDATES,
           selectedPrediction: selected,
           selectionLoss,
           finalTestLoss,
@@ -967,9 +974,11 @@ export function visualMechanismObservation(
         metrics: {
           secondCoordinateScale: boundedValue,
           pointCount: CLUSTER_POINTS.length,
+          scaledPoints: state.points.flat(),
           assignments: state.assignments,
           centroidZero: state.centroids[0],
           centroidOne: state.centroids[1],
+          dataCenter: state.center,
           principalAngleDegrees: state.principalAngle,
         },
       };

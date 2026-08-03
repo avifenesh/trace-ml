@@ -51,6 +51,15 @@ function observationFor(
   );
 }
 
+function paddedBounds(values: readonly number[]) {
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const span = maximum - minimum;
+  const padding =
+    span > 0 ? span * 0.12 : Math.max(1, Math.abs(maximum) * 0.2);
+  return [minimum - padding, maximum + padding] as const;
+}
+
 afterEach(cleanup);
 
 describe("MechanismDiagram", () => {
@@ -123,53 +132,159 @@ describe("MechanismDiagram", () => {
     ).toBe(true);
   });
 
-  it("renders the exact 2 by 2 kernel and computed convolution peak", () => {
-    const observation = observationFor("convolution-field", 3);
-    const { container } = render(
+  it("labels Lesson 05 candidates as authored rather than trained", () => {
+    const observation = observationFor("split-and-leakage", 0);
+    render(
       <MechanismDiagram
-        labId="convolution-field"
+        labId="split-and-leakage"
         observation={observation}
       />,
     );
 
-    expect(
-      screen.getByText("shared 2 x 2 kernel"),
-    ).toBeTruthy();
-    expect(
-      Array.from(
-        container.querySelectorAll('[aria-label^="Kernel row"]'),
-        (element) => element.textContent,
-      ),
-    ).toEqual(["1", "0", "0", "-1"]);
-    const peak = container.querySelector(
-      '[data-output-index="3"]',
-    );
-    expect(peak?.getAttribute("data-output-value")).toBe("2");
-    expect(screen.getByText("2 at output 3")).toBeTruthy();
+    expect(screen.getByText("AUTHORED CANDIDATES")).toBeTruthy();
+    expect(screen.getByText("10 / 11 / 12")).toBeTruthy();
+    expect(screen.queryByText("TRAIN")).toBeNull();
+    expect(screen.queryByText("fit candidates")).toBeNull();
+    expect(screen.getByText("VALIDATION SELECTS")).toBeTruthy();
+    expect(screen.getByText("FINAL TEST")).toBeTruthy();
   });
 
-  it("uses exactly two normalized attention weights from the metrics", () => {
-    const observation = observationFor("attention-routing", 0);
-    const { container } = render(
+  it("labels the backprop product route unambiguously", () => {
+    const observation = observationFor("backprop-graph", 1);
+    render(
       <MechanismDiagram
-        labId="attention-routing"
+        labId="backprop-graph"
         observation={observation}
       />,
     );
 
-    const weights = Array.from(
-      container.querySelectorAll("[data-attention-weight]"),
-      (element) =>
-        Number(element.getAttribute("data-attention-weight")),
+    expect(screen.getByText("p = w * x")).toBeTruthy();
+    expect(screen.queryByText("p = w x x")).toBeNull();
+  });
+
+  it("renders the PCA direction through the data center under unequal axis scales", () => {
+    const observation = observationFor("cluster-project", 4);
+    const { container } = render(
+      <MechanismDiagram
+        labId="cluster-project"
+        observation={observation}
+      />,
     );
-    expect(weights).toEqual([0.5, 0.5]);
-    expect(weights.reduce((sum, weight) => sum + weight, 0)).toBe(1);
-    expect(screen.getByText("sum weights = 1")).toBeTruthy();
+    const axis = screen.getByTestId("cluster-principal-axis");
+    expect(screen.getByTestId("cluster-axis-frame").getAttribute("fill")).toBe(
+      "none",
+    );
+    const [x1, y1, x2, y2] = ["x1", "y1", "x2", "y2"].map(
+      (attribute) => Number(axis.getAttribute(attribute)),
+    );
+    const flatPoints = observation.metrics.scaledPoints as readonly number[];
+    const points = Array.from(
+      { length: flatPoints.length / 2 },
+      (_unused, index) => [
+        flatPoints[index * 2],
+        flatPoints[index * 2 + 1],
+      ] as const,
+    );
+    const xValues = points.map(([x]) => x);
+    const yValues = points.map(([, y]) => y);
+    const [xMin, xMax] = paddedBounds(xValues);
+    const [yMin, yMax] = paddedBounds(yValues);
+    const [centerX, centerY] = observation.metrics
+      .dataCenter as readonly number[];
+    const renderedCenterX =
+      75 + ((centerX - xMin) / (xMax - xMin)) * (390 - 75);
+    const renderedCenterY =
+      210 + ((centerY - yMin) / (yMax - yMin)) * (50 - 210);
+    const radians =
+      ((observation.metrics.principalAngleDegrees as number) *
+        Math.PI) /
+      180;
+    const expectedSlope =
+      (-Math.sin(radians) * (210 - 50) / (yMax - yMin)) /
+      (Math.cos(radians) * (390 - 75) / (xMax - xMin));
+
+    expect((x1 + x2) / 2).toBeCloseTo(renderedCenterX, 10);
+    expect((y1 + y2) / 2).toBeCloseTo(renderedCenterY, 10);
+    expect((y2 - y1) / (x2 - x1)).toBeCloseTo(expectedSlope, 10);
     expect(
-      [...container.querySelectorAll("svg text")].some(
-        (element) => element.textContent === "6",
+      Array.from(
+        container.querySelectorAll("[data-cluster-point]"),
+        (element) =>
+          Number(element.getAttribute("data-cluster-assignment")),
       ),
-    ).toBe(true);
+    ).toEqual([0, 0, 1, 1]);
+  });
+
+  it("renders the fixed convolution kernel while its peak translates", () => {
+    for (const position of [0, 1, 4]) {
+      const observation = observationFor(
+        "convolution-field",
+        position,
+      );
+      const rendered = render(
+        <MechanismDiagram
+          labId="convolution-field"
+          observation={observation}
+        />,
+      );
+      const { container } = rendered;
+
+      expect(screen.getByText("shared 2 x 2 kernel")).toBeTruthy();
+      expect(
+        Array.from(
+          container.querySelectorAll('[aria-label^="Kernel row"]'),
+          (element) => element.textContent,
+        ),
+      ).toEqual(["1", "0", "0", "-1"]);
+      const peak = container.querySelector(
+        `[data-output-index="${position}"]`,
+      );
+      expect(peak?.getAttribute("data-output-value")).toBe("2");
+      expect(
+        screen.getByText(`2 at output ${position}`),
+      ).toBeTruthy();
+      rendered.unmount();
+    }
+  });
+
+  it("renders two normalized attention routes with monotonic selected routing", () => {
+    const selectedWeights: number[] = [];
+    const outputs: number[] = [];
+    for (const score of [-2, 0, 2]) {
+      const observation = observationFor("attention-routing", score);
+      const rendered = render(
+        <MechanismDiagram
+          labId="attention-routing"
+          observation={observation}
+        />,
+      );
+      const { container } = rendered;
+
+      const weights = Array.from(
+        container.querySelectorAll("[data-attention-weight]"),
+        (element) =>
+          Number(element.getAttribute("data-attention-weight")),
+      );
+      expect(weights).toHaveLength(2);
+      expect(weights.reduce((sum, weight) => sum + weight, 0)).toBeCloseTo(
+        1,
+        12,
+      );
+      selectedWeights.push(
+        Number(
+          container
+            .querySelector('[data-attention-route="selected"]')
+            ?.getAttribute("data-attention-weight"),
+        ),
+      );
+      outputs.push(observation.metrics.output as number);
+      expect(screen.getByText("sum weights = 1")).toBeTruthy();
+      rendered.unmount();
+    }
+    expect(selectedWeights[0]).toBeLessThan(selectedWeights[1]);
+    expect(selectedWeights[1]).toBeLessThan(selectedWeights[2]);
+    expect(outputs[0]).toBeLessThan(outputs[1]);
+    expect(outputs[1]).toBeLessThan(outputs[2]);
   });
 
   it("shows the exact Q-learning discount, alpha, target, and update", () => {

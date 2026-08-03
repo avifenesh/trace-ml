@@ -534,6 +534,10 @@ function GradientDescentView({ observation }: ObservationViewProps) {
 
 function SplitLeakageView({ observation }: ObservationViewProps) {
   const source = stringMetric(observation, "selectionSource");
+  const candidatePredictions = numberArrayMetric(
+    observation,
+    "candidatePredictions",
+  );
   const selectedPrediction = numberMetric(
     observation,
     "selectedPrediction",
@@ -553,8 +557,8 @@ function SplitLeakageView({ observation }: ObservationViewProps) {
         x={38}
         y={45}
         width={150}
-        title="TRAIN"
-        value="fit candidates"
+        title="AUTHORED CANDIDATES"
+        value={candidatePredictions.map(formatNumber).join(" / ")}
       />
       <path d="M188 77H245" stroke={BLUE} strokeWidth="2" />
       <FormulaNode
@@ -1217,7 +1221,7 @@ function BackpropGraphView({ observation }: ObservationViewProps) {
 
       {graphNode(32, 37, 73, "SHARED w", formatNumber(weight), YELLOW)}
       {graphNode(32, 116, 73, "INPUT x", formatNumber(input))}
-      {graphNode(168, 58, 100, "p = w x x", formatNumber(productBranch))}
+      {graphNode(168, 58, 100, "p = w * x", formatNumber(productBranch))}
       {graphNode(168, 111, 100, "q = w^2", formatNumber(squareBranch))}
       {graphNode(330, 80, 100, "y-hat = p+q+b", formatNumber(prediction))}
       {graphNode(330, 153, 94, "BIAS b", formatNumber(bias))}
@@ -1320,37 +1324,84 @@ function ClusterProjectView({ observation }: ObservationViewProps) {
     "secondCoordinateScale",
   );
   const pointCount = numberMetric(observation, "pointCount");
+  const scaledPointValues = numberArrayMetric(
+    observation,
+    "scaledPoints",
+  );
+  const scaledPoints = Array.from(
+    { length: scaledPointValues.length / 2 },
+    (_unused, index) => [
+      scaledPointValues[index * 2],
+      scaledPointValues[index * 2 + 1],
+    ] as const,
+  );
   const assignments = numberArrayMetric(observation, "assignments");
   const centroidZero = numberArrayMetric(observation, "centroidZero");
   const centroidOne = numberArrayMetric(observation, "centroidOne");
+  const dataCenter = numberArrayMetric(observation, "dataCenter");
   const angle = numberMetric(
     observation,
     "principalAngleDegrees",
   );
-  const allX = [centroidZero[0], centroidOne[0]];
-  const allY = [centroidZero[1], centroidOne[1]];
+  const allX = [
+    ...scaledPoints.map(([x]) => x),
+    centroidZero[0],
+    centroidOne[0],
+  ];
+  const allY = [
+    ...scaledPoints.map(([, y]) => y),
+    centroidZero[1],
+    centroidOne[1],
+  ];
   const [xMin, xMax] = paddedBounds(allX);
   const [yMin, yMax] = paddedBounds(allY);
   const xFor = (value: number) => scale(value, xMin, xMax, 75, 390);
   const yFor = (value: number) => scale(value, yMin, yMax, 210, 50);
-  const centerX = (xFor(centroidZero[0]) + xFor(centroidOne[0])) / 2;
-  const centerY = (yFor(centroidZero[1]) + yFor(centroidOne[1])) / 2;
+  const centerX = xFor(dataCenter[0]);
+  const centerY = yFor(dataCenter[1]);
   const radians = (angle * Math.PI) / 180;
-  const axisDx = Math.cos(radians) * 115;
-  const axisDy = -Math.sin(radians) * 115;
+  const transformedDirection = [
+    (Math.cos(radians) * (390 - 75)) / (xMax - xMin),
+    (-Math.sin(radians) * (210 - 50)) / (yMax - yMin),
+  ] as const;
+  const directionLength = Math.hypot(...transformedDirection);
+  const axisDx = (transformedDirection[0] / directionLength) * 115;
+  const axisDy = (transformedDirection[1] / directionLength) * 115;
+  const axisStart = [centerX - axisDx, centerY - axisDy] as const;
+  const axisEnd = [centerX + axisDx, centerY + axisDy] as const;
 
   return (
     <>
       <text x="38" y="25" fill={BLUE} fontSize="11" fontWeight="700">
         second-coordinate scale {formatNumber(coordinateScale)}
       </text>
-      <path d="M62 38V218H412" stroke={GRID} />
       <path
-        d={`M${centerX - axisDx} ${centerY - axisDy}L${centerX + axisDx} ${centerY + axisDy}`}
+        d="M62 38V218H412"
+        fill="none"
+        stroke={GRID}
+        data-testid="cluster-axis-frame"
+      />
+      <line
+        x1={axisStart[0]}
+        y1={axisStart[1]}
+        x2={axisEnd[0]}
+        y2={axisEnd[1]}
         stroke={YELLOW}
         strokeWidth="3"
+        data-testid="cluster-principal-axis"
         data-principal-angle={angle}
       />
+      {scaledPoints.map(([pointX, pointY], index) => (
+        <circle
+          key={`point-${index}`}
+          cx={xFor(pointX)}
+          cy={yFor(pointY)}
+          r="6"
+          fill={assignments[index] === 0 ? BLUE : CORAL}
+          data-cluster-point={index}
+          data-cluster-assignment={assignments[index]}
+        />
+      ))}
       {[centroidZero, centroidOne].map((centroid, index) => {
         const x = xFor(centroid[0]);
         const y = yFor(centroid[1]);
@@ -1602,6 +1653,7 @@ function AttentionRoutingView({ observation }: ObservationViewProps) {
             stroke={route.color}
             strokeWidth={2 + route.weight * 10}
             opacity={0.45 + route.weight * 0.5}
+            data-attention-route={route.label}
             data-attention-weight={route.weight}
             aria-label={`${route.label} attention weight ${formatNumber(route.weight)}`}
           />
