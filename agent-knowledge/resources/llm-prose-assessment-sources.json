@@ -1,0 +1,866 @@
+{
+  "topic": "Bounded LLM assessment for beginner prose",
+  "slug": "llm-prose-assessment",
+  "generated": "2026-08-03T15:23:16+03:00",
+  "depth": "deep",
+  "totalSources": 40,
+  "sources": [
+    {
+      "id": "PA01",
+      "url": "https://aclanthology.org/2024.acl-long.745/",
+      "title": "LLM-Rubric: A Multidimensional, Calibrated Approach to Automated Evaluation of Natural Language Texts",
+      "publisher": "ACL",
+      "published": "2024-08",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 90,
+      "scores": {
+        "authority": 10,
+        "recency": 6,
+        "depth": 10,
+        "examples": 9,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Independent rubric dimensions plus human calibration substantially reduced judge error.",
+        "Human raters themselves differ, so raw model labels require task-specific calibration."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA02",
+      "url": "https://aclanthology.org/2026.findings-eacl.335/",
+      "title": "Learning to Judge: LLMs Designing and Applying Evaluation Rubrics",
+      "publisher": "Findings of EACL",
+      "published": "2026-03",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 90,
+      "scores": {
+        "authority": 9,
+        "recency": 10,
+        "depth": 9,
+        "examples": 8,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Generated rubrics can be interpretable while remaining model-dependent.",
+        "Internal consistency can coexist with poor human alignment on factual criteria."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA03",
+      "url": "https://aclanthology.org/2024.acl-long.511/",
+      "title": "Large Language Models are not Fair Evaluators",
+      "publisher": "ACL",
+      "published": "2024-08",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 85,
+      "scores": {
+        "authority": 10,
+        "recency": 6,
+        "depth": 8,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Response order can reverse model judgments.",
+        "Prompting a judge to ignore order does not reliably remove position bias."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA04",
+      "url": "https://aclanthology.org/2024.emnlp-main.474/",
+      "title": "Humans or LLMs as the Judge? A Study on Judgement Bias",
+      "publisher": "EMNLP",
+      "published": "2024-11",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 84,
+      "scores": {
+        "authority": 9,
+        "recency": 6,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Judges can prefer polished presentation and fake authority over factual quality.",
+        "Evaluation sets need confident, well-written misconceptions and fake-reference attacks."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA05",
+      "url": "https://openreview.net/forum?id=G0dksFayVq",
+      "title": "JudgeBench: A Benchmark for Evaluating LLM-Based Judges",
+      "publisher": "ICLR",
+      "published": "2025-04",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 89,
+      "scores": {
+        "authority": 9,
+        "recency": 8,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Objective hard negatives expose judge failures hidden by preference benchmarks.",
+        "Evaluation must measure conceptual error detection rather than preference for nicer prose."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA06",
+      "url": "https://aclanthology.org/2025.acl-short.20/",
+      "title": "LLMs instead of Human Judges? A Large Scale Empirical Study across 20 NLP Evaluation Tasks",
+      "publisher": "ACL",
+      "published": "2025-07",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 91,
+      "scores": {
+        "authority": 10,
+        "recency": 8,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Agreement varies by criterion, task, annotator expertise, and text source.",
+        "No single judge or reasoning prompt dominates across evaluation properties."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA07",
+      "url": "https://doi.org/10.1609/aaai.v39i18.34157",
+      "title": "Evaluating the Evaluator: Measuring LLMs' Adherence to Task Evaluation Instructions",
+      "publisher": "AAAI",
+      "published": "2025-04",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 83,
+      "scores": {
+        "authority": 9,
+        "recency": 8,
+        "depth": 8,
+        "examples": 8,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Additional rubric detail yields limited gains when model priors dominate.",
+        "Operational criteria need direct adherence tests rather than prompt-length assumptions."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA08",
+      "url": "https://aclanthology.org/2025.findings-emnlp.1361/",
+      "title": "Rating Roulette: Self-Inconsistency in LLM-As-A-Judge Frameworks",
+      "publisher": "Findings of EMNLP",
+      "published": "2025-11",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 84,
+      "scores": {
+        "authority": 9,
+        "recency": 8,
+        "depth": 8,
+        "examples": 8,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Identical prompts and settings can produce low intra-rater reliability.",
+        "Determinism does not guarantee human agreement, so stability and correctness need separate measures."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA09",
+      "url": "https://arxiv.org/abs/2407.18370",
+      "title": "Trust or Escalate: LLM Judges with Provable Guarantees for Human Agreement",
+      "publisher": "arXiv",
+      "published": "2024-07",
+      "type": "preprint",
+      "qualityScore": 79,
+      "scores": {
+        "authority": 7,
+        "recency": 6,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Selective evaluation can improve human agreement when calibrated on representative labels.",
+        "Verbalized and token-probability confidence are not reliable abstention signals by themselves."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA10",
+      "url": "https://aclanthology.org/2026.gem-main.46/",
+      "title": "Concord: An Agreement-Aware Multi-Adjudication Pipeline for LLM-as-a-Judge",
+      "publisher": "GEM",
+      "published": "2026-07",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 81,
+      "scores": {
+        "authority": 8,
+        "recency": 10,
+        "depth": 7,
+        "examples": 7,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Inter-judge disagreement can identify useful human-review cases.",
+        "Panel gains do not automatically transfer across domains or response formats."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA11",
+      "url": "https://doi.org/10.3389/fpsyg.2019.03087",
+      "title": "The Power of Feedback Revisited: A Meta-Analysis of Educational Feedback Research",
+      "publisher": "Frontiers in Psychology",
+      "published": "2020",
+      "type": "meta-analysis",
+      "qualityScore": 86,
+      "scores": {
+        "authority": 10,
+        "recency": 4,
+        "depth": 10,
+        "examples": 10,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Feedback has a positive average effect with substantial heterogeneity.",
+        "Information content strongly moderates whether feedback helps."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA12",
+      "url": "https://doi.org/10.3102/0034654307313795",
+      "title": "Focus on Formative Feedback",
+      "publisher": "Review of Educational Research",
+      "published": "2008",
+      "type": "research-review",
+      "qualityScore": 79,
+      "scores": {
+        "authority": 10,
+        "recency": 2,
+        "depth": 10,
+        "examples": 8,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Useful formative feedback is supportive, timely, specific, and manageable.",
+        "Grades, normative comparison, person praise, and excessive complexity can distract from the task."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA13",
+      "url": "https://doi.org/10.3102/0034654314564881",
+      "title": "Effects of Feedback in a Computer-Based Learning Environment on Students' Learning Outcomes",
+      "publisher": "Review of Educational Research",
+      "published": "2015",
+      "type": "meta-analysis",
+      "qualityScore": 82,
+      "scores": {
+        "authority": 10,
+        "recency": 4,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Elaborated feedback outperformed correctness-only feedback.",
+        "Higher-order outcomes especially benefit from explanation of the relevant relationship."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA14",
+      "url": "https://doi.org/10.3389/feduc.2021.720195",
+      "title": "A Review of Feedback Models and Theories: Descriptions, Definitions, and Conclusions",
+      "publisher": "Frontiers in Education",
+      "published": "2021",
+      "type": "systematic-review",
+      "qualityScore": 79,
+      "scores": {
+        "authority": 9,
+        "recency": 6,
+        "depth": 9,
+        "examples": 7,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Feedback should connect current state, target state, and a route forward.",
+        "Learner uptake is part of the feedback process rather than an optional afterthought."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA15",
+      "url": "https://doi.org/10.1007/s10648-018-9434-x",
+      "title": "Inducing Self-Explanation: a Meta-Analysis",
+      "publisher": "Educational Psychology Review",
+      "published": "2018",
+      "type": "meta-analysis",
+      "qualityScore": 82,
+      "scores": {
+        "authority": 10,
+        "recency": 4,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Self-explanation prompts have positive average effects across tasks and subjects.",
+        "The learner should perform the causal explanation before a completed explanation is revealed."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA16",
+      "url": "https://doi.org/10.1037/edu0000053",
+      "title": "Feedback Both Helps and Hinders Learning: The Causal Role of Prior Knowledge",
+      "publisher": "Journal of Educational Psychology",
+      "published": "2016",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 79,
+      "scores": {
+        "authority": 9,
+        "recency": 4,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Feedback effects depend on the learner's existing strategy and knowledge.",
+        "Already-correct reasoning should receive less interruption and explanation."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA17",
+      "url": "https://doi.org/10.1002/tea.20163",
+      "title": "Exploring Teachers' Informal Formative Assessment Practices and Students' Understanding",
+      "publisher": "Journal of Research in Science Teaching",
+      "published": "2007",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 70,
+      "scores": {
+        "authority": 9,
+        "recency": 2,
+        "depth": 8,
+        "examples": 7,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Formative assessment is a cycle of eliciting, recognizing, using, and rechecking evidence.",
+        "A judgment without an opportunity to revise leaves the cycle incomplete."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA18",
+      "url": "https://doi.org/10.1016/j.edurev.2007.05.002",
+      "title": "The Use of Scoring Rubrics: Reliability, Validity and Educational Consequences",
+      "publisher": "Educational Research Review",
+      "published": "2007",
+      "type": "research-review",
+      "qualityScore": 76,
+      "scores": {
+        "authority": 10,
+        "recency": 2,
+        "depth": 9,
+        "examples": 7,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Analytic topic-specific rubrics and rater training can improve reliability.",
+        "A rubric alone does not establish that the resulting judgment is valid."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA19",
+      "url": "https://doi.org/10.1609/aaai.v38i21.30364",
+      "title": "A Chain-of-Thought Prompting Approach with LLMs for Evaluating Students' Formative Assessment Responses in Science",
+      "publisher": "AAAI",
+      "published": "2024",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 88,
+      "scores": {
+        "authority": 10,
+        "recency": 6,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Student-response judges can overfit keywords, miss synonyms, and reuse faulty evidence.",
+        "Human-supervised error analysis remains necessary even with detailed reasoning prompts."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA20",
+      "url": "https://eric.ed.gov/?id=ED615988",
+      "title": "Teacher Feedback to Improve Pupil Learning",
+      "publisher": "Education Endowment Foundation",
+      "published": "2021",
+      "type": "evidence-guidance",
+      "qualityScore": 72,
+      "scores": {
+        "authority": 8,
+        "recency": 4,
+        "depth": 8,
+        "examples": 8,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Feedback should establish the learning intention, the current gap, and a forward action.",
+        "Instruction must include a plan for how the learner will use feedback."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA21",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys-use.html",
+      "title": "Use Amazon Bedrock API Keys",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 94,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 8,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Bedrock API keys can authenticate direct HTTPS requests through an Authorization Bearer header.",
+        "The bearer token must stay out of arguments, logs, webview state, and persisted learner records."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA22",
+      "url": "https://developers.openai.com/api/docs/guides/structured-outputs",
+      "title": "Structured Model Outputs",
+      "publisher": "OpenAI",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 95,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Strict JSON Schema can require fields, close objects, and constrain enums.",
+        "Structured output still requires handling refusals, truncation, and semantic mistakes."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA23",
+      "url": "https://developers.openai.com/api/docs/guides/evaluation-best-practices",
+      "title": "Evaluation Best Practices",
+      "publisher": "OpenAI",
+      "published": null,
+      "type": "official-methodology",
+      "qualityScore": 91,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 8,
+        "examples": 8,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Fixed classification criteria are easier to evaluate than open-ended impressions.",
+        "Human calibration, adversarial cases, and continuous evaluation are required."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA24",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/structured-output.html",
+      "title": "Get Validated JSON Results from Models",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 95,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 9,
+        "examples": 8,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Bedrock supports native schema-constrained output only for documented APIs and models.",
+        "Prompt-only JSON must not be silently treated as native validation."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA25",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-tagging.html",
+      "title": "Apply Tags to User Input to Filter Content",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 92,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 8,
+        "examples": 8,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Guard only the untrusted portion of mixed trusted and untrusted input.",
+        "Static delimiters are injection-prone; request-specific boundaries are safer."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA26",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-permissions-id.html",
+      "title": "Enforce Specific Guardrails in Inference Requests",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 87,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 7,
+        "examples": 7,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "IAM can deny inference unless a required guardrail and version are present.",
+        "Guardrail enforcement belongs at the authorization boundary, not only in prompts."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA27",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/security_iam_id-based-policy-examples.html",
+      "title": "Identity-Based Policy Examples for Amazon Bedrock",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 90,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 8,
+        "examples": 8,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Inference access can be limited to exact model or inference-profile resources.",
+        "API-only callers do not need console or administrative permissions."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA28",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html",
+      "title": "LLM Prompt Injection Prevention Cheat Sheet",
+      "publisher": "OWASP",
+      "published": null,
+      "type": "security-guidance",
+      "qualityScore": 91,
+      "scores": {
+        "authority": 9,
+        "recency": 10,
+        "depth": 9,
+        "examples": 8,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Instruction/data separation, least privilege, and output validation must work together.",
+        "Prompt text alone is not a sufficient prompt-injection defense."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA29",
+      "url": "https://json-schema.org/draft/2020-12/json-schema-validation",
+      "title": "JSON Schema Validation: A Vocabulary for Structural Validation of JSON",
+      "publisher": "JSON Schema",
+      "published": "2022-06-16",
+      "type": "standard",
+      "qualityScore": 81,
+      "scores": {
+        "authority": 10,
+        "recency": 5,
+        "depth": 10,
+        "examples": 6,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Required, enum, uniqueItems, and type constraints have defined validation semantics.",
+        "Application invariants such as complete disjoint partitions still require explicit checks."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA30",
+      "url": "https://arxiv.org/abs/2306.05685",
+      "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena",
+      "publisher": "NeurIPS Datasets and Benchmarks",
+      "published": "2023-12-24",
+      "type": "peer-reviewed-paper",
+      "qualityScore": 86,
+      "scores": {
+        "authority": 10,
+        "recency": 5,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "LLM judges exhibit position, verbosity, and self-enhancement biases.",
+        "Human calibration and order-swapped tests are needed for comparative judgments."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA31",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-mantle.html",
+      "title": "Inference Using the OpenAI Responses API",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 96,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 9,
+        "examples": 8,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Bedrock Mantle exposes OpenAI-compatible Models and Responses APIs over regional HTTPS endpoints.",
+        "Responses storage defaults on, so callers that do not need retrievable state must explicitly send store=false."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA32",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html",
+      "title": "Amazon Bedrock API Keys",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 91,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 8,
+        "examples": 8,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Production use should prefer short-term credentials or the AWS credential chain.",
+        "Bearer-token values must not appear in arguments, logs, analytics, or webview state."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA33",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html",
+      "title": "Data Retention for Amazon Bedrock",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 92,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 9,
+        "examples": 7,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Account or project data_retention_mode controls durable request and response handling.",
+        "store=false does not independently guarantee zero retention; guaranteed ZDR requires effective mode none."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA34",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html",
+      "title": "Monitor Model Invocation Using CloudWatch Logs and Amazon S3",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 89,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 8,
+        "examples": 7,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Bedrock runtime invocation logging can copy complete prompts and responses when enabled.",
+        "The documented invocation-logging feature does not currently capture Responses calls on the bedrock-mantle endpoint."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA35",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-sol.html",
+      "title": "GPT-5.6 Sol Model Card",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 92,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "GPT-5.6 Sol is Responses-only on Bedrock Mantle and uses the special /openai/v1 path.",
+        "The exact model ID openai.gpt-5.6-sol is available in us-east-1 and us-east-2."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA36",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/models-api-compatibility.html",
+      "title": "API Compatibility by Models",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 96,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 9,
+        "examples": 8,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "GPT-5.6 Sol, Terra, and Luna support the Responses API but not Invoke, Converse, or Chat Completions.",
+        "API compatibility must be checked per model rather than inferred from provider family."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA37",
+      "url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "title": "Create a Model Response",
+      "publisher": "OpenAI",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 94,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "The Responses request supports separate instructions and input fields, text.format JSON schema, reasoning effort, output limits, and store=false.",
+        "The response status and output_text content must be checked before accepting structured data."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA38",
+      "url": "https://docs.rs/reqwest/0.12.28/reqwest/",
+      "title": "reqwest 0.12.28",
+      "publisher": "reqwest project",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 90,
+      "scores": {
+        "authority": 9,
+        "recency": 10,
+        "depth": 8,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "The async Rust client supports explicit total timeouts, bearer authentication, JSON bodies, redirect policies, and proxy disabling.",
+        "Disabling redirects and proxies narrows where a bearer credential can be sent."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA39",
+      "url": "https://v2.tauri.app/develop/calling-rust/",
+      "title": "Calling Rust from the Frontend",
+      "publisher": "Tauri",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 90,
+      "scores": {
+        "authority": 10,
+        "recency": 9,
+        "depth": 8,
+        "examples": 9,
+        "uniqueness": 8
+      },
+      "keyInsights": [
+        "Tauri commands expose narrowly typed Rust operations to the frontend.",
+        "Result errors reject the frontend promise without exposing a generic process API."
+      ],
+      "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA40",
+      "url": "https://v2.tauri.app/plugin/shell/",
+      "title": "Tauri Shell Plugin",
+      "publisher": "Tauri",
+      "published": "2025-02-22",
+      "type": "official-documentation",
+      "qualityScore": 91,
+      "scores": {
+        "authority": 10,
+        "recency": 8,
+        "depth": 9,
+        "examples": 9,
+        "uniqueness": 9
+      },
+      "keyInsights": [
+        "Shell execution is dangerous and must be explicitly and narrowly scoped.",
+        "A dedicated backend command is safer than exposing arbitrary shell arguments to the webview."
+      ],
+      "verifiedAt": "2026-08-03"
+    }
+  ],
+  "sourceBreakdown": {
+    "peerReviewedOrMetaAnalysis": 19,
+    "officialDocumentationOrGuidance": 17,
+    "standardsAndSecurityGuidance": 2,
+    "preprints": 2
+  },
+  "selfEvaluation": {
+    "coverage": 9,
+    "diversity": 9,
+    "examples": 8,
+    "accuracy": 9,
+      "gaps": [
+        "No human-labeled Trace ML learner-response corpus",
+        "No repeated-run or subgroup audit for the selected Bedrock model",
+        "The live AWS account mode is provider_data_share rather than guaranteed zero retention"
+      ]
+  }
+}

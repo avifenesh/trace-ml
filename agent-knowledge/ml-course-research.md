@@ -18,7 +18,12 @@ The six-stage loop `read -> predict -> manipulate -> explain -> transfer -> code
 
 ## Executive Decision
 
-**Product constraint:** Trace ML is a complete course whose lessons, order, explanations, activities, gates, code, and resources are authored before release. The course is not generated, sequenced, graded, or directed by an LLM.
+**Product constraint:** Trace ML is a complete course whose lessons, order,
+explanations, activities, gates, code, resources, and rubrics are authored
+before release. The course is not generated, sequenced, or directed by an LLM.
+A bounded LLM may review one free-form response against the current authored
+page and rubric, but it cannot create criteria, control progress, choose
+remediation, or certify mastery.
 
 **Synthesized design decision:** Use a fixed foundations-to-modern-ML spine:
 
@@ -132,7 +137,11 @@ learning or mastery from an immediate demonstration. A future longitudinal
 revision could claim retention only after a separately authored delayed or
 interleaved variant is implemented and validated.
 
-**Boundary:** These labels are course-state rules implemented by authored activities and deterministic checks. The chatbot does not assign or change them.
+**Boundary:** These labels describe performance on an authored activity. The
+chatbot does not assign or change them. Objective progression labels come from
+deterministic checks; the separate prose assessor may return a formative label
+for the current draft, but prose never satisfies objective completion or
+establishes retention.
 
 ## Visual-Artifact Audit
 
@@ -214,7 +223,13 @@ This is a **synthesized design decision**, informed by the curriculum matrix and
 | 19 | Bandits, MDPs, and tabular Q-learning | Distinguish reward from label and execute one Bellman or Q update |
 | 20 | Distribution shift, fairness, monitoring, and capstone diagnosis | Diagnose an end-to-end failure across data, objective, optimization, evaluation, and deployment |
 
-The complete course, including every explanation, activity, alternative worked example, hint, resource, rubric, and objective deterministic check, must ship as authored content. Free-form prose remains a formative draft because local term matching cannot establish semantic correctness. A future course revision may change material through editorial review and versioning, never through runtime chatbot decisions.
+The complete course, including every explanation, activity, alternative worked
+example, hint, resource, rubric, and objective deterministic check, must ship as
+authored content. Free-form prose remains a formative draft. Desktop semantic
+review is bounded to the current authored page and rubric; browser-only term
+matching reports structure. Neither path changes course material or objective
+progression. Course revisions happen through editorial review and versioning,
+never through runtime chatbot or assessor decisions.
 
 ## External Resource Placement
 
@@ -295,6 +310,43 @@ Persist only current page/revision, learner-visible turns, unresolved learner qu
 
 This architecture supports Q&A reliability only. It does not give the chatbot any role in teaching or course governance.
 
+## Prose Assessor Boundary: Authored-Rubric Review Only
+
+The prose assessor is not the page Q&A chatbot and is not a curriculum agent.
+It receives one authored page, one authored prompt, the authored criterion
+labels, and one learner response. Its only output is a schema-validated
+formative assessment for that response.
+
+Allowed:
+
+- Judge intended conceptual meaning rather than exact keyword overlap.
+- Accept clear novice paraphrases, minor language errors, and concise answers.
+- Identify which authored criteria are supported or need revision.
+- Acknowledge the strongest correct idea and direct the learner toward the
+  single most important missing or mistaken causal link.
+
+Forbidden:
+
+- Add requirements beyond the authored rubric or use external facts.
+- Write or revise lessons, rubrics, hints, resources, or activities.
+- Choose the next lesson, remediation path, difficulty, or intervention.
+- Treat one immediate response as retained learning or mastery.
+- Change objective completion, lesson availability, or chatbot behavior.
+
+The webview sends authored IDs and the learner draft; Rust resolves the trusted
+lesson text and rubric from a generated manifest compiled into the app. The
+desktop backend sends one direct HTTPS request with strict structured output,
+validates that matched, missing, and uncertain IDs exactly partition the
+authored criteria, and rejects inconsistent levels. One active request is
+cancellable and rate-limited. Results remain revision-scoped formative
+activity state and never become concept evidence. The request sets
+`store: false`, but remote retention and provider sharing remain governed by
+the effective AWS account/project policy. The configured account reported
+`provider_data_share` during the 2026-08-03 verification, so zero data
+retention is not established. The browser fallback reports structure only.
+This separation preserves semantic feedback without turning course governance
+over to an LLM.
+
 ## Known Evidence Gaps
 
 - No reviewed study validates the full six-stage loop as one package.
@@ -309,6 +361,10 @@ This architecture supports Q&A reliability only. It does not give the chatbot an
 - Visual artifacts can create fluency without mechanism understanding; the proposed lab contract still needs learner testing.
 - A fixed course needs accessibility, internationalization, and novice usability studies beyond this research set.
 - The page-grounded chatbot has no evidence showing it improves this course's outcomes. It should be evaluated as a side feature against a no-chat condition, with factuality and learner dependence monitored.
+- LLM prose judgments can vary or encode bias even with a fixed rubric. Before
+  they are used beyond low-stakes formative direction, they require
+  criterion-level agreement studies against multiple human reviewers,
+  adversarial response tests, and subgroup error analysis.
 - Source freshness does not establish instructional correctness. Course releases still require subject-matter review, activity QA, and learner studies.
 
 ## Editorial Validation Before Publishing Lessons
