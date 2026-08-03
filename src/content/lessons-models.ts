@@ -344,11 +344,6 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
         "S74",
       ),
     ],
-    exitGate: [
-      { conceptId: "log-loss", kind: "explanation" },
-      { conceptId: "sigmoid", kind: "transfer" },
-      { conceptId: "log-loss", kind: "code-check" },
-    ],
   },
   {
     id: "decision-costs",
@@ -720,11 +715,6 @@ print("chosen:", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))
         "S76",
       ),
     ],
-    exitGate: [
-      { conceptId: "calibration", kind: "explanation" },
-      { conceptId: "decision-cost", kind: "transfer" },
-      { conceptId: "confusion-matrix", kind: "code-check" },
-    ],
   },
   {
     id: "feature-pipeline",
@@ -1095,11 +1085,6 @@ print("feature names:", PREPROCESSOR.get_feature_names_out().tolist())
         "S78",
       ),
     ],
-    exitGate: [
-      { conceptId: "pipeline", kind: "explanation" },
-      { conceptId: "categorical-encoding", kind: "transfer" },
-      { conceptId: "missing-values", kind: "code-check" },
-    ],
   },
   {
     id: "knn-versus-tree",
@@ -1436,11 +1421,6 @@ print("stump error:", stump_error(POINTS, 3.0, 0, 1))
         "Explore after the local transfer and track how each split changes the decision regions rather than treating a clean tree as inevitable.",
         "S51",
       ),
-    ],
-    exitGate: [
-      { conceptId: "inductive-bias", kind: "explanation" },
-      { conceptId: "inductive-bias", kind: "transfer" },
-      { conceptId: "decision-tree", kind: "code-check" },
     ],
   },
   {
@@ -1819,11 +1799,6 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
         "S82",
       ),
     ],
-    exitGate: [
-      { conceptId: "regularization", kind: "explanation" },
-      { conceptId: "hyperparameter-selection", kind: "transfer" },
-      { conceptId: "cross-validation", kind: "code-check" },
-    ],
   },
   {
     id: "ensemble-votes",
@@ -2170,11 +2145,6 @@ print("boosted:", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))
         "After repairing the local residual direction, watch the 14:22 explanation and compare sequential correction with independent bagging.",
         "S84",
       ),
-    ],
-    exitGate: [
-      { conceptId: "random-forest", kind: "explanation" },
-      { conceptId: "boosting", kind: "transfer" },
-      { conceptId: "bagging", kind: "code-check" },
     ],
   },
   {
@@ -2536,11 +2506,6 @@ print("predictions:", [xor_predict(x1, x2) for x1, x2 in CASES])
         "After the reproducible local truth table passes, explore one external XOR run while changing only one control. Its initialization can vary between runs.",
         "S15",
       ),
-    ],
-    exitGate: [
-      { conceptId: "xor", kind: "explanation" },
-      { conceptId: "nonlinear-composition", kind: "transfer" },
-      { conceptId: "hidden-representation", kind: "code-check" },
     ],
   },
 ];

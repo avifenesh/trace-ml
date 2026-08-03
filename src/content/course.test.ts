@@ -397,10 +397,6 @@ describe("fixed authored course integrity", () => {
       expect(lesson.resources, lesson.id).toHaveLength(
         lesson.id === "data-and-baseline" ? 1 : 2,
       );
-      expect(lesson.exitGate, lesson.id).toHaveLength(
-        index === 0 || (index >= 3 && index <= 6) ? 4 : 3,
-      );
-
       lesson.outcomes.forEach((outcome) => {
         expectNonBlank(outcome.id);
         expectNonBlank(outcome.text);
@@ -460,23 +456,6 @@ describe("fixed authored course integrity", () => {
         });
       });
 
-      expectUnique(
-        lesson.exitGate.map(
-          (requirement) => `${requirement.conceptId}:${requirement.kind}`,
-        ),
-      );
-      lesson.exitGate.forEach((requirement) => {
-        expect(concepts.has(requirement.conceptId)).toBe(true);
-        expect(
-          supportsEvidence(
-            lessonIndex,
-            requirement.conceptId,
-            requirement.kind,
-          ),
-          `${lesson.id} exit gate has no ${requirement.kind} activity for ${requirement.conceptId}`,
-        ).toBe(true);
-      });
-
       const lessonReferences = [
         ...lesson.prerequisiteConceptIds,
         ...lesson.outcomes.map((outcome) => outcome.conceptId),
@@ -487,7 +466,6 @@ describe("fixed authored course integrity", () => {
             ? activity.spec.checks.flatMap((check) => check.conceptIds)
             : []
         ),
-        ...lesson.exitGate.map((requirement) => requirement.conceptId),
       ];
       referencedConcepts.push(...lessonReferences);
 

@@ -3,7 +3,6 @@ import {
   ArrowUpRight,
   BookOpen,
   Check,
-  Circle,
   Clock3,
   Eye,
   MousePointer2,
@@ -11,7 +10,6 @@ import {
 } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type {
-  LearningOutcome,
   Lesson,
   LessonActivity,
   LessonResource,
@@ -35,7 +33,6 @@ interface LessonArticleProps {
   activityAttempted: (activity: LessonActivity) => boolean;
   activityDemonstrated: (activity: LessonActivity) => boolean;
   activityStateFor: (activity: LessonActivity) => ActivityState | null;
-  outcomeEvidenced: (outcome: LearningOutcome) => boolean;
   nextLessonTitle?: string;
   onNextLesson?: () => void;
   onBlockActive: (blockId: string) => void;
@@ -67,7 +64,6 @@ export function LessonArticle({
   activityAttempted,
   activityDemonstrated,
   activityStateFor,
-  outcomeEvidenced,
   nextLessonTitle,
   onNextLesson,
   onBlockActive,
@@ -532,29 +528,15 @@ export function LessonArticle({
       )}
 
       <div className="reading-column">
-        <aside className="lesson-outcomes" aria-label="Lesson evidence targets">
-          <span>EVIDENCE TARGETS</span>
+        <aside className="lesson-outcomes" aria-label="Lesson outcomes">
+          <span>LESSON OUTCOMES</span>
           <ul>
-            {lesson.outcomes.map((outcome) => {
-              const evidenced = outcomeEvidenced(outcome);
-              return (
-                <li key={outcome.id}>
-                  {evidenced ? (
-                    <Check size={14} className="supported" aria-hidden="true" />
-                  ) : (
-                    <Circle size={12} aria-hidden="true" />
-                  )}
-                  <span>
-                    {outcome.text}
-                    <small className={evidenced ? "supported" : ""}>
-                      {evidenced
-                        ? "Authored criteria matched"
-                        : "Criteria not yet matched"}
-                    </small>
-                  </span>
-                </li>
-              );
-            })}
+            {lesson.outcomes.map((outcome) => (
+              <li key={outcome.id}>
+                <ArrowRight size={12} aria-hidden="true" />
+                <span>{outcome.text}</span>
+              </li>
+            ))}
           </ul>
         </aside>
 

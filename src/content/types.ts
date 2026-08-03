@@ -178,11 +178,6 @@ export type LessonActivity =
   | VisualLabActivity
   | CodeLabActivity;
 
-export interface ExitGateRequirement {
-  conceptId: ConceptId;
-  kind: EvidenceKind;
-}
-
 export interface Lesson {
   id: string;
   number: string;
@@ -206,7 +201,6 @@ export interface Lesson {
   blocks: LessonBlock[];
   activities: LessonActivity[];
   resources: LessonResource[];
-  exitGate: ExitGateRequirement[];
   checkpoint?: LessonCheckpoint;
 }
 

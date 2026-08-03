@@ -18,13 +18,9 @@ import { CourseNav } from "./components/CourseNav";
 import { LessonArticle } from "./components/LessonArticle";
 import { TutorPanel } from "./components/TutorPanel";
 import { lessons, requireLesson } from "./content/course";
-import type {
-  LearningOutcome,
-  LessonActivity,
-} from "./content/types";
+import type { LessonActivity } from "./content/types";
 import {
   hasActivityAttempt,
-  hasDemonstratedEvidence,
   hasResourceAttempt,
   type RecordActivityInput,
 } from "./learning/evidence";
@@ -331,16 +327,6 @@ function App() {
     });
   };
 
-  const outcomeEvidenced = (outcome: LearningOutcome) =>
-    outcome.requiredEvidenceKinds.every((kind) =>
-      hasDemonstratedEvidence(
-        learner.record,
-        outcome.conceptId,
-        kind,
-        evidenceScope,
-      ),
-    );
-
   const activityDemonstrated = (activity: LessonActivity) =>
     activity.kind !== "text-response" &&
     objectiveCheckpointComplete(
@@ -523,7 +509,6 @@ function App() {
             activityAttempted={activityAttempted}
             activityDemonstrated={activityDemonstrated}
             activityStateFor={activityStateFor}
-            outcomeEvidenced={outcomeEvidenced}
             nextLessonTitle={nextLesson?.title}
             onNextLesson={
               nextLesson ? () => selectLesson(nextLesson.id) : undefined

@@ -386,11 +386,6 @@ print("branch contributions:", branch_contributions(*CASES[0]))
         "S85",
       ),
     ],
-    exitGate: [
-      { conceptId: "backpropagation", kind: "explanation" },
-      { conceptId: "chain-rule", kind: "transfer" },
-      { conceptId: "autodiff", kind: "code-check" },
-    ],
   },
   {
     id: "optimizer-traces",
@@ -828,11 +823,6 @@ REFERENCE_TRACE = reference_trace()
         "S86",
       ),
     ],
-    exitGate: [
-      { conceptId: "optimization-dynamics", kind: "explanation" },
-      { conceptId: "mini-batch", kind: "transfer" },
-      { conceptId: "adam", kind: "code-check" },
-    ],
   },
   {
     id: "cluster-project",
@@ -1174,11 +1164,6 @@ START = [(0.0, 0.0), (10.0, 10.0)]
         "S87",
       ),
     ],
-    exitGate: [
-      { conceptId: "pca", kind: "explanation" },
-      { conceptId: "embedding-objective", kind: "transfer" },
-      { conceptId: "k-means", kind: "code-check" },
-    ],
   },
   {
     id: "convolution-field",
@@ -1511,11 +1496,6 @@ KERNEL = [
         "After transferring the mechanism to audio, watch the 9:12 residual-path explanation and map its identity route back to the local arithmetic.",
         "S89",
       ),
-    ],
-    exitGate: [
-      { conceptId: "weight-sharing", kind: "explanation" },
-      { conceptId: "receptive-field", kind: "transfer" },
-      { conceptId: "convolution", kind: "code-check" },
     ],
   },
   {
@@ -1853,11 +1833,6 @@ LOG_THREE = log(3.0)
         "S91",
       ),
     ],
-    exitGate: [
-      { conceptId: "qkv", kind: "explanation" },
-      { conceptId: "attention", kind: "transfer" },
-      { conceptId: "attention", kind: "code-check" },
-    ],
   },
   {
     id: "q-learning",
@@ -2185,11 +2160,6 @@ def update_table(table, state, action, reward, next_state,
         "Read after the terminal-aware table update passes and compare the Bellman target with the local code trace.",
         "S93",
       ),
-    ],
-    exitGate: [
-      { conceptId: "bellman-update", kind: "explanation" },
-      { conceptId: "mdp", kind: "transfer" },
-      { conceptId: "q-learning", kind: "code-check" },
     ],
   },
   {
@@ -2590,11 +2560,6 @@ LIVE_RECORDS = (
         "Read after the subgroup diagnosis and compare aggregate metrics with the authored slice-specific failure.",
         "S95",
       ),
-    ],
-    exitGate: [
-      { conceptId: "system-diagnosis", kind: "explanation" },
-      { conceptId: "monitoring", kind: "transfer" },
-      { conceptId: "fairness", kind: "code-check" },
     ],
   },
 ];

@@ -374,12 +374,6 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         "extension",
       ),
     ],
-    exitGate: [
-      { conceptId: "array-shape", kind: "explanation" },
-      { conceptId: "numpy-array", kind: "code-check" },
-      { conceptId: "slope-chain-rule", kind: "explanation" },
-      { conceptId: "probability-baseline", kind: "transfer" },
-    ],
   },
   {
     id: "data-and-baseline",
@@ -614,11 +608,6 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         "extension",
       ),
     ],
-    exitGate: [
-      { conceptId: "data-role", kind: "explanation" },
-      { conceptId: "training-versus-inference", kind: "transfer" },
-      { conceptId: "baseline", kind: "transfer" },
-    ],
   },
   {
     id: "linear-model",
@@ -841,11 +830,6 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         "S50",
         "extension",
       ),
-    ],
-    exitGate: [
-      { conceptId: "linear-parameters", kind: "explanation" },
-      { conceptId: "linear-parameters", kind: "transfer" },
-      { conceptId: "prediction-contract", kind: "transfer" },
     ],
   },
   {
@@ -1149,12 +1133,6 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
         "extension",
       ),
     ],
-    exitGate: [
-      { conceptId: "loss", kind: "explanation" },
-      { conceptId: "loss-landscape", kind: "transfer" },
-      { conceptId: "residual", kind: "code-check" },
-      { conceptId: "loss", kind: "code-check" },
-    ],
   },
   {
     id: "gradient-descent",
@@ -1454,12 +1432,6 @@ print("loss trace:", loss_history)
         "S69",
         "extension",
       ),
-    ],
-    exitGate: [
-      { conceptId: "gradient-direction", kind: "explanation" },
-      { conceptId: "learning-rate", kind: "transfer" },
-      { conceptId: "gradient-descent", kind: "code-check" },
-      { conceptId: "learning-rate", kind: "code-check" },
     ],
   },
   {
@@ -1770,12 +1742,6 @@ print("final test loss:", mean_squared_error(TEST_ROWS, selected_prediction))
         "S70",
         "extension",
       ),
-    ],
-    exitGate: [
-      { conceptId: "leakage", kind: "explanation" },
-      { conceptId: "generalization", kind: "transfer" },
-      { conceptId: "data-split", kind: "code-check" },
-      { conceptId: "leakage", kind: "code-check" },
     ],
   },
   {
@@ -2121,12 +2087,6 @@ for name, coefficients in [
         "S72",
         "extension",
       ),
-    ],
-    exitGate: [
-      { conceptId: "learning-curves", kind: "explanation" },
-      { conceptId: "model-capacity", kind: "transfer" },
-      { conceptId: "model-capacity", kind: "code-check" },
-      { conceptId: "generalization", kind: "code-check" },
     ],
   },
 ];
