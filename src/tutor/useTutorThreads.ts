@@ -119,6 +119,11 @@ function normalizeThread(
   const messages = rawMessages
     .map((message) => normalizeMessage(message, lessonId, lessonRevision))
     .filter((message): message is TutorMessage => message !== null)
+    .filter(
+      (message) =>
+        message.lessonId === lessonId &&
+        message.lessonRevision === lessonRevision,
+    )
     .slice(-80);
   if (messages.length === 0) return null;
   const createdAt =

@@ -164,6 +164,75 @@ describe("useTutorThreads", () => {
     expect(result.current.activeThread.messages[0]?.role).toBe("tutor");
   });
 
+  it("filters stored messages from another lesson or revision", () => {
+    const createdAt = "2026-08-03T08:00:00.000Z";
+    localStorage.setItem(
+      "trace-ml:tutor-threads:v1",
+      JSON.stringify({
+        version: 1,
+        threads: [
+          {
+            id: "mixed-thread",
+            lessonId: lesson.id,
+            lessonRevision,
+            title: "Mixed scope",
+            createdAt,
+            updatedAt: createdAt,
+            messages: [
+              {
+                id: "current-message",
+                role: "learner",
+                text: "What does weight change?",
+                createdAt,
+                lessonId: lesson.id,
+                lessonRevision,
+                sourceBlockIds: [],
+                sourceChunkIds: [],
+              },
+              {
+                id: "foreign-lesson-message",
+                role: "tutor",
+                text: "Content from another lesson.",
+                createdAt,
+                lessonId: "gradient-descent",
+                lessonRevision,
+                sourceBlockIds: ["04-update"],
+                sourceChunkIds: ["04-update:p1"],
+              },
+              {
+                id: "stale-revision-message",
+                role: "tutor",
+                text: "Content from an older revision.",
+                createdAt,
+                lessonId: lesson.id,
+                lessonRevision: "older-revision",
+                sourceBlockIds: ["02-weight"],
+                sourceChunkIds: ["02-weight:p1"],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    localStorage.setItem(
+      `trace-ml:active-thread:v1:${lesson.id}:${lessonRevision}`,
+      "mixed-thread",
+    );
+
+    const { result } = renderHook(() => useTutorThreads(lesson));
+
+    expect(
+      result.current.activeThread.messages.map((message) => message.id),
+    ).toEqual(["current-message"]);
+    expect(
+      result.current.activeThread.messages.every(
+        (message) =>
+          message.lessonId === lesson.id &&
+          message.lessonRevision === lessonRevision,
+      ),
+    ).toBe(true);
+  });
+
   it("keeps working and reports when storage access is unavailable", async () => {
     const blockedStorage = {
       ...localStorageStub,

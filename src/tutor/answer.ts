@@ -76,6 +76,12 @@ const questionCases: QuestionCase[] = [
 const helperBoundaryPatterns = [
   /\bteach\b/,
   /\b(?:tutor|coach|remediate|remediation)\b/,
+  /\b(?:act|behave|pretend|roleplay)\b.{0,30}\b(?:teacher|instructor|examiner|grader|coach|tutor|curriculum designer)\b/,
+  /\b(?:enter|switch|use)\b.{0,20}\b(?:teacher|instructor|examiner|grader|coach|tutor)\s+mode\b/,
+  /\bas\s+(?:my|a|an|the)?\s*(?:teacher|instructor|examiner|grader|coach|tutor|curriculum designer)\b/,
+  /\b(?:ignore|disregard|override|bypass|forget)\b.{0,40}\b(?:instructions?|rules?|limits?|boundar(?:y|ies)|policy|policies)\b/,
+  /\b(?:summarize|cover|explain|walk through)\b.{0,30}\b(?:whole|entire|full|this|the)?\s*(?:lesson|module|course|page)\b/,
+  /\b(?:give|show|walk)\b.{0,25}\b(?:a\s+)?(?:lesson|course|tutorial)\b/,
   /\b(?:give|offer|provide|show)\b.{0,20}\b(?:a\s+)?hint\b/,
   /\bhint\b.{0,20}\b(?:me|please)\b/,
   /\b(?:choose|select|pick|recommend|arrange|reorder|sequence|order|plan|skip|replace)\b.{0,50}\b(?:lessons?|modules?|topics?|courses?|curriculum|materials?)\b/,
@@ -89,14 +95,30 @@ const helperBoundaryPatterns = [
   /\bput\b.{0,40}\b(?:lessons?|modules?|topics?|courses?|curriculum|materials?)\b.{0,30}\b(?:order|before|after)\b/,
   /\b(?:create|generate|write|design|make|invent)\b.{0,40}\b(?:lessons?|courses?|curriculum|syllabus|quiz(?:zes)?|tests?|assessments?|exercises?|assignments?|activities|activity|examples?|analogies|analogy|problems?)\b/,
   /\b(?:build|give|make|write|create|generate|design|invent)\b.{0,40}\b(?:practice\s+)?(?:problems?|exercises?|examples?|quiz(?:zes)?|tests?|questions?|assignments?|activities?)\b/,
+  /\b(?:build|create|design|give|make|write)\b.{0,40}\b(?:checkpoints?|rubrics?|worksheets?|drills?|challenges?|multiple choice)\b/,
+  /\b(?:build|compose|create|draft|generate|make|write)\b.{0,40}\b(?:flashcards?|study guides?|cheat sheets?|mnemonics?|notes?|recaps?|summaries?|tutorials?)\b/,
   /\b(?:another|new)\b.{0,20}\b(?:examples?|analogies|analogy|exercises?|assignments?|activities|activity|problems?|quiz(?:zes)?|assessments?)\b/,
   /\b(?:quiz|test)\s+me\b/,
+  /\b(?:do|have|run|try)\b.{0,20}\b(?:quiz(?:zes)?|tests?|assessments?|exercises?|drills?|challenges?)\b/,
+  /\b(?:ask|question)\s+me\b/,
+  /\b(?:ask|pose)\b.{0,30}\b(?:questions?|quiz(?:zes)?|tests?)\b/,
+  /\b(?:turn|convert|transform)\b.{0,30}\b(?:quiz(?:zes)?|tests?|flashcards?|exercises?|assessments?|practice)\b/,
+  /\b(?:different|alternate|alternative|other)\b.{0,15}\b(?:examples?|analogies|exercises?|problems?|scenarios?|situations?|one)\b/,
   /\b(?:grade|score|rate|assess|evaluate)\b.{0,30}\b(?:me|my|answer|response|work|mastery|understanding|progress|this)\b/,
+  /^(?:approve|check|confirm|validate|verify)\b.{0,20}\b(?:my|this|that|answer|response|reasoning|work|claim|statement)\b/,
   /\b(?:is|was)\s+my\s+(?:answer|response|work|reasoning|understanding)\b.{0,20}\b(?:correct|right|good|wrong)\b/,
+  /\bmy\s+(?:answer|response|work|reasoning|understanding|claim|statement)\b.{0,40}\b(?:correct|right|wrong|good|strong|weak|hold|work|stand|make sense)\b/,
+  /\b(?:does|is|was|would)\s+my\s+(?:answer|response|work|reasoning|understanding|claim|statement)\b.{0,30}\b(?:hold|work|stand|check out|make sense|pass|correct|right|good|wrong)\b/,
+  /\b(?:prove|show|mean)\b.{0,20}\bi\b.{0,20}\b(?:understand|master|know)\b/,
+  /^(?:is|was|would|does)\b.{0,50}\b(?:the\s+)?(?:correct|right|wrong)\s+(?:answer|response)\b/,
+  /\b(?:earn|receive|deserve|get)\b.{0,15}\b(?:full|partial)?\s*credit\b/,
+  /\b(?:would|did|does|should|can)\b.{0,30}\b(?:pass|count as correct|be accepted)\b/,
   /\b(?:did|have)\s+i\b.{0,15}\b(?:master|understand|pass)\b/,
   /\b(?:have|did|do)\s+i\s+(?:learn(?:ed|t)?|know|understand)\b.{0,40}\b(?:enough|well|correctly)\b/,
   /\bunlock\b/,
   /\bmark\b.{0,20}\b(?:complete|completed|done|progress)\b/,
+  /\b(?:call|count|consider|treat)\b.{0,20}\b(?:this|it|me|my)\b.{0,15}\b(?:complete|completed|done|passed)\b/,
+  /\b(?:move|send|take)\s+me\s+(?:on|forward|ahead|to)\b/,
   /\badvance\s+me\b/,
   /\bchange\s+my\s+progress\b/,
 ];
@@ -111,32 +133,78 @@ const contextualReferences = new Set([
   "those",
   "same",
   "former",
+  "its",
   "latter",
+  "their",
 ]);
 const contextOnlyTokens = new Set([
   "again",
   "and",
+  "another",
+  "are",
   "but",
   "can",
   "clarify",
+  "clearly",
   "could",
   "does",
   "explain",
+  "further",
   "happen",
   "how",
   "it",
+  "its",
+  "is",
+  "mean",
   "more",
   "not",
+  "plain",
   "please",
+  "repeat",
   "restate",
+  "role",
+  "say",
+  "simply",
   "simplify",
   "so",
   "that",
+  "their",
   "this",
+  "terms",
+  "unpack",
+  "way",
+  "what",
+  "which",
   "why",
+  "words",
   "would",
+  "was",
+  "were",
   "you",
 ]);
+const lessonNumberWords = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+  "twenty",
+];
 
 function normalizedTokens(value: string) {
   return value
@@ -149,6 +217,63 @@ function normalizedTokens(value: string) {
 function crossesHelperBoundary(query: string) {
   const normalized = normalizedTokens(query).join(" ");
   return helperBoundaryPatterns.some((pattern) => pattern.test(normalized));
+}
+
+function referencesAnotherPage(query: string, lesson: Lesson) {
+  const normalized = normalizedTokens(query).join(" ");
+  if (
+    /\b(?:another|other|previous|prior|earlier|next|later|following)\s+(?:lesson|module|page)\b/.test(
+      normalized,
+    ) ||
+    /\b(?:lesson|module|page)\s+(?:before|after)\b/.test(normalized)
+  ) {
+    return true;
+  }
+
+  if (/\bmodule\s+(?:\d+|[ivxlcdm]+)\b/.test(normalized)) return true;
+  if (/\blesson\s+[ivxlcdm]+\b/.test(normalized)) return true;
+  if (
+    /\b(?:in|from|according to)\s+(?!(?:this|current|the current|the lesson)\b).{1,40}\blesson\b/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+
+  const currentNumber = lesson.number.replace(/^0+/, "") || "0";
+  const hasOtherNumericLesson = [
+    ...normalized.matchAll(/\blesson\s+(\d+)\b/g),
+  ].some(
+    ([, number]) => (number.replace(/^0+/, "") || "0") !== currentNumber,
+  );
+  if (hasOtherNumericLesson) return true;
+
+  return [
+    ...normalized.matchAll(
+      new RegExp(`\\blesson\\s+(${lessonNumberWords.join("|")})\\b`, "g"),
+    ),
+  ].some(([, word]) => String(lessonNumberWords.indexOf(word)) !== currentNumber);
+}
+
+function withoutCurrentPageReference(query: string, lesson: Lesson) {
+  const numericLesson = Number.parseInt(lesson.number, 10);
+  const lessonNumberPattern = numericLesson === 0
+    ? "0+"
+    : `0*${numericLesson}`;
+  const lessonWord = lessonNumberWords[numericLesson];
+  return query
+    .replace(
+      new RegExp(`\\blesson\\s+${lessonNumberPattern}\\b\\s*[:,-]?`, "gi"),
+      " ",
+    )
+    .replace(
+      new RegExp(`\\blesson\\s+${lessonWord}\\b\\s*[:,-]?`, "gi"),
+      " ",
+    )
+    .replace(
+      /\b(?:in|from|according to)\s+(?:this|current|the current|the)\s+(?:lesson|page)\b\s*[:,-]?/gi,
+      " ",
+    );
 }
 
 function isContextualFollowUp(query: string) {
@@ -252,11 +377,21 @@ export function answerFromLesson(
     };
   }
 
-  const isFollowUp = isContextualFollowUp(query);
+  if (referencesAnotherPage(query, lesson)) {
+    return {
+      text:
+        "I can only answer from the current page and its exact authored paragraphs. Ask the question again while viewing the page you mean.",
+      sources: [],
+      retrievalMode: "page-context",
+    };
+  }
+
+  const pageQuery = withoutCurrentPageReference(query, lesson);
+  const isFollowUp = isContextualFollowUp(pageQuery);
   const exchange = isFollowUp
     ? latestGroundedExchange(history, lesson)
     : undefined;
-  if (isFollowUp && !exchange && !hasStandaloneSubject(query)) {
+  if (isFollowUp && !exchange && !hasStandaloneSubject(pageQuery)) {
     return {
       text:
         "Which term or mechanism on this page do you mean? Name it, and I will answer from the exact authored paragraphs.",
@@ -264,16 +399,35 @@ export function answerFromLesson(
       retrievalMode: "page-context",
     };
   }
-  const directSources = retrieveLessonContext(query, lesson, activeBlockId);
+  const directSources = retrieveLessonContext(
+    pageQuery,
+    lesson,
+    activeBlockId,
+  );
+  const hasNewSubject = hasStandaloneSubject(pageQuery);
+  if (
+    exchange &&
+    hasNewSubject &&
+    directSources.length === 0
+  ) {
+    return {
+      text:
+        "This page does not contain enough information to answer that follow-up. Ask about a term or mechanism stated on the current page.",
+      sources: [],
+      retrievalMode: "page-context",
+    };
+  }
   const expandedSources = exchange
     ? retrieveLessonContext(
-        `${exchange.question} ${query}`,
+        `${exchange.question} ${pageQuery}`,
         lesson,
         activeBlockId,
       )
     : [];
   const sources = exchange
-    ? mergeSources(directSources, exchange.sources, expandedSources)
+    ? hasNewSubject
+      ? mergeSources(directSources, exchange.sources, expandedSources)
+      : exchange.sources
     : directSources;
 
   if (sources.length === 0) {
@@ -287,7 +441,7 @@ export function answerFromLesson(
     };
   }
 
-  const matchedCase = retrieveQuestionCase(query);
+  const matchedCase = retrieveQuestionCase(pageQuery);
   if (matchedCase) {
     const usedSources = sources.slice(0, matchedCase.sourceLimit);
     return {

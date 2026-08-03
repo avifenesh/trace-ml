@@ -99,14 +99,6 @@ export function TutorPanel({
       label: `${chunk.heading} · paragraph ${paragraph}`,
     };
   };
-  const sourceFromBlock = (blockId: string) => ({
-    id: blockId,
-    blockId,
-    label:
-      lesson.blocks.find((block) => block.id === blockId)?.heading ??
-      blockId,
-  });
-
   return (
     <aside
       id="lesson-helper-panel"
@@ -223,35 +215,37 @@ export function TutorPanel({
             aria-live="polite"
             aria-relevant="additions text"
           >
-            {tutor.activeThread.messages.map((message) => (
-              <article className={`tutor-message ${message.role}`} key={message.id}>
-                <span>{message.role === "tutor" ? "HELPER" : "YOU"}</span>
-                <p>{message.text}</p>
-                {(message.sourceChunkIds.length > 0 ||
-                  message.sourceBlockIds.length > 0) && (
-                  <div className="message-sources">
-                    {(message.sourceChunkIds.length > 0
-                      ? message.sourceChunkIds
-                          .map(sourceFromChunk)
-                          .filter((source) => source !== null)
-                      : message.sourceBlockIds.map(sourceFromBlock)
-                    ).map((source) => (
-                      <a
-                        href={`#${source.blockId}`}
-                        key={source.id}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          onNavigateToBlock(source.blockId);
-                        }}
-                      >
-                        <BookOpenText size={12} aria-hidden="true" />
-                        {source.label}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </article>
-            ))}
+            {tutor.activeThread.messages.map((message) => {
+              const sources = message.sourceChunkIds
+                .map(sourceFromChunk)
+                .filter((source) => source !== null);
+              return (
+                <article
+                  className={`tutor-message ${message.role}`}
+                  key={message.id}
+                >
+                  <span>{message.role === "tutor" ? "HELPER" : "YOU"}</span>
+                  <p>{message.text}</p>
+                  {sources.length > 0 && (
+                    <div className="message-sources">
+                      {sources.map((source) => (
+                        <a
+                          href={`#${source.blockId}`}
+                          key={source.id}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            onNavigateToBlock(source.blockId);
+                          }}
+                        >
+                          <BookOpenText size={12} aria-hidden="true" />
+                          {source.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
 
           {tutor.activeThread.messages.length === 1 && (
