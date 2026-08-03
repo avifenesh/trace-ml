@@ -6,7 +6,7 @@
 
 | Topic | Guide | Sources | Depth | Created |
 |---|---|---:|---|---|
-| Fixed authored ML course research | [ml-course-research.md](ml-course-research.md) | 99 | deep | 2026-08-03 |
+| Fixed authored ML course research | [ml-course-research.md](ml-course-research.md) | 103 | deep | 2026-08-03 |
 
 ## Use This Guide For
 
