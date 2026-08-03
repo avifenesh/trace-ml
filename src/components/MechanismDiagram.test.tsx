@@ -196,6 +196,24 @@ describe("MechanismDiagram", () => {
     );
   });
 
+  it("keeps the open logistic axes and probability guide unfilled", () => {
+    render(
+      <MechanismDiagram
+        labId="logistic-link"
+        observation={observationFor("logistic-link")}
+      />,
+    );
+
+    expect(screen.getByTestId("logistic-link-axes").getAttribute("fill")).toBe(
+      "none",
+    );
+    expect(
+      screen
+        .getByTestId("logistic-link-current-guide")
+        .getAttribute("fill"),
+    ).toBe("none");
+  });
+
   it("keeps the ensemble at the exact fixed learner count", () => {
     const observation = observationFor("ensemble-votes", 1);
     const { container } = render(

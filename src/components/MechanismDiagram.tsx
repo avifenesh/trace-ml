@@ -803,7 +803,12 @@ function LogisticLinkView({ observation }: ObservationViewProps) {
 
   return (
     <>
-      <path d="M58 38V211H426" stroke={GRID} />
+      <path
+        d="M58 38V211H426"
+        fill="none"
+        stroke={GRID}
+        data-testid="logistic-link-axes"
+      />
       <path
         d={sigmoid.path}
         fill="none"
@@ -812,8 +817,10 @@ function LogisticLinkView({ observation }: ObservationViewProps) {
       />
       <path
         d={`M${pointX} 211V${pointY}H58`}
+        fill="none"
         stroke={CORAL}
         strokeDasharray="4 4"
+        data-testid="logistic-link-current-guide"
       />
       <circle cx={pointX} cy={pointY} r="7" fill={CORAL} />
       <text x="63" y="30" fill={BLUE} fontSize="10">
