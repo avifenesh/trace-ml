@@ -215,6 +215,9 @@
           "url": "https://doi.org/10.3758/s13423-023-02353-8"
         },
         {
+          "url": "https://doi.org/10.7717/peerj-cs.2991"
+        },
+        {
           "url": "https://eecs189.org/sp26/"
         },
         {
@@ -264,9 +267,6 @@
         },
         {
           "url": "https://playground.tensorflow.org/"
-        },
-        {
-          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12453719/"
         },
         {
           "url": "https://poloclub.github.io/cnn-explainer/"
