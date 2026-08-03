@@ -6,9 +6,11 @@
   "scripts": {
     "sync:pyodide": "node scripts/sync-pyodide.mjs",
     "sync:opener-scope": "node scripts/sync-opener-scope.mjs",
-    "predev": "npm run sync:pyodide",
+    "sync:prose-manifest": "node scripts/sync-prose-assessment-manifest.mjs",
+    "sync:helper-manifest": "node scripts/sync-lesson-helper-manifest.mjs",
+    "predev": "npm run sync:pyodide && npm run sync:prose-manifest && npm run sync:helper-manifest",
     "dev": "vite",
-    "prebuild": "npm run sync:pyodide && npm run sync:opener-scope",
+    "prebuild": "npm run sync:pyodide && npm run sync:prose-manifest && npm run sync:helper-manifest && npm run sync:opener-scope",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",

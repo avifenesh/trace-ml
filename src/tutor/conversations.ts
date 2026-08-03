@@ -2,6 +2,12 @@ import type { Lesson } from "../content/types";
 
 export type TutorRole = "learner" | "tutor";
 
+export interface TutorClaim {
+  text: string;
+  sourceChunkId: string;
+  quote: string;
+}
+
 export interface TutorMessage {
   id: string;
   role: TutorRole;
@@ -11,6 +17,7 @@ export interface TutorMessage {
   lessonRevision: string;
   sourceBlockIds: string[];
   sourceChunkIds: string[];
+  claims?: TutorClaim[];
 }
 
 export interface ConversationThread {

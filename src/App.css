@@ -943,10 +943,19 @@
 }
 
 .explanation-actions small {
-  max-width: 280px;
+  max-width: 330px;
   color: #59615f;
   font-size: 11px;
   line-height: 1.45;
+}
+
+.explanation-action-buttons {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .explanation-actions button {
@@ -970,6 +979,60 @@
   border-color: #d0d6d3;
   background: #e8ecea;
   cursor: default;
+}
+
+.explanation-actions .cancel-review {
+  color: #7e342b;
+  border-color: #cba8a0;
+  background: #ffffff;
+}
+
+.explanation-actions .cancel-review:hover:not(:disabled) {
+  background: #fff7f5;
+}
+
+.explanation-actions .local-review {
+  color: #315c50;
+  border-color: #9bb7ae;
+  background: #ffffff;
+}
+
+.explanation-actions .local-review:hover:not(:disabled) {
+  background: #f2f8f6;
+}
+
+.assessment-spinner {
+  animation: assessment-spin 850ms linear infinite;
+}
+
+@keyframes assessment-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.explanation-error,
+.explanation-notice,
+.explanation-review-status {
+  grid-column: 2;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.explanation-error {
+  border: 1px solid #d9b8b0;
+  color: #7e342b;
+  background: #fff7f5;
+}
+
+.explanation-notice,
+.explanation-review-status {
+  border: 1px solid #cbd9d4;
+  color: #315c50;
+  background: #f2f8f6;
 }
 
 .explanation-feedback {
@@ -1019,6 +1082,14 @@
   line-height: 1.5;
 }
 
+.assessment-draft-note {
+  display: block;
+  margin: 0 0 7px;
+  color: #59615f;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .structure-criteria {
   display: grid;
   gap: 6px;
@@ -1048,6 +1119,15 @@
 .structure-criteria li.mentioned > span {
   border-color: #3b679d;
   background: #3b679d;
+}
+
+.structure-criteria li.uncertain {
+  color: #775c24;
+}
+
+.structure-criteria li.uncertain > span {
+  border-color: #a77a27;
+  background: #fff1cf;
 }
 
 .structure-criteria li.missing {
@@ -2181,6 +2261,11 @@
   height: 30px;
 }
 
+.tutor-actions .icon-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .tutor-mobile-close {
   display: inline-grid;
 }
@@ -2261,6 +2346,46 @@
   line-height: 1.58;
 }
 
+.tutor-message.pending > div {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 7px;
+  max-width: 220px;
+  padding: 9px 9px 9px 10px;
+  border: 1px solid #dce2ee;
+  border-radius: 5px;
+  color: #3e568b;
+  background: #f8faff;
+}
+
+.tutor-message.pending p {
+  color: #4f5f7c;
+  font-size: 11px;
+}
+
+.cancel-helper {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 4px;
+  color: #805248;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cancel-helper:hover:not(:disabled) {
+  background: #fff1ee;
+}
+
+.cancel-helper:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .message-sources {
   display: flex;
   flex-wrap: wrap;
@@ -2268,7 +2393,8 @@
   margin-top: 9px;
 }
 
-.message-sources a {
+.message-sources a,
+.message-claims a {
   display: inline-flex;
   max-width: 100%;
   align-items: center;
@@ -2283,6 +2409,20 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   background: #f8faff;
+}
+
+.message-claims {
+  display: grid;
+  gap: 10px;
+}
+
+.message-claims > div {
+  display: grid;
+  gap: 5px;
+}
+
+.message-claims a {
+  width: fit-content;
 }
 
 .starter-questions {
@@ -2317,10 +2457,36 @@
   background: #f4f7ff;
 }
 
+.starter-questions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .tutor-composer {
   padding: 12px 14px 14px;
   border-top: 1px solid var(--line);
   background: #ffffff;
+}
+
+.tutor-helper-alert {
+  margin: 0 0 9px;
+  padding: 8px 9px;
+  border: 1px solid;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.tutor-helper-alert.error {
+  color: #7e342b;
+  border-color: #d9b8b0;
+  background: #fff7f5;
+}
+
+.tutor-helper-alert.notice {
+  color: #315c50;
+  border-color: #cbd9d4;
+  background: #f2f8f6;
 }
 
 .tutor-composer > label {
@@ -2677,7 +2843,8 @@
     min-height: 44px;
   }
 
-  .message-sources a {
+  .message-sources a,
+  .message-claims a {
     min-height: 44px;
     padding: 8px;
   }
@@ -2814,6 +2981,12 @@
     grid-template-columns: 1fr;
     gap: 24px;
     padding-block: 40px 42px;
+  }
+
+  .explanation-error,
+  .explanation-notice,
+  .explanation-review-status {
+    grid-column: 1;
   }
 
   .choice-prediction {

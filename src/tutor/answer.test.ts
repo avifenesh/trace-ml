@@ -3,9 +3,11 @@ import { requireLesson } from "../content/course";
 import { pageChunksForLesson } from "../content/types";
 import {
   answerFromLesson,
+  helperRequestCrossesBoundary,
   type TutorAnswer,
   type TutorHistoryMessage,
 } from "./answer";
+import boundaryCases from "./helper-boundary-cases.json";
 
 const lesson = requireLesson("linear-model");
 const lessonRevision = lesson.revision ?? "unversioned";
@@ -207,6 +209,16 @@ describe("multi-turn page-grounded answers", () => {
 });
 
 describe("helper-only boundary", () => {
+  it("matches the shared native adversarial and benign corpus", () => {
+    const prerequisiteLesson = requireLesson("prerequisite-trace");
+    for (const testCase of boundaryCases) {
+      expect(
+        helperRequestCrossesBoundary(testCase.question, prerequisiteLesson),
+        testCase.question,
+      ).toBe(testCase.expectedBoundary);
+    }
+  });
+
   it.each([
     "Teach me this lesson.",
     "Tutor me through weight and bias step by step.",

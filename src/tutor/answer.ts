@@ -74,12 +74,17 @@ const questionCases: QuestionCase[] = [
 ];
 
 const helperBoundaryPatterns = [
-  /\bteach\b/,
-  /\b(?:tutor|coach|remediate|remediation)\b/,
+  /\b(?:teach|tutor|coach)\s+(?:me|us)\b/,
+  /\b(?:teach|tutor|coach)\b.{0,35}\b(?:lesson|course|module|topic|step by step|through)\b/,
+  /\bremediat(?:e|ion)\b.{0,30}\b(?:me|my|understanding|lesson|topic)\b/,
   /\b(?:act|behave|pretend|roleplay)\b.{0,30}\b(?:teacher|instructor|examiner|grader|coach|tutor|curriculum designer)\b/,
   /\b(?:enter|switch|use)\b.{0,20}\b(?:teacher|instructor|examiner|grader|coach|tutor)\s+mode\b/,
   /\bas\s+(?:my|a|an|the)?\s*(?:teacher|instructor|examiner|grader|coach|tutor|curriculum designer)\b/,
+  /\byou\s+are\s+now\b.{0,25}\b(?:developer|system|teacher|grader|tutor)\b/,
   /\b(?:ignore|disregard|override|bypass|forget)\b.{0,40}\b(?:instructions?|rules?|limits?|boundar(?:y|ies)|policy|policies)\b/,
+  /\b(?:output|return|respond)\s+only\b/,
+  /\b(?:omit|remove|skip|without)\b.{0,25}\b(?:citations?|sources?|quotes?)\b/,
+  /\bdecode\b.{0,25}\b(?:base64|hex|encoded)\b.{0,40}\b(?:follow|execute|obey|instructions?)\b/,
   /\b(?:summarize|cover|explain|walk through)\b.{0,30}\b(?:whole|entire|full|this|the)?\s*(?:lesson|module|course|page)\b/,
   /\b(?:give|show|walk)\b.{0,25}\b(?:a\s+)?(?:lesson|course|tutorial)\b/,
   /\b(?:give|offer|provide|show)\b.{0,20}\b(?:a\s+)?hint\b/,
@@ -105,6 +110,7 @@ const helperBoundaryPatterns = [
   /\b(?:turn|convert|transform)\b.{0,30}\b(?:quiz(?:zes)?|tests?|flashcards?|exercises?|assessments?|practice)\b/,
   /\b(?:different|alternate|alternative|other)\b.{0,15}\b(?:examples?|analogies|exercises?|problems?|scenarios?|situations?|one)\b/,
   /\b(?:grade|score|rate|assess|evaluate)\b.{0,30}\b(?:me|my|answer|response|work|mastery|understanding|progress|this)\b/,
+  /\b(?:assess|evaluate|judge|determine)\b.{0,45}\b(?:master(?:y|ed)?|understanding|progress|readiness)\b/,
   /^(?:approve|check|confirm|validate|verify)\b.{0,20}\b(?:my|this|that|answer|response|reasoning|work|claim|statement)\b/,
   /\b(?:is|was)\s+my\s+(?:answer|response|work|reasoning|understanding)\b.{0,20}\b(?:correct|right|good|wrong)\b/,
   /\bmy\s+(?:answer|response|work|reasoning|understanding|claim|statement)\b.{0,40}\b(?:correct|right|wrong|good|strong|weak|hold|work|stand|make sense)\b/,
@@ -115,12 +121,18 @@ const helperBoundaryPatterns = [
   /\b(?:would|did|does|should|can)\b.{0,30}\b(?:pass|count as correct|be accepted)\b/,
   /\b(?:did|have)\s+i\b.{0,15}\b(?:master|understand|pass)\b/,
   /\b(?:have|did|do)\s+i\s+(?:learn(?:ed|t)?|know|understand)\b.{0,40}\b(?:enough|well|correctly)\b/,
-  /\bunlock\b/,
+  /\bunlock\b.{0,25}\b(?:lesson|module|progress|activity|next)\b/,
+  /\b(?:lesson|module|activity)\b.{0,20}\bunlock\b/,
   /\bmark\b.{0,20}\b(?:complete|completed|done|progress)\b/,
   /\b(?:call|count|consider|treat)\b.{0,20}\b(?:this|it|me|my)\b.{0,15}\b(?:complete|completed|done|passed)\b/,
   /\b(?:move|send|take)\s+me\s+(?:on|forward|ahead|to)\b/,
   /\badvance\s+me\b/,
   /\bchange\s+my\s+progress\b/,
+  /\b(?:give|show|tell)\b.{0,45}\b(?:answer|solution|correct option)\b.{0,30}\b(?:activity|exercise|quiz|checkpoint|problem|question)\b/,
+  /\b(?:solve|complete|do)\b.{0,30}\b(?:activity|exercise|quiz|checkpoint|assignment)\b/,
+  /\bwhich\b.{0,20}\boption\b.{0,20}\b(?:choose|pick|select|correct)\b/,
+  /\b(?:correct|right)\b.{0,15}\boption\b/,
+  /\b(?:reveal|repeat|show|print)\b.{0,40}\b(?:system|developer|hidden)\b.{0,20}\b(?:prompt|instructions?)\b/,
 ];
 
 const contextualReferences = new Set([
@@ -206,12 +218,59 @@ const lessonNumberWords = [
   "twenty",
 ];
 
+const privilegedTerms = [
+  "ignore",
+  "bypass",
+  "override",
+  "reveal",
+  "system",
+  "prompt",
+  "instructions",
+  "developer",
+  "citations",
+];
+
+function isTypoglycemicMatch(candidate: string, expected: string) {
+  const candidateCharacters = Array.from(candidate);
+  const expectedCharacters = Array.from(expected);
+  if (candidate === expected) return true;
+  if (
+    candidateCharacters.length !== expectedCharacters.length ||
+    candidateCharacters.length < 5 ||
+    candidateCharacters[0] !== expectedCharacters[0] ||
+    candidateCharacters.at(-1) !== expectedCharacters.at(-1)
+  ) {
+    return false;
+  }
+  return candidateCharacters.slice(1, -1).sort().join("") ===
+    expectedCharacters.slice(1, -1).sort().join("");
+}
+
+function canonicalPrivilegedToken(token: string) {
+  return privilegedTerms.find((term) => isTypoglycemicMatch(token, term)) ??
+    token;
+}
+
+function isIgnoredFormattingCharacter(character: string) {
+  const codePoint = character.codePointAt(0) ?? 0;
+  return codePoint === 0x00ad ||
+    (codePoint >= 0x200b && codePoint <= 0x200f) ||
+    (codePoint >= 0x202a && codePoint <= 0x202e) ||
+    (codePoint >= 0x2060 && codePoint <= 0x206f) ||
+    (codePoint >= 0xfe00 && codePoint <= 0xfe0f) ||
+    codePoint === 0xfeff ||
+    (codePoint >= 0xe0100 && codePoint <= 0xe01ef);
+}
+
 function normalizedTokens(value: string) {
-  return value
+  return Array.from(value.normalize("NFKC"))
+    .filter((character) => !isIgnoredFormattingCharacter(character))
+    .join("")
     .toLocaleLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .split(/\s+/)
-    .filter(Boolean);
+    .filter(Boolean)
+    .map(canonicalPrivilegedToken);
 }
 
 function crossesHelperBoundary(query: string) {
@@ -253,6 +312,10 @@ function referencesAnotherPage(query: string, lesson: Lesson) {
       new RegExp(`\\blesson\\s+(${lessonNumberWords.join("|")})\\b`, "g"),
     ),
   ].some(([, word]) => String(lessonNumberWords.indexOf(word)) !== currentNumber);
+}
+
+export function helperRequestCrossesBoundary(query: string, lesson: Lesson) {
+  return crossesHelperBoundary(query) || referencesAnotherPage(query, lesson);
 }
 
 function withoutCurrentPageReference(query: string, lesson: Lesson) {

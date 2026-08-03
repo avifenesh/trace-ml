@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { readLocalStorage, writeLocalStorage } from "../storage";
+import type { ExplanationAssessment } from "./types";
 
 const STORAGE_PREFIX = "trace-ml:activity-state:v1";
 
@@ -19,6 +20,7 @@ export type ActivityState =
       kind: "text-response";
       response: string;
       submittedResponse?: string;
+      assessment?: ExplanationAssessment;
     }
   | {
       kind: "visual-lab";
@@ -55,6 +57,42 @@ function optionalFiniteNumber(value: unknown) {
     : undefined;
 }
 
+function optionalExplanationAssessment(
+  value: unknown,
+): ExplanationAssessment | undefined {
+  const assessment = objectRecord(value);
+  const level = assessment?.level;
+  const assessmentMode = assessment?.assessmentMode;
+  const matchedCriteria = assessment?.matchedCriteria;
+  const missingCriteria = assessment?.missingCriteria;
+  const uncertainCriteria = assessment?.uncertainCriteria;
+  const feedback = assessment?.feedback;
+  if (
+    !assessment ||
+    (assessmentMode !== "semantic" && assessmentMode !== "structure") ||
+    (level !== "unsupported" && level !== "partial" && level !== "demonstrated") ||
+    !Array.isArray(matchedCriteria) ||
+    !matchedCriteria.every((item) => typeof item === "string") ||
+    !Array.isArray(missingCriteria) ||
+    !missingCriteria.every((item) => typeof item === "string") ||
+    !Array.isArray(uncertainCriteria) ||
+    !uncertainCriteria.every((item) => typeof item === "string") ||
+    typeof feedback !== "string" ||
+    !feedback.trim()
+  ) {
+    return undefined;
+  }
+
+  return {
+    assessmentMode,
+    level,
+    matchedCriteria: [...new Set(matchedCriteria)].slice(0, 12),
+    missingCriteria: [...new Set(missingCriteria)].slice(0, 12),
+    uncertainCriteria: [...new Set(uncertainCriteria)].slice(0, 12),
+    feedback: feedback.slice(0, 2_000),
+  };
+}
+
 export function normalizeStoredActivityState(
   value: unknown,
 ): StoredActivityState | null {
@@ -88,6 +126,7 @@ export function normalizeStoredActivityState(
       kind: "text-response",
       response: rawState.response.slice(0, 20_000),
       submittedResponse: optionalString(rawState.submittedResponse, 20_000),
+      assessment: optionalExplanationAssessment(rawState.assessment),
     };
   } else if (rawState.kind === "visual-lab") {
     const value = optionalFiniteNumber(rawState.value);

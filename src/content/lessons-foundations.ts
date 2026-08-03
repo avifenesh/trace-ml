@@ -1,5 +1,6 @@
 import {
   COURSE_REVISION,
+  PREREQUISITE_TRACE_REVISION,
   interactive,
   pythonLab,
   reading,
@@ -77,7 +78,7 @@ export const foundationLessons: Lesson[] = [
     summary:
       "Use a compact diagnostic and repair lab for Python, NumPy, plot coordinates, the chain rule, and a probability baseline.",
     durationMinutes: 32,
-    revision: COURSE_REVISION,
+    revision: PREREQUISITE_TRACE_REVISION,
     sourceIds: ["S43", "S48", "S58", "S76", "S85"],
     mechanism: {
       input:
@@ -176,7 +177,7 @@ export const foundationLessons: Lesson[] = [
         heading: "A baseline states the performance floor",
         sourceIds: ["S48", "S76"],
         body: [
-          "If 80 of 100 recorded cases are negative, always predicting negative is correct 80 percent of the time. That majority baseline uses no features.",
+          "Classes are the possible target-label categories. In this binary example, 80 of 100 recorded cases are negative and the other 20 are positive. Always predicting the negative majority is therefore correct 80 percent of the time, and that majority baseline uses no features.",
           "A model that scores 75 percent on those same kinds of cases has not beaten the simplest available rule, even if 75 percent sounds high in isolation.",
         ],
         conceptIds: ["probability-baseline"],
@@ -203,7 +204,7 @@ export const foundationLessons: Lesson[] = [
         ["array-shape", "slope-chain-rule", "probability-baseline"],
         "Keep three traces synchronized",
         "Move x through the composed function while its forward values, array dimensions, and class counts remain visible. Record the shape, both derivative factors, and majority baseline.",
-        "The array layout, function definition, and 80-to-20 class counts stay fixed.",
+        "The array layout and function stay fixed, as do the two target-label counts: 80 negative cases and 20 positive cases.",
         "Change only x and inspect how u, the outer slope, and the final derivative change.",
         {
           label: "Input x",

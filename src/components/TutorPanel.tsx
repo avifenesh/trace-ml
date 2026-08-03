@@ -1,7 +1,9 @@
 import {
   ArrowUp,
   BookOpenText,
+  CircleStop,
   History,
+  LoaderCircle,
   MessageSquareText,
   Plus,
   X,
@@ -71,7 +73,13 @@ export function TutorPanel({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!draft.trim()) return;
+    if (
+      !draft.trim() ||
+      tutor.pendingAnswer ||
+      tutor.helperMode === "checking"
+    ) {
+      return;
+    }
     tutor.send(draft);
     setDraft("");
   };
@@ -125,6 +133,7 @@ export function TutorPanel({
           <button
             type="button"
             className="icon-button"
+            disabled={tutor.pendingAnswer !== null}
             onClick={() => setShowHistory((value) => !value)}
             title="Conversation history"
             aria-label="Conversation history"
@@ -135,6 +144,7 @@ export function TutorPanel({
           <button
             type="button"
             className="icon-button"
+            disabled={tutor.pendingAnswer !== null}
             onClick={startNewThread}
             title="New conversation"
             aria-label="New conversation"
@@ -162,6 +172,7 @@ export function TutorPanel({
             </div>
             <button
               type="button"
+              disabled={tutor.pendingAnswer !== null}
               onClick={startNewThread}
             >
               <Plus size={15} />
@@ -179,6 +190,7 @@ export function TutorPanel({
                   aria-current={
                     thread.id === tutor.activeThread.id ? "true" : undefined
                   }
+                  disabled={tutor.pendingAnswer !== null}
                   onClick={() => selectThread(thread.id)}
                 >
                   <MessageSquareText size={15} />
@@ -219,14 +231,42 @@ export function TutorPanel({
               const sources = message.sourceChunkIds
                 .map(sourceFromChunk)
                 .filter((source) => source !== null);
+              const claims = message.claims ?? [];
               return (
                 <article
                   className={`tutor-message ${message.role}`}
                   key={message.id}
                 >
                   <span>{message.role === "tutor" ? "HELPER" : "YOU"}</span>
-                  <p>{message.text}</p>
-                  {sources.length > 0 && (
+                  {claims.length > 0 ? (
+                    <div className="message-claims">
+                      {claims.map((claim, index) => {
+                        const source = sourceFromChunk(claim.sourceChunkId);
+                        return (
+                          <div key={`${claim.sourceChunkId}:${index}`}>
+                            <p>{claim.text}</p>
+                            {source && (
+                              <a
+                                href={`#${source.blockId}`}
+                                title={`Exact support: ${claim.quote}`}
+                                aria-label={`${source.label}. Exact support: ${claim.quote}`}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  onNavigateToBlock(source.blockId);
+                                }}
+                              >
+                                <BookOpenText size={12} aria-hidden="true" />
+                                {source.label}
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p>{message.text}</p>
+                  )}
+                  {claims.length === 0 && sources.length > 0 && (
                     <div className="message-sources">
                       {sources.map((source) => (
                         <a
@@ -246,6 +286,37 @@ export function TutorPanel({
                 </article>
               );
             })}
+            {tutor.pendingAnswer && (
+              <article
+                className="tutor-message tutor pending"
+                role="status"
+                aria-live="polite"
+              >
+                <span>HELPER</span>
+                <div>
+                  <LoaderCircle
+                    className="assessment-spinner"
+                    size={15}
+                    aria-hidden="true"
+                  />
+                  <p>
+                    {tutor.pendingAnswer.cancelling
+                      ? "Cancelling..."
+                      : "Reading this page..."}
+                  </p>
+                  <button
+                    type="button"
+                    className="cancel-helper"
+                    disabled={tutor.pendingAnswer.cancelling}
+                    onClick={tutor.cancelAnswer}
+                    title="Cancel answer"
+                    aria-label="Cancel answer"
+                  >
+                    <CircleStop size={16} />
+                  </button>
+                </div>
+              </article>
+            )}
           </div>
 
           {tutor.activeThread.messages.length === 1 && (
@@ -255,6 +326,10 @@ export function TutorPanel({
                 <button
                   type="button"
                   key={question}
+                  disabled={
+                    tutor.pendingAnswer !== null ||
+                    tutor.helperMode === "checking"
+                  }
                   onClick={() => tutor.send(question)}
                 >
                   {question}
@@ -263,7 +338,25 @@ export function TutorPanel({
             </div>
           )}
 
-          <form className="tutor-composer" onSubmit={submit}>
+          <form
+            className="tutor-composer"
+            onSubmit={submit}
+            aria-busy={tutor.pendingAnswer !== null}
+          >
+            {tutor.helperErrorMessage && (
+              <p className="tutor-helper-alert error" role="alert">
+                {tutor.helperErrorMessage}
+              </p>
+            )}
+            {tutor.helperNotice && (
+              <p
+                className="tutor-helper-alert notice"
+                role="status"
+                aria-live="polite"
+              >
+                {tutor.helperNotice}
+              </p>
+            )}
             <label htmlFor="tutor-question">Ask about this lesson</label>
             <div>
               <textarea
@@ -290,7 +383,11 @@ export function TutorPanel({
               <button
                 type="submit"
                 className="send-button"
-                disabled={!draft.trim()}
+                disabled={
+                  !draft.trim() ||
+                  tutor.pendingAnswer !== null ||
+                  tutor.helperMode === "checking"
+                }
                 title="Send question"
                 aria-label="Send question"
               >
@@ -298,9 +395,17 @@ export function TutorPanel({
               </button>
             </div>
             <small id="tutor-composer-note">
-              {tutor.persistenceStatus === "persistent"
-                ? "Answers are limited to this authored page and saved thread."
-                : "Answers are limited to this authored page. This thread lasts for this session only."}
+              {tutor.helperMode === "semantic"
+                ? `Bedrock receives this authored page, your question, and recent thread context. Store=false is not a zero-retention guarantee; AWS may retain classifier-flagged model traffic for up to 30 days. ${
+                  tutor.persistenceStatus === "persistent"
+                    ? "The thread is saved locally."
+                    : "The thread lasts for this session only."
+                }`
+                : tutor.helperMode === "checking"
+                  ? "Preparing the page-grounded helper..."
+                  : tutor.persistenceStatus === "persistent"
+                    ? "Local exact-page matching is active. The thread is saved locally."
+                    : "Local exact-page matching is active. This thread lasts for this session only."}
             </small>
           </form>
         </>

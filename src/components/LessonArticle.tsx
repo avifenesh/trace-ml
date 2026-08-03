@@ -236,22 +236,12 @@ export function LessonArticle({
       return (
         <SelfExplanationGate
           activity={activity}
+          lesson={lesson}
           initialState={
             savedState?.kind === "text-response" ? savedState : undefined
           }
           onStateChange={(state) =>
             onActivityStateChange(activity, state)
-          }
-          onAssess={(response, assessment) =>
-            onActivityEvidence({
-              activityId: activity.id,
-              conceptIds: activityEvidenceConceptIds(activity),
-              evidenceKind: activity.evidenceKind,
-              response,
-              rubricSignals: assessment.matchedCriteria,
-              level: assessment.level,
-              summary: assessment.feedback,
-            })
           }
         />
       );

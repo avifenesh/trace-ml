@@ -1,0 +1,1204 @@
+[
+  {
+    "lessonId": "prerequisite-trace",
+    "lessonRevision": "2026-08-03-r3",
+    "lessonTitle": "Trace the tools before the model",
+    "lessonContext": "This is a trace, not a placement exam\nMachine-learning mechanisms repeatedly reuse three tools: array dimensions, rates of change, and probabilities. The diagnostic asks you to expose the intermediate quantities instead of recognizing a final answer.\nA correct result with no trace is fragile evidence. Keep dimensions beside arrays, name each local derivative, and write the count behind every probability.\n\nShapes describe which axes can interact\nA batch X with shape 4 by 3 contains four examples and three features per example. Multiplying X by a weight vector with three entries combines the feature axis and leaves one score per example, so the result has shape 4.\nThe operation is valid because the three feature positions align with the three weights. The batch axis is not summed away.\nIn NumPy, shape reports axis lengths in order. A plotting table with shape 3 by 2 can store three observations as rows: column zero supplies x coordinates and column one supplies y coordinates. Transposing it to 2 by 3 swaps the meaning of rows and columns.\n\nA composed change has two local factors\nLet u = 2x + 1 and y = u squared. At x = 1, u = 3. The outer derivative dy/du is 2u = 6 and the inner derivative du/dx is 2.\nThe chain rule multiplies those local rates: dy/dx = 6 times 2 = 12. Each factor answers how one adjacent quantity changes.\n\nA baseline states the performance floor\nClasses are the possible target-label categories. In this binary example, 80 of 100 recorded cases are negative and the other 20 are positive. Always predicting the negative majority is therefore correct 80 percent of the time, and that majority baseline uses no features.\nA model that scores 75 percent on those same kinds of cases has not beaten the simplest available rule, even if 75 percent sounds high in isolation.",
+    "activityId": "00-mechanism-explanation",
+    "activityPrompt": "Explain why a 4 by 3 batch times three weights produces four scores, why the derivative at x = 1 is 12, and why 80 percent is the relevant baseline.",
+    "activityGuidance": "Name the preserved axis, both local derivative factors, and the majority count.",
+    "criteria": [
+      {
+        "id": "00-preserved-batch",
+        "label": "preserve four examples while combining three features"
+      },
+      {
+        "id": "00-chain-factors",
+        "label": "multiply the outer factor 6 by the inner factor 2"
+      },
+      {
+        "id": "00-majority-count",
+        "label": "derive the baseline from 80 of 100 cases"
+      }
+    ],
+    "demonstratedFeedback": "The trace connects each answer to the operation that produced it.",
+    "unsupportedFeedback": "Show what is combined, what is preserved, and which two adjacent derivatives multiply."
+  },
+  {
+    "lessonId": "prerequisite-trace",
+    "lessonRevision": "2026-08-03-r3",
+    "lessonTitle": "Trace the tools before the model",
+    "lessonContext": "This is a trace, not a placement exam\nMachine-learning mechanisms repeatedly reuse three tools: array dimensions, rates of change, and probabilities. The diagnostic asks you to expose the intermediate quantities instead of recognizing a final answer.\nA correct result with no trace is fragile evidence. Keep dimensions beside arrays, name each local derivative, and write the count behind every probability.\n\nShapes describe which axes can interact\nA batch X with shape 4 by 3 contains four examples and three features per example. Multiplying X by a weight vector with three entries combines the feature axis and leaves one score per example, so the result has shape 4.\nThe operation is valid because the three feature positions align with the three weights. The batch axis is not summed away.\nIn NumPy, shape reports axis lengths in order. A plotting table with shape 3 by 2 can store three observations as rows: column zero supplies x coordinates and column one supplies y coordinates. Transposing it to 2 by 3 swaps the meaning of rows and columns.\n\nA composed change has two local factors\nLet u = 2x + 1 and y = u squared. At x = 1, u = 3. The outer derivative dy/du is 2u = 6 and the inner derivative du/dx is 2.\nThe chain rule multiplies those local rates: dy/dx = 6 times 2 = 12. Each factor answers how one adjacent quantity changes.\n\nA baseline states the performance floor\nClasses are the possible target-label categories. In this binary example, 80 of 100 recorded cases are negative and the other 20 are positive. Always predicting the negative majority is therefore correct 80 percent of the time, and that majority baseline uses no features.\nA model that scores 75 percent on those same kinds of cases has not beaten the simplest available rule, even if 75 percent sounds high in isolation.",
+    "activityId": "00-sensor-transfer",
+    "activityPrompt": "A sensor system receives 12 windows with 5 measurements each, averages the five measurements in each window into one scalar t, computes z = 3t - 2 and score = z^2, and has 90 normal versus 10 fault records. State the score-vector shape, dscore/dt at t = 2, and the accuracy of an always-normal baseline.",
+    "activityGuidance": "Reduce each window to one t, map windows to the preserved axis, trace both derivative factors, and use the observed class counts.",
+    "criteria": [
+      {
+        "id": "00-transfer-shape",
+        "label": "produce one score for each of 12 windows"
+      },
+      {
+        "id": "00-transfer-derivative",
+        "label": "compute 24 from 2z times 3 at t equals 2"
+      },
+      {
+        "id": "00-transfer-baseline",
+        "label": "compute the 90 percent always-normal baseline"
+      }
+    ],
+    "demonstratedFeedback": "You transferred all three traces to new quantities and labels.",
+    "unsupportedFeedback": "Do not reuse the earlier numbers. Recompute the preserved axis, z at t = 2, and the new majority count."
+  },
+  {
+    "lessonId": "data-and-baseline",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Data gives each quantity a role",
+    "lessonContext": "A recorded row contains evidence, not instructions\nFor a completed delivery, distance and package mass can be features, while elapsed minutes is the target. The target is the outcome the prediction is meant to approximate.\nAt inference time for a new delivery, the features are available but the target is not. If elapsed minutes were already known, there would be nothing to predict.\n\nParameters belong to the reusable rule\nA parameter is an adjustable number carried by the model across examples. Training uses feature-target pairs to choose parameter values.\nAn input changes when the example changes. A parameter changes when training updates the rule.\n\nTraining and inference run different contracts\nDuring training, the system predicts on recorded examples, compares predictions with targets, and updates parameters. During inference, it receives new features and uses the fitted parameters without reading a target or updating the rule.\nThe same model structure can participate in both stages, but only training changes its fitted state.\n\nStart comparison with the mean\nFor training targets 8, 10, and 12 minutes, the mean is 10. A mean baseline predicts 10 for every delivery and ignores all features.\nA learned regression rule earns its complexity only if its evaluation loss improves on that baseline for untouched cases.",
+    "activityId": "01-role-explanation",
+    "activityPrompt": "Explain why a target may guide a parameter update during training but must be absent during inference, and why the mean prediction is a baseline rather than a learned feature rule.",
+    "activityGuidance": "Use availability time, parameter state, and feature use in your explanation.",
+    "criteria": [
+      {
+        "id": "01-target-training",
+        "label": "use targets after predictions to evaluate training examples"
+      },
+      {
+        "id": "01-inference-no-target",
+        "label": "exclude the unknown target at inference"
+      },
+      {
+        "id": "01-parameter-update",
+        "label": "change parameters only during fitting"
+      },
+      {
+        "id": "01-baseline-no-features",
+        "label": "state that the mean baseline ignores features"
+      }
+    ],
+    "demonstratedFeedback": "You separated the data roles, the two execution stages, and the comparison floor.",
+    "unsupportedFeedback": "Anchor each value to when it is available and state whether it can change the model."
+  },
+  {
+    "lessonId": "data-and-baseline",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Data gives each quantity a role",
+    "lessonContext": "A recorded row contains evidence, not instructions\nFor a completed delivery, distance and package mass can be features, while elapsed minutes is the target. The target is the outcome the prediction is meant to approximate.\nAt inference time for a new delivery, the features are available but the target is not. If elapsed minutes were already known, there would be nothing to predict.\n\nParameters belong to the reusable rule\nA parameter is an adjustable number carried by the model across examples. Training uses feature-target pairs to choose parameter values.\nAn input changes when the example changes. A parameter changes when training updates the rule.\n\nTraining and inference run different contracts\nDuring training, the system predicts on recorded examples, compares predictions with targets, and updates parameters. During inference, it receives new features and uses the fitted parameters without reading a target or updating the rule.\nThe same model structure can participate in both stages, but only training changes its fitted state.\n\nStart comparison with the mean\nFor training targets 8, 10, and 12 minutes, the mean is 10. A mean baseline predicts 10 for every delivery and ignores all features.\nA learned regression rule earns its complexity only if its evaluation loss improves on that baseline for untouched cases.",
+    "activityId": "01-energy-transfer",
+    "activityPrompt": "A building model predicts tomorrow's electricity use from forecast temperature and occupancy. Historical use values average 240 kWh. Identify features, target, what training changes, what inference may read, and the baseline prediction.",
+    "activityGuidance": "Map the delivery roles to this new domain without changing their timing.",
+    "criteria": [
+      {
+        "id": "01-transfer-features",
+        "label": "identify forecast temperature and occupancy as features"
+      },
+      {
+        "id": "01-transfer-target",
+        "label": "identify actual electricity use as the target"
+      },
+      {
+        "id": "01-transfer-stages",
+        "label": "fit parameters on history but do not update from tomorrow's unknown use"
+      },
+      {
+        "id": "01-transfer-baseline",
+        "label": "state the 240 kWh mean baseline"
+      }
+    ],
+    "demonstratedFeedback": "The same role and timing contract now holds for energy demand.",
+    "unsupportedFeedback": "Name what is known before tomorrow, what is observed afterward, and what the no-feature rule predicts."
+  },
+  {
+    "lessonId": "linear-model",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Two parameters draw one line",
+    "lessonContext": "The complete model fits on one line\nA one-feature linear model predicts y_hat = wx + b. The feature x belongs to the case; weight w and bias b belong to the fitted model.\nThe formula is the prediction mechanism. Training may later choose w and b, but inference only evaluates the formula with their current values.\n\nBias sets the prediction at zero\nWith w = 3 and b = 4, an input x = 0 produces y_hat = 4. Changing b shifts every prediction by the same amount.\nOn a graph, b is where the line crosses the vertical prediction axis.\n\nWeight sets change per input unit\nWith w = 3, increasing x by one increases y_hat by three while b stays fixed. The weight is therefore the line's slope.\nAt x = 5, w = 3 and b = 4 give y_hat = 19. The multiplication contributes 15 and the bias contributes 4.\n\nThe sign of x matters\nIncreasing w raises y_hat when x is positive, changes nothing at x = 0, and lowers y_hat when x is negative. A weight does not have one output direction independent of the input.\nThis boundary condition prevents the shortcut that a larger weight always means a larger prediction.",
+    "activityId": "02-parameter-explanation",
+    "activityPrompt": "Explain how w and b affect y_hat = wx + b, including what happens at x = 0 and why increasing w can lower a prediction for negative x.",
+    "activityGuidance": "Connect each parameter to a geometric and arithmetic effect, then state the sign boundary.",
+    "criteria": [
+      {
+        "id": "02-weight-rate",
+        "label": "identify weight as change in prediction per input unit"
+      },
+      {
+        "id": "02-bias-zero",
+        "label": "identify bias as the prediction at x equals zero"
+      },
+      {
+        "id": "02-negative-boundary",
+        "label": "explain the reversed effect at negative x"
+      }
+    ],
+    "demonstratedFeedback": "You linked both parameters to the equation and stated the input-sign boundary.",
+    "unsupportedFeedback": "State which parameter is multiplied by x, which is added, and test the rule at x = 0 and x below zero."
+  },
+  {
+    "lessonId": "linear-model",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Two parameters draw one line",
+    "lessonContext": "The complete model fits on one line\nA one-feature linear model predicts y_hat = wx + b. The feature x belongs to the case; weight w and bias b belong to the fitted model.\nThe formula is the prediction mechanism. Training may later choose w and b, but inference only evaluates the formula with their current values.\n\nBias sets the prediction at zero\nWith w = 3 and b = 4, an input x = 0 produces y_hat = 4. Changing b shifts every prediction by the same amount.\nOn a graph, b is where the line crosses the vertical prediction axis.\n\nWeight sets change per input unit\nWith w = 3, increasing x by one increases y_hat by three while b stays fixed. The weight is therefore the line's slope.\nAt x = 5, w = 3 and b = 4 give y_hat = 19. The multiplication contributes 15 and the bias contributes 4.\n\nThe sign of x matters\nIncreasing w raises y_hat when x is positive, changes nothing at x = 0, and lowers y_hat when x is negative. A weight does not have one output direction independent of the input.\nThis boundary condition prevents the shortcut that a larger weight always means a larger prediction.",
+    "activityId": "02-thermostat-transfer",
+    "activityPrompt": "A thermostat predicts energy change as y_hat = 1.5x - 2, where x is degrees relative to a reference temperature. Interpret the weight and bias, then compute predictions for x = 0 and x = -4 and explain why the negative input reverses the weight contribution.",
+    "activityGuidance": "Map slope and intercept to this signed input rather than to the earlier distance example.",
+    "criteria": [
+      {
+        "id": "02-transfer-weight",
+        "label": "interpret 1.5 as energy change per degree"
+      },
+      {
+        "id": "02-transfer-bias",
+        "label": "compute minus 2 at the reference point"
+      },
+      {
+        "id": "02-transfer-negative",
+        "label": "compute minus 8 at x equals minus 4"
+      }
+    ],
+    "demonstratedFeedback": "The line mechanism transfers to a signed temperature feature.",
+    "unsupportedFeedback": "Substitute each x explicitly before interpreting the direction."
+  },
+  {
+    "lessonId": "loss-landscape",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Loss turns many residuals into a surface",
+    "lessonContext": "Start with one signed miss\nFor one example, residual = prediction - target. A residual of -3 means the prediction is three units below the target; +3 means it is three units above.\nThe sign preserves direction. Its magnitude preserves the size of the miss in target units.\n\nSquare first, then average\nResiduals -1 and +3 would average to 1, hiding part of the error through cancellation. Their squared values are 1 and 9, so MSE is (1 + 9) / 2 = 5.\nSquaring makes every contribution nonnegative and gives a residual twice as large four times the squared contribution.\n\nA landscape indexes loss by parameters\nHold the examples and loss definition fixed. For each candidate weight and bias, compute all predictions and one MSE. Those parameter-to-loss values form a loss landscape.\nThe landscape is not physical terrain. It is a graph of the objective produced by a particular dataset, model, and loss.\n\nA large residual can dominate MSE\nChanging one target so its residual grows from 2 to 10 changes its squared contribution from 4 to 100. The row count is unchanged, but that example now has much more influence on MSE.\nThis is a property of the chosen loss, not proof that the row should be deleted. First investigate measurement, scope, and the cost represented by large misses.",
+    "activityId": "03-loss-explanation",
+    "activityPrompt": "Explain how fixed examples and one candidate weight produce a point on the MSE landscape, and why a large residual can dominate that point without canceling against an opposite residual.",
+    "activityGuidance": "Trace prediction to residual to square to mean, then connect the mean to the parameter position.",
+    "criteria": [
+      {
+        "id": "03-residual-chain",
+        "label": "subtract target from prediction for each row"
+      },
+      {
+        "id": "03-square-mean",
+        "label": "square every residual before averaging"
+      },
+      {
+        "id": "03-no-cancel",
+        "label": "explain why opposite signs cannot cancel"
+      },
+      {
+        "id": "03-parameter-index",
+        "label": "associate the resulting MSE with the candidate parameters"
+      }
+    ],
+    "demonstratedFeedback": "You reconstructed one landscape point from row-level errors and the loss definition.",
+    "unsupportedFeedback": "Do not jump from parameter to loss. Name each intermediate quantity and operation."
+  },
+  {
+    "lessonId": "loss-landscape",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Loss turns many residuals into a surface",
+    "lessonContext": "Start with one signed miss\nFor one example, residual = prediction - target. A residual of -3 means the prediction is three units below the target; +3 means it is three units above.\nThe sign preserves direction. Its magnitude preserves the size of the miss in target units.\n\nSquare first, then average\nResiduals -1 and +3 would average to 1, hiding part of the error through cancellation. Their squared values are 1 and 9, so MSE is (1 + 9) / 2 = 5.\nSquaring makes every contribution nonnegative and gives a residual twice as large four times the squared contribution.\n\nA landscape indexes loss by parameters\nHold the examples and loss definition fixed. For each candidate weight and bias, compute all predictions and one MSE. Those parameter-to-loss values form a loss landscape.\nThe landscape is not physical terrain. It is a graph of the objective produced by a particular dataset, model, and loss.\n\nA large residual can dominate MSE\nChanging one target so its residual grows from 2 to 10 changes its squared contribution from 4 to 100. The row count is unchanged, but that example now has much more influence on MSE.\nThis is a property of the chosen loss, not proof that the row should be deleted. First investigate measurement, scope, and the cost represented by large misses.",
+    "activityId": "03-calibration-transfer",
+    "activityPrompt": "A scale calibration model predicts grams from voltage. Three residuals are -1, +1, and +8 grams. A calibration audit then corrects the third recorded target, changing that residual to +2 at the same parameter setting while the other two rows stay fixed. Compute both MSE values, interpret the +8 sign, and explain why the corrected target defines a new dataset and therefore a new loss landscape.",
+    "activityGuidance": "Use the new units, show both MSE calculations, and distinguish a new dataset and landscape from movement within one fixed landscape.",
+    "criteria": [
+      {
+        "id": "03-transfer-mse",
+        "label": "compute the original MSE as 22"
+      },
+      {
+        "id": "03-transfer-sign",
+        "label": "interpret plus 8 as prediction above target"
+      },
+      {
+        "id": "03-transfer-corrected",
+        "label": "compute corrected MSE as 2 and identify a new dataset and landscape"
+      }
+    ],
+    "demonstratedFeedback": "You distinguished a lower MSE at the same parameters on a corrected dataset from movement within the original landscape.",
+    "unsupportedFeedback": "Square all three residuals before and after the correction, divide each sum by three, and name why changing a target changes the dataset-defined landscape."
+  },
+  {
+    "lessonId": "gradient-descent",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Gradient descent follows repeated local measurements",
+    "lessonContext": "The gradient describes the current neighborhood\nFor one parameter, the gradient is the slope of loss with respect to that parameter at its current value. A positive gradient means a small parameter increase raises loss; a negative gradient means it lowers loss.\nThis is local evidence. It does not describe every distant part of the landscape.\n\nSubtract the measured slope\nGradient descent applies parameter_new = parameter_old - learning_rate times gradient. The minus sign reverses the uphill direction reported by the gradient.\nThe learning rate scales the move without changing the measured gradient itself.\n\nEvery new position needs a new measurement\nIf weight is 0, gradient is -18.666667, and learning rate is 0.05, one update gives 0 - 0.05(-18.666667) = 0.933333.\nPredictions and residuals change at weight 0.933333, so the next update must use a newly computed gradient there.\n\nDirection and distance are separate\nA step can begin in the downhill direction and still cross the low-loss region. Repeated oversized steps can oscillate or diverge.\nTo test this diagnosis, keep data, initialization, model, and loss fixed, reduce only the learning rate, and compare complete traces.",
+    "activityId": "04-descent-explanation",
+    "activityPrompt": "Explain why subtracting a negative gradient increases the parameter, why the next gradient must be recomputed, and how a large learning rate can raise loss despite using the correct local direction.",
+    "activityGuidance": "Separate sign, new position, and step distance.",
+    "criteria": [
+      {
+        "id": "04-negative-sign",
+        "label": "reverse a negative gradient into a positive parameter move"
+      },
+      {
+        "id": "04-new-gradient",
+        "label": "recompute after predictions and residuals change"
+      },
+      {
+        "id": "04-overshoot-cause",
+        "label": "connect a large learning rate to crossing the low-loss region"
+      }
+    ],
+    "demonstratedFeedback": "You separated the measured direction from the distance moved and the next measurement.",
+    "unsupportedFeedback": "Use the update equation once, then state which quantities changed before the second update."
+  },
+  {
+    "lessonId": "gradient-descent",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Gradient descent follows repeated local measurements",
+    "lessonContext": "The gradient describes the current neighborhood\nFor one parameter, the gradient is the slope of loss with respect to that parameter at its current value. A positive gradient means a small parameter increase raises loss; a negative gradient means it lowers loss.\nThis is local evidence. It does not describe every distant part of the landscape.\n\nSubtract the measured slope\nGradient descent applies parameter_new = parameter_old - learning_rate times gradient. The minus sign reverses the uphill direction reported by the gradient.\nThe learning rate scales the move without changing the measured gradient itself.\n\nEvery new position needs a new measurement\nIf weight is 0, gradient is -18.666667, and learning rate is 0.05, one update gives 0 - 0.05(-18.666667) = 0.933333.\nPredictions and residuals change at weight 0.933333, so the next update must use a newly computed gradient there.\n\nDirection and distance are separate\nA step can begin in the downhill direction and still cross the low-loss region. Repeated oversized steps can oscillate or diverge.\nTo test this diagnosis, keep data, initialization, model, and loss fixed, reduce only the learning rate, and compare complete traces.",
+    "activityId": "04-valve-transfer",
+    "activityPrompt": "A controller tunes a valve coefficient. At coefficient 4.0 the loss gradient is +8.0. Compute one update with learning rate 0.1, then explain what a trace alternating between coefficients 3.2 and 4.8 would test and which single variable you would change first.",
+    "activityGuidance": "Map the same local update to a physical coefficient and preserve the controlled comparison.",
+    "criteria": [
+      {
+        "id": "04-transfer-update",
+        "label": "compute the new coefficient as 3.2"
+      },
+      {
+        "id": "04-transfer-oscillation",
+        "label": "diagnose repeated overshoot from the alternating trace"
+      },
+      {
+        "id": "04-transfer-control",
+        "label": "reduce only the learning rate first"
+      }
+    ],
+    "demonstratedFeedback": "The update and controlled overshoot diagnosis transfer to the valve coefficient.",
+    "unsupportedFeedback": "Apply new = old - rate times gradient, then change only the quantity that scales the step."
+  },
+  {
+    "lessonId": "split-and-leakage",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Three splits protect three decisions",
+    "lessonContext": "Partition before the answer can influence a decision\nTraining data fits parameters. Validation data compares model or hyperparameter choices. Test data evaluates the frozen process after fitting and selection are complete.\nThe labels do not make a split. Its role is defined by how information from it is used.\n\nValidation closes the development loop\nFit candidate models on training rows, compare their validation losses, and select one. A validation result can change the next candidate, so it becomes part of development evidence.\nAfter selection, refit only according to the authored procedure and freeze every choice before test evaluation.\n\nLeakage is an information path\nTest leakage occurs when test features, targets, metrics, or repeated feedback influence fitting, preprocessing, feature choices, stopping, or model selection.\nCalling the same rows test data afterward does not restore independence. A new untouched set is required for an honest final estimate.\n\nUntouched does not mean universal\nAn untouched test set estimates behavior for cases represented by the same sampling and measurement process. It does not establish behavior for missing locations, users, seasons, or sensors.\nIndependence protects the estimate from selection bias; coverage limits the situations to which that estimate applies.",
+    "activityId": "05-leakage-explanation",
+    "activityPrompt": "Explain why choosing a candidate from test loss contaminates the final estimate even when no gradient used test rows, and state the separate jobs of train, validation, and test.",
+    "activityGuidance": "Trace the information path from a metric to a decision.",
+    "criteria": [
+      {
+        "id": "05-train-job",
+        "label": "fit parameters on training data"
+      },
+      {
+        "id": "05-validation-job",
+        "label": "select candidates with validation data"
+      },
+      {
+        "id": "05-test-job",
+        "label": "reserve test data for final evaluation"
+      },
+      {
+        "id": "05-information-path",
+        "label": "identify test metric influence on the chosen model"
+      }
+    ],
+    "demonstratedFeedback": "You identified leakage as decision-relevant information, not merely shared rows.",
+    "unsupportedFeedback": "State what changed after seeing the test metric; that changed decision is the leakage path."
+  },
+  {
+    "lessonId": "split-and-leakage",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Three splits protect three decisions",
+    "lessonContext": "Partition before the answer can influence a decision\nTraining data fits parameters. Validation data compares model or hyperparameter choices. Test data evaluates the frozen process after fitting and selection are complete.\nThe labels do not make a split. Its role is defined by how information from it is used.\n\nValidation closes the development loop\nFit candidate models on training rows, compare their validation losses, and select one. A validation result can change the next candidate, so it becomes part of development evidence.\nAfter selection, refit only according to the authored procedure and freeze every choice before test evaluation.\n\nLeakage is an information path\nTest leakage occurs when test features, targets, metrics, or repeated feedback influence fitting, preprocessing, feature choices, stopping, or model selection.\nCalling the same rows test data afterward does not restore independence. A new untouched set is required for an honest final estimate.\n\nUntouched does not mean universal\nAn untouched test set estimates behavior for cases represented by the same sampling and measurement process. It does not establish behavior for missing locations, users, seasons, or sensors.\nIndependence protects the estimate from selection bias; coverage limits the situations to which that estimate applies.",
+    "activityId": "05-factory-transfer",
+    "activityPrompt": "A factory trains a defect model on Line A, tunes its threshold by repeatedly checking Line B, then reports the best Line B result as the test score for all factories. Identify each data role, the leakage, the repair, and the remaining coverage limit.",
+    "activityGuidance": "Separate independence from representativeness.",
+    "criteria": [
+      {
+        "id": "05-transfer-roles",
+        "label": "treat Line A as training and Line B as validation"
+      },
+      {
+        "id": "05-transfer-leak",
+        "label": "identify repeated Line B threshold selection as validation use"
+      },
+      {
+        "id": "05-transfer-repair",
+        "label": "require a new untouched final test set"
+      },
+      {
+        "id": "05-transfer-scope",
+        "label": "limit claims beyond represented lines or factories"
+      }
+    ],
+    "demonstratedFeedback": "You repaired the information path and kept the deployment claim inside the data coverage.",
+    "unsupportedFeedback": "Rename Line B by how it was used, then introduce data that influenced no decision."
+  },
+  {
+    "lessonId": "capacity-curves",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Capacity changes what a model can fit",
+    "lessonContext": "Capacity is a set of possible rules\nA linear polynomial can represent straight lines. Adding squared and higher-power terms expands the set of curves the model can fit.\nMore capacity is not automatically better. It can represent the underlying pattern, but it can also follow sample-specific noise.\n\nHigh train and validation loss indicate underfit\nIf training and held-out loss are both high and close under one fixed evaluation protocol, the current features, model family, or optimization may not capture the pattern.\nMore observations alone do not repair a rule that cannot represent the relationship. First test one controlled change to capacity, features, objective, or optimization.\n\nA persistent gap indicates overfit\nVery low training loss with substantially higher validation loss means the fitted rule captured details that did not transfer to validation cases.\nReducing capacity or constraining the fit can shrink this gap. More representative data is another possible intervention, but this lesson's local code does not test a data-size sequence.\n\nTwo fitted data states are not a learning curve\nThe visual compares a five-row fit evaluated on three added rows with an eight-row fit evaluated on a separate probe set. Because both the training rows and held-out rows change, the grouped bars are a capacity comparison, not a learning curve.\nA learning curve refits across several nested training sizes while preserving one validation or cross-validation protocol. It can support a data-scaling diagnosis for that fixed pipeline and represented distribution, but it never justifies repeated test inspection.",
+    "activityId": "06-curves-explanation",
+    "activityPrompt": "Explain how train and held-out loss pairs distinguish a capacity bottleneck from sample-specific overfit. Then explain why the two authored data states do not form a learning curve and why slider movement or low training loss alone proves neither diagnosis.",
+    "activityGuidance": "Use both losses and their gap, then name what a multi-size learning-curve protocol would hold fixed.",
+    "criteria": [
+      {
+        "id": "06-underfit-pattern",
+        "label": "identify high close training and validation losses as underfit evidence"
+      },
+      {
+        "id": "06-overfit-pattern",
+        "label": "identify low train loss and high validation loss as overfit evidence"
+      },
+      {
+        "id": "06-protocol-boundary",
+        "label": "distinguish the two-state comparison from a learning curve"
+      },
+      {
+        "id": "06-not-activity",
+        "label": "reject control movement or train fit as sufficient evidence"
+      }
+    ],
+    "demonstratedFeedback": "You tied each diagnosis to a train-held-out pattern and kept the two-state capacity comparison distinct from a learning curve.",
+    "unsupportedFeedback": "Describe training loss, held-out loss, their gap, and what a valid multi-size protocol would keep fixed."
+  },
+  {
+    "lessonId": "capacity-curves",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Capacity changes what a model can fit",
+    "lessonContext": "Capacity is a set of possible rules\nA linear polynomial can represent straight lines. Adding squared and higher-power terms expands the set of curves the model can fit.\nMore capacity is not automatically better. It can represent the underlying pattern, but it can also follow sample-specific noise.\n\nHigh train and validation loss indicate underfit\nIf training and held-out loss are both high and close under one fixed evaluation protocol, the current features, model family, or optimization may not capture the pattern.\nMore observations alone do not repair a rule that cannot represent the relationship. First test one controlled change to capacity, features, objective, or optimization.\n\nA persistent gap indicates overfit\nVery low training loss with substantially higher validation loss means the fitted rule captured details that did not transfer to validation cases.\nReducing capacity or constraining the fit can shrink this gap. More representative data is another possible intervention, but this lesson's local code does not test a data-size sequence.\n\nTwo fitted data states are not a learning curve\nThe visual compares a five-row fit evaluated on three added rows with an eight-row fit evaluated on a separate probe set. Because both the training rows and held-out rows change, the grouped bars are a capacity comparison, not a learning curve.\nA learning curve refits across several nested training sizes while preserving one validation or cross-validation protocol. It can support a data-scaling diagnosis for that fixed pipeline and represented distribution, but it never justifies repeated test inspection.",
+    "activityId": "06-spectrometer-transfer",
+    "activityPrompt": "A spectrometer calibration compares polynomial degrees on one fixed train-validation split. Model A, degree 1, has high similar train and validation errors. Model B, degree 9, has nearly zero train error and high validation error. Diagnose each, prescribe one controlled capacity test for each, and explain why these fits are not a learning curve.",
+    "activityGuidance": "Map each loss pair to a capacity diagnosis, then state the missing multi-size protocol.",
+    "criteria": [
+      {
+        "id": "06-transfer-a",
+        "label": "diagnose Model A as underfit or otherwise capacity-limited"
+      },
+      {
+        "id": "06-transfer-a-test",
+        "label": "test one added capacity or feature intervention for A"
+      },
+      {
+        "id": "06-transfer-b",
+        "label": "diagnose Model B as overfit and test lower capacity"
+      },
+      {
+        "id": "06-transfer-protocol",
+        "label": "deny a learning-curve claim without nested training sizes"
+      }
+    ],
+    "demonstratedFeedback": "You matched each calibration failure to capacity evidence, proposed controlled tests, and stated the learning-curve boundary.",
+    "unsupportedFeedback": "Model A cannot fit either split; Model B fits training too specifically. Neither comparison varies training size under one held-out protocol."
+  },
+  {
+    "lessonId": "logistic-link",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "A linear score becomes a probability",
+    "lessonContext": "Keep the score visible\nA binary classifier can begin with the same weighted sum used by a linear model: z = w1 x1 + w2 x2 + b. This unbounded number is the logit.\nThe logit is not yet a class label or a probability. Its sign says which side of the boundary the example lies on, and its distance from zero records how strongly the linear score favors that side.\n\nSigmoid bends the number line\nThe sigmoid is p = 1 / (1 + exp(-z)). At z = 0, p = 0.5. Mathematically, every finite logit maps strictly between zero and one. In finite-precision arithmetic, an extreme finite logit may round to 0.0 or 1.0; that endpoint is numerical saturation, not the exact mathematical value.\nFor z = ln(3), exp(-z) = 1/3, so p = 1 / (1 + 1/3) = 0.75. The transformation changes the scale, not the ordering: a larger logit always produces a larger probability.\n\nThe boundary remains linear\nUsing probability 0.5 as the decision cutoff is equivalent to using logit zero, because sigmoid(0) = 0.5. The boundary is therefore the set of inputs where w dot x + b = 0.\nSigmoid changes how the score is interpreted, but it does not curve the boundary in the original feature space. Nonlinear boundaries require nonlinear features or a nonlinear composition.\n\nLog loss scores the probability of what happened\nFor target y = 1, log loss is -log(p). For target y = 0, it is -log(1 - p). In both cases, the loss reads the probability assigned to the observed target.\nPredicting p = 0.8 gives loss about 0.223 when y = 1 but about 1.609 when y = 0. A confident probability aimed at the wrong class is expensive because the probability assigned to the actual target is small.\n\nTraining still adjusts parameters\nTraining adjusts the weights and bias to reduce mean training log loss, tending to increase the probability assigned to observed targets in aggregate; an individual training example can still worsen. Inference holds those learned parameters fixed and computes logits and probabilities for new examples.\nA low training log loss is not proof of generalization. The same split discipline from regression still determines whether the probability rule works on unseen data.",
+    "activityId": "logistic-mechanism-explanation",
+    "activityPrompt": "Explain the complete path from features to log loss. Include why logit zero maps to probability 0.5 and why the same probability has different loss for targets 0 and 1.",
+    "activityGuidance": "Name the weighted sum, sigmoid transformation, target-dependent probability, and negative logarithm.",
+    "criteria": [
+      {
+        "id": "logit-weighted-sum",
+        "label": "identify the logit as a weighted sum plus bias"
+      },
+      {
+        "id": "sigmoid-bounds",
+        "label": "state that mathematical sigmoid maps the logit strictly between zero and one"
+      },
+      {
+        "id": "zero-midpoint",
+        "label": "connect logit zero to probability 0.5"
+      },
+      {
+        "id": "target-probability",
+        "label": "make log loss depend on probability assigned to the target"
+      }
+    ],
+    "demonstratedFeedback": "You traced the classifier from an unbounded score to a target-dependent probabilistic loss.",
+    "unsupportedFeedback": "Trace four named objects in order: logit, sigmoid probability, observed target, and negative log probability."
+  },
+  {
+    "lessonId": "logistic-link",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "A linear score becomes a probability",
+    "lessonContext": "Keep the score visible\nA binary classifier can begin with the same weighted sum used by a linear model: z = w1 x1 + w2 x2 + b. This unbounded number is the logit.\nThe logit is not yet a class label or a probability. Its sign says which side of the boundary the example lies on, and its distance from zero records how strongly the linear score favors that side.\n\nSigmoid bends the number line\nThe sigmoid is p = 1 / (1 + exp(-z)). At z = 0, p = 0.5. Mathematically, every finite logit maps strictly between zero and one. In finite-precision arithmetic, an extreme finite logit may round to 0.0 or 1.0; that endpoint is numerical saturation, not the exact mathematical value.\nFor z = ln(3), exp(-z) = 1/3, so p = 1 / (1 + 1/3) = 0.75. The transformation changes the scale, not the ordering: a larger logit always produces a larger probability.\n\nThe boundary remains linear\nUsing probability 0.5 as the decision cutoff is equivalent to using logit zero, because sigmoid(0) = 0.5. The boundary is therefore the set of inputs where w dot x + b = 0.\nSigmoid changes how the score is interpreted, but it does not curve the boundary in the original feature space. Nonlinear boundaries require nonlinear features or a nonlinear composition.\n\nLog loss scores the probability of what happened\nFor target y = 1, log loss is -log(p). For target y = 0, it is -log(1 - p). In both cases, the loss reads the probability assigned to the observed target.\nPredicting p = 0.8 gives loss about 0.223 when y = 1 but about 1.609 when y = 0. A confident probability aimed at the wrong class is expensive because the probability assigned to the actual target is small.\n\nTraining still adjusts parameters\nTraining adjusts the weights and bias to reduce mean training log loss, tending to increase the probability assigned to observed targets in aggregate; an individual training example can still worsen. Inference holds those learned parameters fixed and computes logits and probabilities for new examples.\nA low training log loss is not proof of generalization. The same split discipline from regression still determines whether the probability rule works on unseen data.",
+    "activityId": "logistic-sensor-transfer",
+    "activityPrompt": "A factory sensor predicts whether a bearing will fail. For one machine its logit is ln(3), so p(failure) = 0.75. Explain what probability the model assigns to no failure, which side of the 0.5 boundary it occupies, and why observing no failure produces a larger log loss than observing failure.",
+    "activityGuidance": "Use the complementary probability and compare the probability assigned to each possible observed target.",
+    "criteria": [
+      {
+        "id": "transfer-complement",
+        "label": "compute the no-failure probability as 0.25"
+      },
+      {
+        "id": "transfer-boundary",
+        "label": "place 0.75 on the positive side of the 0.5 boundary"
+      },
+      {
+        "id": "transfer-loss-comparison",
+        "label": "explain that no failure receives the smaller assigned probability"
+      }
+    ],
+    "demonstratedFeedback": "You transferred the logit, complementary probability, boundary, and target-dependent loss to a new domain.",
+    "unsupportedFeedback": "Compute both class probabilities first, then ask which probability the loss reads after each possible outcome."
+  },
+  {
+    "lessonId": "decision-costs",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "A probability becomes a decision",
+    "lessonContext": "The model score and policy are different objects\nA model can output the same probability for an example while two applications make different decisions. The threshold belongs to the decision policy, not to the target and not necessarily to training.\nLowering a threshold makes more examples positive. Raising it makes fewer examples positive. That directional fact holds before any metric is computed.\n\nEvery decision enters one of four cells\nA true positive and true negative are correct decisions. A false positive is a negative target called positive; a false negative is a positive target called negative.\nThe four counts describe decisions at one threshold. If the threshold changes, examples may move between cells even though their scores and targets stay fixed.\n\nPrecision and recall ask different questions\nPrecision = TP / (TP + FP): among positive decisions, how many were truly positive? Recall = TP / (TP + FN): among actual positives, how many did the policy recover?\nIf TP + FP is zero, there were no positive decisions, so precision is undefined; this lesson reports math.nan rather than inventing a measured zero. Recall is likewise undefined when TP + FN is zero.\nA lower threshold often raises recall and lowers precision because it admits more true positives and more false positives. This is a tradeoff, not a law for every finite dataset.\n\nRanking is not calibration\nRanking asks whether higher-scored examples tend to be more positive. Calibration asks whether examples assigned probability 0.7 are positive about 70 percent of the time under the evaluation conditions.\nA monotonic transformation can preserve ranking while changing calibration. A threshold can then produce the same ordering but a different operating point.\n\nCosts make the operating point concrete\nIf a false negative costs 10 units and a false positive costs 1, the empirical total validation cost is 10 x FN + 1 x FP. The best tested threshold is the one with the lowest total across the fixed validation cases.\nThe test set remains untouched while the threshold is chosen. Otherwise the reported test cost becomes part of tuning rather than an independent estimate.",
+    "activityId": "decision-metrics-explanation",
+    "activityPrompt": "Explain why moving a threshold can change precision and recall without changing model probabilities. Then distinguish a high ranking score from a calibrated probability.",
+    "activityGuidance": "Keep the fixed score list, thresholded labels, confusion counts, metric denominators, and observed frequencies separate.",
+    "criteria": [
+      {
+        "id": "fixed-probabilities",
+        "label": "state that probabilities remain fixed when only threshold moves"
+      },
+      {
+        "id": "labels-change",
+        "label": "connect threshold movement to changed positive labels"
+      },
+      {
+        "id": "metrics-from-counts",
+        "label": "connect precision and recall to different confusion counts"
+      },
+      {
+        "id": "calibration-frequency",
+        "label": "define calibration through predicted and observed frequencies"
+      }
+    ],
+    "demonstratedFeedback": "You separated model output, decision policy, metric counts, and calibration.",
+    "unsupportedFeedback": "Explain the chain in two layers: fixed probabilities become changing labels, while calibration compares probabilities with observed frequencies."
+  },
+  {
+    "lessonId": "decision-costs",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "A probability becomes a decision",
+    "lessonContext": "The model score and policy are different objects\nA model can output the same probability for an example while two applications make different decisions. The threshold belongs to the decision policy, not to the target and not necessarily to training.\nLowering a threshold makes more examples positive. Raising it makes fewer examples positive. That directional fact holds before any metric is computed.\n\nEvery decision enters one of four cells\nA true positive and true negative are correct decisions. A false positive is a negative target called positive; a false negative is a positive target called negative.\nThe four counts describe decisions at one threshold. If the threshold changes, examples may move between cells even though their scores and targets stay fixed.\n\nPrecision and recall ask different questions\nPrecision = TP / (TP + FP): among positive decisions, how many were truly positive? Recall = TP / (TP + FN): among actual positives, how many did the policy recover?\nIf TP + FP is zero, there were no positive decisions, so precision is undefined; this lesson reports math.nan rather than inventing a measured zero. Recall is likewise undefined when TP + FN is zero.\nA lower threshold often raises recall and lowers precision because it admits more true positives and more false positives. This is a tradeoff, not a law for every finite dataset.\n\nRanking is not calibration\nRanking asks whether higher-scored examples tend to be more positive. Calibration asks whether examples assigned probability 0.7 are positive about 70 percent of the time under the evaluation conditions.\nA monotonic transformation can preserve ranking while changing calibration. A threshold can then produce the same ordering but a different operating point.\n\nCosts make the operating point concrete\nIf a false negative costs 10 units and a false positive costs 1, the empirical total validation cost is 10 x FN + 1 x FP. The best tested threshold is the one with the lowest total across the fixed validation cases.\nThe test set remains untouched while the threshold is chosen. Otherwise the reported test cost becomes part of tuning rather than an independent estimate.",
+    "activityId": "decision-fire-transfer",
+    "activityPrompt": "A wildfire alert system sends a crew to inspect predicted hotspots. A missed fire costs 20 units; an unnecessary inspection costs 2. Explain which threshold direction you would test first, which confusion cells drive cost, and how you would check whether predicted 0.8 risks are calibrated before deployment.",
+    "activityGuidance": "Name the expensive error, the expected directional tradeoff, the cost expression, and an observed-frequency calibration check.",
+    "criteria": [
+      {
+        "id": "fire-lower-threshold",
+        "label": "test a lower threshold to reduce missed fires"
+      },
+      {
+        "id": "fire-cost-cells",
+        "label": "weight false negatives by 20 and false positives by 2"
+      },
+      {
+        "id": "fire-tradeoff",
+        "label": "acknowledge that false positives may increase"
+      },
+      {
+        "id": "fire-calibration",
+        "label": "compare 0.8 predictions with an observed rate near 80 percent"
+      }
+    ],
+    "demonstratedFeedback": "You chose and justified an operating point without confusing ranking, calibration, or test-set evaluation.",
+    "unsupportedFeedback": "Start with the 20-to-2 cost ratio, identify the corresponding confusion cells, then define what 0.8 should mean across many cases."
+  },
+  {
+    "lessonId": "feature-pipeline",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Features need a reproducible path",
+    "lessonContext": "Fit once, transform many times\nSome preprocessing learns state: a mean, a scale, a category vocabulary, or an imputation value. That state must be fitted using training rows only.\nTransform then applies the frozen state to training, validation, test, and future rows. Re-fitting on each split silently gives the model a different input definition.\n\nScaling records a reference system\nIn the shared lesson fixture, training temperatures [10, missing, 30] use a training-mean imputation of 20. The fitted population scale is sqrt(200 / 3), about 8.165, so a complete value of 40 becomes about 2.449 after scaling.\nScaling does not create information. It changes numeric geometry so a distance or penalty does not become dominated merely by a larger unit.\n\nCategories become stable positions\nA training vocabulary [day, night] can become two indicator positions. Day maps to [1, 0], night to [0, 1], and an unseen category needs an authored policy such as an all-zero unknown encoding.\nInteger codes such as day = 1 and night = 2 invent an ordering and distance that the raw categories did not contain.\n\nMissing is a condition, not a number\nReplacing a missing numeric value with the training mean supplies a usable number, but it does not claim the measurement was actually average. A separate binary missing indicator marks only that the field was absent in the raw row; it does not recover the measurement or explain why it was absent.\nThe reason for missingness may differ across environments. Both the imputation state and the missing rate should therefore remain visible.\n\nA pipeline is an ordered contract\nA pipeline fixes transformation order, learned state, output positions, and model application. Feature crosses are built from already defined values, such as scaled temperature multiplied by a night-shift indicator.\nThe same raw row must produce the same vector under the same fitted pipeline revision. This reproducibility is what makes debugging and deployment comparisons possible.",
+    "activityId": "pipeline-mechanism-explanation",
+    "activityPrompt": "Explain why a scaler mean and imputation value fitted on all rows leak information, while applying training-fitted values to a held-out row does not.",
+    "activityGuidance": "Separate learning transformation state from using already frozen state.",
+    "criteria": [
+      {
+        "id": "pipeline-fit-state",
+        "label": "identify mean and imputation value as fitted state"
+      },
+      {
+        "id": "pipeline-training-only",
+        "label": "fit state on training rows only"
+      },
+      {
+        "id": "pipeline-leak-definition",
+        "label": "explain that held-out values would influence the representation"
+      },
+      {
+        "id": "pipeline-transform-safe",
+        "label": "apply frozen training state without refitting"
+      }
+    ],
+    "demonstratedFeedback": "You separated learning preprocessing state from replaying that state on unseen rows.",
+    "unsupportedFeedback": "Ask which operation estimates a value and which operation only substitutes that already estimated value."
+  },
+  {
+    "lessonId": "feature-pipeline",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Features need a reproducible path",
+    "lessonContext": "Fit once, transform many times\nSome preprocessing learns state: a mean, a scale, a category vocabulary, or an imputation value. That state must be fitted using training rows only.\nTransform then applies the frozen state to training, validation, test, and future rows. Re-fitting on each split silently gives the model a different input definition.\n\nScaling records a reference system\nIn the shared lesson fixture, training temperatures [10, missing, 30] use a training-mean imputation of 20. The fitted population scale is sqrt(200 / 3), about 8.165, so a complete value of 40 becomes about 2.449 after scaling.\nScaling does not create information. It changes numeric geometry so a distance or penalty does not become dominated merely by a larger unit.\n\nCategories become stable positions\nA training vocabulary [day, night] can become two indicator positions. Day maps to [1, 0], night to [0, 1], and an unseen category needs an authored policy such as an all-zero unknown encoding.\nInteger codes such as day = 1 and night = 2 invent an ordering and distance that the raw categories did not contain.\n\nMissing is a condition, not a number\nReplacing a missing numeric value with the training mean supplies a usable number, but it does not claim the measurement was actually average. A separate binary missing indicator marks only that the field was absent in the raw row; it does not recover the measurement or explain why it was absent.\nThe reason for missingness may differ across environments. Both the imputation state and the missing rate should therefore remain visible.\n\nA pipeline is an ordered contract\nA pipeline fixes transformation order, learned state, output positions, and model application. Feature crosses are built from already defined values, such as scaled temperature multiplied by a night-shift indicator.\nThe same raw row must produce the same vector under the same fitted pipeline revision. This reproducibility is what makes debugging and deployment comparisons possible.",
+    "activityId": "pipeline-maintenance-transfer",
+    "activityPrompt": "A maintenance model receives vibration, machine type, and operator shift. Validation contains a new machine type, and some vibration readings are missing. Specify a leak-free transformation path, including the unknown category, missing indicator, and when any feature cross is computed.",
+    "activityGuidance": "Describe fit state, transform order, stable output positions, and an explicit unknown-category policy.",
+    "criteria": [
+      {
+        "id": "maintenance-training-fit",
+        "label": "fit numeric and categorical state on training rows"
+      },
+      {
+        "id": "maintenance-unknown",
+        "label": "use an explicit unknown-category representation"
+      },
+      {
+        "id": "maintenance-missing",
+        "label": "impute vibration and preserve a missing indicator"
+      },
+      {
+        "id": "maintenance-cross-order",
+        "label": "compute a cross after its component values are defined"
+      },
+      {
+        "id": "maintenance-replay",
+        "label": "replay identical state and feature positions on validation"
+      }
+    ],
+    "demonstratedFeedback": "You designed a stable feature contract for missing and previously unseen inputs.",
+    "unsupportedFeedback": "List what the training split learns, then walk one validation row through the frozen steps in order."
+  },
+  {
+    "lessonId": "knn-versus-tree",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Two models draw different neighborhoods",
+    "lessonContext": "kNN predicts from stored examples\nk-nearest neighbors stores the labeled training examples. For a new point, it computes distances, selects the k closest examples, and combines their labels.\nThe method assumes that nearby points should often have similar targets. That local-similarity assumption is its central inductive bias.\n\nk and scale change the neighborhood\nA small k follows local detail and can react strongly to one mislabeled point. A larger k averages over a wider region and can erase a small but real cluster.\nDistance depends on feature scale. If age ranges over tens and income over hundreds of thousands, unscaled income can dominate which points count as near.\n\nA tree predicts by routing\nA decision tree asks a sequence of questions such as temperature < 18 or pressure >= 4.5. Each split partitions the current rows, and a leaf returns a prediction.\nA standard numeric split is axis-aligned: one feature and one threshold at a time. Repeated splits create rectangular regions in feature space.\n\nDepth controls partition detail\nA shallow tree has few large regions and may miss a real interaction. A deep tree can isolate individual training examples and become unstable when the sample changes.\nUnlike kNN, a fitted tree stores split rules rather than consulting every training point for each prediction. Both can overfit, but through different mechanisms.\n\nModel choice is a claim about structure\nkNN favors local similarity under a chosen distance. A tree favors a hierarchy of threshold rules. Neither bias is universally correct.\nCompare them under the same preprocessing, splits, and metric. A more flexible boundary on training data is not enough; the choice must survive validation and transfer to new cases.",
+    "activityId": "knn-tree-explanation",
+    "activityPrompt": "Explain how kNN and a decision tree can assign different labels to the same point. Trace each computation and name the structural assumption responsible.",
+    "activityGuidance": "For kNN, name distance, k, and voting. For the tree, name learned thresholds, routing, and leaves.",
+    "criteria": [
+      {
+        "id": "knn-trace",
+        "label": "trace kNN through distance, k closest points, and vote"
+      },
+      {
+        "id": "tree-trace",
+        "label": "trace the tree through threshold branches to a leaf"
+      },
+      {
+        "id": "knn-bias",
+        "label": "name local similarity as the kNN assumption"
+      },
+      {
+        "id": "tree-bias",
+        "label": "name hierarchical axis-aligned partitioning as the tree assumption"
+      }
+    ],
+    "demonstratedFeedback": "You traced both predictors and made their different inductive biases explicit.",
+    "unsupportedFeedback": "Describe the exact route to a label for each model before comparing their assumptions."
+  },
+  {
+    "lessonId": "knn-versus-tree",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Two models draw different neighborhoods",
+    "lessonContext": "kNN predicts from stored examples\nk-nearest neighbors stores the labeled training examples. For a new point, it computes distances, selects the k closest examples, and combines their labels.\nThe method assumes that nearby points should often have similar targets. That local-similarity assumption is its central inductive bias.\n\nk and scale change the neighborhood\nA small k follows local detail and can react strongly to one mislabeled point. A larger k averages over a wider region and can erase a small but real cluster.\nDistance depends on feature scale. If age ranges over tens and income over hundreds of thousands, unscaled income can dominate which points count as near.\n\nA tree predicts by routing\nA decision tree asks a sequence of questions such as temperature < 18 or pressure >= 4.5. Each split partitions the current rows, and a leaf returns a prediction.\nA standard numeric split is axis-aligned: one feature and one threshold at a time. Repeated splits create rectangular regions in feature space.\n\nDepth controls partition detail\nA shallow tree has few large regions and may miss a real interaction. A deep tree can isolate individual training examples and become unstable when the sample changes.\nUnlike kNN, a fitted tree stores split rules rather than consulting every training point for each prediction. Both can overfit, but through different mechanisms.\n\nModel choice is a claim about structure\nkNN favors local similarity under a chosen distance. A tree favors a hierarchy of threshold rules. Neither bias is universally correct.\nCompare them under the same preprocessing, splits, and metric. A more flexible boundary on training data is not enough; the choice must survive validation and transfer to new cases.",
+    "activityId": "knn-tree-dispatch-transfer",
+    "activityPrompt": "An emergency dispatcher predicts whether a call needs a specialist team from response distance and symptom severity. Similar past calls form curved local clusters, but policy also requires an auditable rule. Compare kNN and a shallow tree, including scaling, boundary shape, noise sensitivity, and the operational tradeoff.",
+    "activityGuidance": "Do not name a universal winner. State what each model assumes and what evidence would decide.",
+    "criteria": [
+      {
+        "id": "dispatch-scaling",
+        "label": "scale distance and severity before kNN distance"
+      },
+      {
+        "id": "dispatch-knn-shape",
+        "label": "connect kNN to curved local clusters and noise sensitivity"
+      },
+      {
+        "id": "dispatch-tree-shape",
+        "label": "connect the tree to auditable threshold regions"
+      },
+      {
+        "id": "dispatch-validation",
+        "label": "choose under a common held-out protocol"
+      }
+    ],
+    "demonstratedFeedback": "You compared the two biases against both data geometry and operational constraints.",
+    "unsupportedFeedback": "Address the geometry first, then the human policy constraint, and finish with a held-out comparison."
+  },
+  {
+    "lessonId": "regularization-path",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Control flexibility without touching the test set",
+    "lessonContext": "Penalize complexity inside the training objective\nRegularized fitting minimizes data loss plus a coefficient penalty. The penalty changes which parameter values count as cheap even when two models fit training data similarly.\nThe regularization strength lambda is a hyperparameter: training optimizes coefficients for a fixed lambda, while validation evidence helps choose lambda.\n\nL2 spreads shrinkage\nL2 adds lambda times the sum of squared coefficients. For one feature through the origin, the fitted weight becomes sum(xy) / (sum(x squared) + lambda).\nWith x = [1, 2] and y = [2, 4], the unregularized weight is 10/5 = 2. At lambda = 5 it becomes 10/10 = 1. Larger lambda pulls it toward zero.\n\nL1 can create exact zeros\nL1 adds lambda times the sum of absolute coefficients. Its sharp corner at zero can make some fitted coefficients exactly zero.\nA zero coefficient does not prove the feature is useless or causal. With correlated features, small data changes can alter which one L1 retains.\n\nCross-validation rotates the validation role\nIn k-fold cross-validation, split the available training data into k folds. Fit on k-1 folds and evaluate on the remaining fold, rotating until every fold has served as validation.\nEach candidate lambda must use the same folds and the complete fitted pipeline inside each training fold. Average validation loss estimates the selection criterion.\n\nSelection ends before final testing\nAfter selecting lambda, refit the pipeline and model on the full development data under that frozen setting. Evaluate the final test set once for an independent estimate.\nRepeatedly checking test performance while changing lambda turns the test set into another validation set. The optimistic result no longer answers how the frozen procedure handles untouched data.",
+    "activityId": "regularization-cv-explanation",
+    "activityPrompt": "Explain why stronger regularization can raise training loss yet lower cross-validation loss. Include how L1 and L2 differ and why lambda is not chosen on the test set.",
+    "activityGuidance": "Connect coefficient flexibility to fit, fold-to-fold generalization, penalty shape, and the role of the untouched test.",
+    "criteria": [
+      {
+        "id": "regularization-training",
+        "label": "connect stronger penalty to smaller coefficients and constrained fit"
+      },
+      {
+        "id": "regularization-generalization",
+        "label": "explain the possible validation improvement through reduced overfit"
+      },
+      {
+        "id": "regularization-l1-l2",
+        "label": "distinguish L1 sparsity from L2 distributed shrinkage"
+      },
+      {
+        "id": "regularization-test-role",
+        "label": "reserve test data for the frozen selected procedure"
+      }
+    ],
+    "demonstratedFeedback": "You connected penalty geometry, training fit, cross-validation, and final testing.",
+    "unsupportedFeedback": "Explain separately what lambda does during fitting and what cross-validation does during selection."
+  },
+  {
+    "lessonId": "regularization-path",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Control flexibility without touching the test set",
+    "lessonContext": "Penalize complexity inside the training objective\nRegularized fitting minimizes data loss plus a coefficient penalty. The penalty changes which parameter values count as cheap even when two models fit training data similarly.\nThe regularization strength lambda is a hyperparameter: training optimizes coefficients for a fixed lambda, while validation evidence helps choose lambda.\n\nL2 spreads shrinkage\nL2 adds lambda times the sum of squared coefficients. For one feature through the origin, the fitted weight becomes sum(xy) / (sum(x squared) + lambda).\nWith x = [1, 2] and y = [2, 4], the unregularized weight is 10/5 = 2. At lambda = 5 it becomes 10/10 = 1. Larger lambda pulls it toward zero.\n\nL1 can create exact zeros\nL1 adds lambda times the sum of absolute coefficients. Its sharp corner at zero can make some fitted coefficients exactly zero.\nA zero coefficient does not prove the feature is useless or causal. With correlated features, small data changes can alter which one L1 retains.\n\nCross-validation rotates the validation role\nIn k-fold cross-validation, split the available training data into k folds. Fit on k-1 folds and evaluate on the remaining fold, rotating until every fold has served as validation.\nEach candidate lambda must use the same folds and the complete fitted pipeline inside each training fold. Average validation loss estimates the selection criterion.\n\nSelection ends before final testing\nAfter selecting lambda, refit the pipeline and model on the full development data under that frozen setting. Evaluate the final test set once for an independent estimate.\nRepeatedly checking test performance while changing lambda turns the test set into another validation set. The optimistic result no longer answers how the frozen procedure handles untouched data.",
+    "activityId": "regularization-sensor-transfer",
+    "activityPrompt": "A vibration model has 40 correlated sensor features and only 160 machines. Describe a defensible comparison of L1 and L2, including fold-local preprocessing, the evidence used to select lambda, what coefficient patterns you expect, and when the test set is opened.",
+    "activityGuidance": "Account for correlation, pipeline fitting inside folds, repeated validation, and the final frozen evaluation.",
+    "criteria": [
+      {
+        "id": "sensor-fold-pipeline",
+        "label": "fit preprocessing inside each training fold"
+      },
+      {
+        "id": "sensor-candidate-comparison",
+        "label": "compare candidate lambdas using mean validation loss"
+      },
+      {
+        "id": "sensor-patterns",
+        "label": "expect L1 zeros and L2 shared shrinkage under correlation"
+      },
+      {
+        "id": "sensor-test-once",
+        "label": "open test data only after freezing model and lambda"
+      }
+    ],
+    "demonstratedFeedback": "You transferred regularized selection to a small, correlated dataset without contaminating final evaluation.",
+    "unsupportedFeedback": "Walk through one fold, then selection across folds, then the single final test."
+  },
+  {
+    "lessonId": "ensemble-votes",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Many weak views can form one stronger model",
+    "lessonContext": "Aggregation needs disagreement\nAveraging can stabilize predictions only when component errors are not perfectly aligned. Copying one deterministic model many times produces the same prediction and no variance reduction.\nAn ensemble therefore combines two ideas: create meaningfully different base learners, then aggregate or sequence their outputs.\n\nBagging trains in parallel\nBagging draws bootstrap samples from the training rows, fits one base learner per sample, then averages regression predictions or votes on classes.\nDeep trees are unstable: a changed sample can change early splits. Averaging many such trees can reduce this sample-driven variance while retaining flexible fits.\n\nRandom forests also vary the available features\nIf one strong feature dominates every tree, bootstrap trees can remain highly correlated. A random forest offers only a random subset of features at each candidate split.\nFeature subsampling can force different useful structures to appear, reducing correlation among trees. It may weaken individual trees while strengthening their average.\n\nBoosting trains in sequence\nBoosting adds a small learner that focuses on what the current ensemble still gets wrong. For squared error, one simple view fits the next learner to residuals target minus current prediction.\nIf the current prediction is 2 for a target of 4, the residual is 2. Adding half of that correction moves the prediction to 3. The learning rate controls how much of each stage is accepted.\n\nName the failure before choosing the ensemble\nBagging and random forests primarily address unstable, high-variance learners. Boosting can reduce systematic underfit by composing many small corrections, though it also needs regularization and validation.\nThe labels variance and bias are diagnostic summaries, not guarantees. Compare learning curves, multi-seed variation, and held-out error under the same protocol.",
+    "activityId": "ensemble-mechanism-explanation",
+    "activityPrompt": "Explain why bootstrap trees can reduce variance, why random feature subsets may improve their average, and why boosting is not bagging.",
+    "activityGuidance": "Contrast parallel resampling and aggregation with sequential error correction.",
+    "criteria": [
+      {
+        "id": "bagging-bootstrap",
+        "label": "connect bootstrap samples to different parallel trees"
+      },
+      {
+        "id": "bagging-variance",
+        "label": "connect averaging imperfectly correlated trees to lower variance"
+      },
+      {
+        "id": "forest-features",
+        "label": "explain feature subsampling as tree decorrelation"
+      },
+      {
+        "id": "boosting-sequence",
+        "label": "explain boosting as sequential correction"
+      }
+    ],
+    "demonstratedFeedback": "You separated diversity and averaging from staged residual correction.",
+    "unsupportedFeedback": "Use two timelines: bagging learners train beside one another; boosting learners train one after another."
+  },
+  {
+    "lessonId": "ensemble-votes",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Many weak views can form one stronger model",
+    "lessonContext": "Aggregation needs disagreement\nAveraging can stabilize predictions only when component errors are not perfectly aligned. Copying one deterministic model many times produces the same prediction and no variance reduction.\nAn ensemble therefore combines two ideas: create meaningfully different base learners, then aggregate or sequence their outputs.\n\nBagging trains in parallel\nBagging draws bootstrap samples from the training rows, fits one base learner per sample, then averages regression predictions or votes on classes.\nDeep trees are unstable: a changed sample can change early splits. Averaging many such trees can reduce this sample-driven variance while retaining flexible fits.\n\nRandom forests also vary the available features\nIf one strong feature dominates every tree, bootstrap trees can remain highly correlated. A random forest offers only a random subset of features at each candidate split.\nFeature subsampling can force different useful structures to appear, reducing correlation among trees. It may weaken individual trees while strengthening their average.\n\nBoosting trains in sequence\nBoosting adds a small learner that focuses on what the current ensemble still gets wrong. For squared error, one simple view fits the next learner to residuals target minus current prediction.\nIf the current prediction is 2 for a target of 4, the residual is 2. Adding half of that correction moves the prediction to 3. The learning rate controls how much of each stage is accepted.\n\nName the failure before choosing the ensemble\nBagging and random forests primarily address unstable, high-variance learners. Boosting can reduce systematic underfit by composing many small corrections, though it also needs regularization and validation.\nThe labels variance and bias are diagnostic summaries, not guarantees. Compare learning curves, multi-seed variation, and held-out error under the same protocol.",
+    "activityId": "ensemble-grid-transfer",
+    "activityPrompt": "A power-grid tree model changes sharply when a few training days are replaced, and most trees always split first on temperature. A separate shallow model underfits every fold. Propose one ensemble intervention for each failure and state the evidence that would support it.",
+    "activityGuidance": "Diagnose instability, correlated trees, and systematic underfit separately.",
+    "criteria": [
+      {
+        "id": "grid-instability-bagging",
+        "label": "use bagging for sample-driven tree instability"
+      },
+      {
+        "id": "grid-correlation-forest",
+        "label": "use random feature subsets to reduce temperature dominance"
+      },
+      {
+        "id": "grid-underfit-boost",
+        "label": "use sequential boosting for residual underfit"
+      },
+      {
+        "id": "grid-evidence",
+        "label": "require held-out and multi-sample evidence"
+      }
+    ],
+    "demonstratedFeedback": "You matched each ensemble mechanism to a distinct observed failure and named the evidence needed.",
+    "unsupportedFeedback": "Treat the unstable tree, correlated trees, and underfitting shallow model as three separate diagnoses."
+  },
+  {
+    "lessonId": "xor-hidden-space",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Hidden units can rebuild the space",
+    "lessonContext": "XOR labels opposite corners together\nXOR is 1 when exactly one binary input is 1. Its four cases are (0,0) -> 0, (1,0) -> 1, (0,1) -> 1, and (1,1) -> 0.\nIn the input plane, the positive examples occupy opposite corners. Any single straight boundary that isolates one positive corner places the other on the wrong side.\n\nStacked linear maps remain linear\nIf one layer computes h = A x + a and the next computes z = B h + b, substitution gives z = B A x + B a + b. The composition is still one linear map plus a bias.\nDepth alone does not create a curved or disconnected boundary. A nonlinear activation between layers changes that algebra.\n\nRectification exposes disagreement\nReLU(a) = max(0, a): positive inputs pass through unchanged, while negative inputs become zero. This is the nonlinear activation used in the two authored hidden features.\nLet h1 = ReLU(x1 - x2) and h2 = ReLU(x2 - x1). For (1,0), the hidden pair is (1,0); for (0,1), it is (0,1).\nFor both equal-input cases, (0,0) and (1,1), the hidden pair is (0,0). The hidden coordinates have turned opposite positive corners into points that share a simple property: h1 + h2 is positive.\n\nThe output layer reads the new geometry\nAn output score s = h1 + h2 is 1 for unequal inputs and 0 for equal inputs. Thresholding at 0.5 reproduces the XOR truth table.\nThe output operation is linear in hidden space. The model succeeds because the nonlinear hidden transformation changed the representation before that final line was drawn.\n\nHidden coordinates are computations, not little names\nHere each hidden unit has a transparent authored formula. In a trained network, useful coordinates are learned jointly and need not correspond to stable human concepts.\nA visual boundary can show what the network computes on a small domain, but it does not by itself explain generalization, calibration, or causality.",
+    "activityId": "xor-mechanism-explanation",
+    "activityPrompt": "Explain why one linear boundary fails on XOR and trace all four inputs through h1 = ReLU(x1 - x2), h2 = ReLU(x2 - x1), and score h1 + h2.",
+    "activityGuidance": "Name the input geometry, hidden coordinates for equal and unequal inputs, and the final threshold.",
+    "criteria": [
+      {
+        "id": "xor-opposite-corners",
+        "label": "identify positive and negative XOR cases as opposite corners"
+      },
+      {
+        "id": "xor-linear-failure",
+        "label": "state that one straight boundary cannot separate both positive corners"
+      },
+      {
+        "id": "xor-row-00",
+        "label": "trace input 0,0 to hidden 0,0, score 0, and label 0"
+      },
+      {
+        "id": "xor-row-10",
+        "label": "trace input 1,0 to hidden 1,0, score 1, and label 1"
+      },
+      {
+        "id": "xor-row-01",
+        "label": "trace input 0,1 to hidden 0,1, score 1, and label 1"
+      },
+      {
+        "id": "xor-row-11",
+        "label": "trace input 1,1 to hidden 0,0, score 0, and label 0"
+      },
+      {
+        "id": "xor-output-threshold",
+        "label": "sum hidden values and threshold at one half"
+      }
+    ],
+    "demonstratedFeedback": "You showed exactly how nonlinear hidden coordinates turn XOR into a simple output threshold.",
+    "unsupportedFeedback": "Build a four-row table with input, h1, h2, score, and label, then explain why no input-space line matches it."
+  },
+  {
+    "lessonId": "xor-hidden-space",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Hidden units can rebuild the space",
+    "lessonContext": "XOR labels opposite corners together\nXOR is 1 when exactly one binary input is 1. Its four cases are (0,0) -> 0, (1,0) -> 1, (0,1) -> 1, and (1,1) -> 0.\nIn the input plane, the positive examples occupy opposite corners. Any single straight boundary that isolates one positive corner places the other on the wrong side.\n\nStacked linear maps remain linear\nIf one layer computes h = A x + a and the next computes z = B h + b, substitution gives z = B A x + B a + b. The composition is still one linear map plus a bias.\nDepth alone does not create a curved or disconnected boundary. A nonlinear activation between layers changes that algebra.\n\nRectification exposes disagreement\nReLU(a) = max(0, a): positive inputs pass through unchanged, while negative inputs become zero. This is the nonlinear activation used in the two authored hidden features.\nLet h1 = ReLU(x1 - x2) and h2 = ReLU(x2 - x1). For (1,0), the hidden pair is (1,0); for (0,1), it is (0,1).\nFor both equal-input cases, (0,0) and (1,1), the hidden pair is (0,0). The hidden coordinates have turned opposite positive corners into points that share a simple property: h1 + h2 is positive.\n\nThe output layer reads the new geometry\nAn output score s = h1 + h2 is 1 for unequal inputs and 0 for equal inputs. Thresholding at 0.5 reproduces the XOR truth table.\nThe output operation is linear in hidden space. The model succeeds because the nonlinear hidden transformation changed the representation before that final line was drawn.\n\nHidden coordinates are computations, not little names\nHere each hidden unit has a transparent authored formula. In a trained network, useful coordinates are learned jointly and need not correspond to stable human concepts.\nA visual boundary can show what the network computes on a small domain, but it does not by itself explain generalization, calibration, or causality.",
+    "activityId": "xor-switch-transfer",
+    "activityPrompt": "A safety lamp should turn on when exactly one of two override switches is active, but stay off when both are equal. Map this problem to XOR, give two hidden ReLU features, and explain why the final output can be linear in hidden space.",
+    "activityGuidance": "Use the switch states as binary inputs and show the equal versus unequal hidden coordinates.",
+    "criteria": [
+      {
+        "id": "switch-xor-map",
+        "label": "map exactly one active switch to XOR positive"
+      },
+      {
+        "id": "switch-hidden-formulas",
+        "label": "provide both directed ReLU difference features"
+      },
+      {
+        "id": "switch-equal-zero",
+        "label": "show equal switch states map to zero-zero"
+      },
+      {
+        "id": "switch-linear-output",
+        "label": "explain that hidden sum separates unequal from equal states"
+      }
+    ],
+    "demonstratedFeedback": "You transferred nonlinear representation building from a geometric puzzle to a control rule.",
+    "unsupportedFeedback": "Translate each of the four switch states first, then reuse the two directional difference features."
+  },
+  {
+    "lessonId": "backprop-graph",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Trace credit through a graph",
+    "lessonContext": "A graph is a record of operations\nFor x = 2, w = 1, b = 0, and target = 1, the graph p = w * x, q = w^2, y_hat = p + q + b, and L = 0.5 * (y_hat - target)^2 produces p = 2, q = 1, y_hat = 3, and L = 2. The shared value w fans out into two operations before their results meet again.\nThe forward pass computes values. It does not yet say which earlier value should change.\n\nBackward credit is a chain of local facts\nAt the loss, dL/dy_hat = y_hat - target = 2. The product path contributes 2 * dp/dw = 2 * x = 4. The square path contributes 2 * dq/dw = 2 * 2w = 4.\nBoth paths originate at the same w, so reverse accumulation adds them: dL/dw = 4 + 4 = 8. The number 8 is the local rate at which this loss would change for a small change in the shared parameter.\n\nProducts follow paths; sums join paths\nAlong one path, chain-rule factors multiply. If a value influences the loss through several paths, the gradient contributions add because each path changes the same final loss.\nThe product branch and square branch each provide one contribution to w. Keeping only either 4 would silently discard a real route from w to the loss.\n\nAutodiff automates bookkeeping, not meaning\nReverse-mode autodiff records the forward operations and applies their derivative rules in reverse topological order. It computes the same chain-rule products and sums as the hand trace.\nAutodiff can return the exact derivative of the program and still optimize the wrong objective or propagate through a mistaken graph.\n\nA nearby perturbation checks the implementation\nFinite differences compare the accumulated analytic gradient with [L(w + epsilon) - L(w - epsilon)] / (2 * epsilon). PyTorch's gradcheck applies this same analytical-versus-numerical idea to floating-point tensor inputs. Agreement across several signed cases supports the derivative code; it does not prove the model or loss is appropriate.",
+    "activityId": "backprop-credit-explanation",
+    "activityPrompt": "Why must dL/dw in the worked graph contain two terms? Trace both routes, show where multiplication and addition occur, and name a numerical result that would falsify your sum.",
+    "activityGuidance": "Name the shared parameter, each local derivative, both path contributions, their sum, and a finite-difference check.",
+    "criteria": [
+      {
+        "id": "backprop-product-route",
+        "label": "trace the product route through p = w times x"
+      },
+      {
+        "id": "backprop-square-route",
+        "label": "trace the square route through q = w squared"
+      },
+      {
+        "id": "backprop-path-sum",
+        "label": "multiply along each route and add the two contributions"
+      },
+      {
+        "id": "backprop-falsifier",
+        "label": "state a finite-difference result that would challenge the accumulated gradient"
+      }
+    ],
+    "demonstratedFeedback": "You traced both branches and named a numerical check on their accumulated gradient.",
+    "unsupportedFeedback": "Start at the residual, trace w through p and q separately, then add only when both routes return to w."
+  },
+  {
+    "lessonId": "backprop-graph",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Trace credit through a graph",
+    "lessonContext": "A graph is a record of operations\nFor x = 2, w = 1, b = 0, and target = 1, the graph p = w * x, q = w^2, y_hat = p + q + b, and L = 0.5 * (y_hat - target)^2 produces p = 2, q = 1, y_hat = 3, and L = 2. The shared value w fans out into two operations before their results meet again.\nThe forward pass computes values. It does not yet say which earlier value should change.\n\nBackward credit is a chain of local facts\nAt the loss, dL/dy_hat = y_hat - target = 2. The product path contributes 2 * dp/dw = 2 * x = 4. The square path contributes 2 * dq/dw = 2 * 2w = 4.\nBoth paths originate at the same w, so reverse accumulation adds them: dL/dw = 4 + 4 = 8. The number 8 is the local rate at which this loss would change for a small change in the shared parameter.\n\nProducts follow paths; sums join paths\nAlong one path, chain-rule factors multiply. If a value influences the loss through several paths, the gradient contributions add because each path changes the same final loss.\nThe product branch and square branch each provide one contribution to w. Keeping only either 4 would silently discard a real route from w to the loss.\n\nAutodiff automates bookkeeping, not meaning\nReverse-mode autodiff records the forward operations and applies their derivative rules in reverse topological order. It computes the same chain-rule products and sums as the hand trace.\nAutodiff can return the exact derivative of the program and still optimize the wrong objective or propagate through a mistaken graph.\n\nA nearby perturbation checks the implementation\nFinite differences compare the accumulated analytic gradient with [L(w + epsilon) - L(w - epsilon)] / (2 * epsilon). PyTorch's gradcheck applies this same analytical-versus-numerical idea to floating-point tensor inputs. Agreement across several signed cases supports the derivative code; it does not prove the model or loss is appropriate.",
+    "activityId": "backprop-thermostat-transfer",
+    "activityPrompt": "A heater computes direct_heat = gain * command, resistive_heat = gain^2, temperature = direct_heat + resistive_heat + ambient, and discomfort = 0.5 * (temperature - target)^2. Explain d(discomfort)/d(gain) and map both gain paths to the worked graph.",
+    "activityGuidance": "Use the residual, command, 2 * gain, both path contributions, and their sum. Do not answer only with a final formula.",
+    "criteria": [
+      {
+        "id": "thermostat-residual",
+        "label": "derive the downstream discomfort sensitivity"
+      },
+      {
+        "id": "thermostat-direct-path",
+        "label": "identify command as the direct-heat path derivative"
+      },
+      {
+        "id": "thermostat-resistive-path",
+        "label": "identify two times gain as the squared path derivative"
+      },
+      {
+        "id": "thermostat-accumulation",
+        "label": "multiply the residual along both routes and add at gain"
+      }
+    ],
+    "demonstratedFeedback": "You transferred fan-out and reverse accumulation without relying on the original variable names.",
+    "unsupportedFeedback": "Map gain to w, command to x, ambient to b, and preserve both routes from gain to temperature."
+  },
+  {
+    "lessonId": "optimizer-traces",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Read the optimizer's trace",
+    "lessonContext": "A mini-batch is a noisy view of the objective\nThe full gradient averages every training example. A mini-batch averages a selected subset, so its direction can differ even when the model and loss are unchanged.\nSmaller batches usually expose more variation between updates. That variation is not automatically evidence of a bug.\n\nInitialization chooses the first regime\nIdentical zero initialization can keep symmetric hidden units identical. Excessively large values can push nonlinear units into saturated regions or make early activations and gradients unstable.\nInitialization changes where optimization starts; it does not change which examples belong to the training objective.\n\nLearning rate scales every proposed update\nFor gradient 4, plain gradient descent with rate 0.01 moves by 0.04; rate 0.5 moves by 2. A very small rate can look flat, while a large rate can cross the minimum repeatedly or diverge.\nA jagged curve alone does not identify the cause: batch order, initialization, and optimizer state must be held fixed before blaming the learning rate.\n\nMomentum and Adam carry state\nMomentum accumulates a decaying history of gradients, so it can preserve motion through a shallow region and overshoot after direction changes. Adam tracks decaying first and second gradient moments, bias-corrects them, and scales the update coordinate by coordinate.\nNeither optimizer chooses the objective, fixes bad data, or guarantees generalization.\n\nChange one cause, then replay\nA useful diagnosis preserves data order, initialization, model, and seed while changing one optimizer mechanism. Compare exact traces rather than interpreting one smooth or dramatic curve in isolation.",
+    "activityId": "optimizer-instability-explanation",
+    "activityPrompt": "A replay with the same seed, batches, and initialization becomes oscillatory only after the learning rate is increased. Explain the causal chain, name the nearest competing explanation, and state a result that would falsify the learning-rate diagnosis.",
+    "activityGuidance": "Connect gradient, step scale, crossing the minimum, the held-fixed controls, and a controlled replay.",
+    "criteria": [
+      {
+        "id": "optimizer-step-scale",
+        "label": "connect learning rate to update magnitude"
+      },
+      {
+        "id": "optimizer-oscillation",
+        "label": "connect large steps to overshoot or oscillation"
+      },
+      {
+        "id": "optimizer-competitor",
+        "label": "name batch order or initialization as a competing cause"
+      },
+      {
+        "id": "optimizer-falsifier",
+        "label": "state a same-control replay that would falsify the diagnosis"
+      }
+    ],
+    "demonstratedFeedback": "You isolated the update-scale mechanism and made the diagnosis testable.",
+    "unsupportedFeedback": "Use the SGD equation, then separate the changed rate from batch and initialization alternatives."
+  },
+  {
+    "lessonId": "optimizer-traces",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Read the optimizer's trace",
+    "lessonContext": "A mini-batch is a noisy view of the objective\nThe full gradient averages every training example. A mini-batch averages a selected subset, so its direction can differ even when the model and loss are unchanged.\nSmaller batches usually expose more variation between updates. That variation is not automatically evidence of a bug.\n\nInitialization chooses the first regime\nIdentical zero initialization can keep symmetric hidden units identical. Excessively large values can push nonlinear units into saturated regions or make early activations and gradients unstable.\nInitialization changes where optimization starts; it does not change which examples belong to the training objective.\n\nLearning rate scales every proposed update\nFor gradient 4, plain gradient descent with rate 0.01 moves by 0.04; rate 0.5 moves by 2. A very small rate can look flat, while a large rate can cross the minimum repeatedly or diverge.\nA jagged curve alone does not identify the cause: batch order, initialization, and optimizer state must be held fixed before blaming the learning rate.\n\nMomentum and Adam carry state\nMomentum accumulates a decaying history of gradients, so it can preserve motion through a shallow region and overshoot after direction changes. Adam tracks decaying first and second gradient moments, bias-corrects them, and scales the update coordinate by coordinate.\nNeither optimizer chooses the objective, fixes bad data, or guarantees generalization.\n\nChange one cause, then replay\nA useful diagnosis preserves data order, initialization, model, and seed while changing one optimizer mechanism. Compare exact traces rather than interpreting one smooth or dramatic curve in isolation.",
+    "activityId": "optimizer-sensor-transfer",
+    "activityPrompt": "A factory estimates sensor bias from a different small sample each minute and smooths updates with a running velocity. Map mini-batch noise and momentum to this estimator. Explain why a stale velocity can overshoot after the true bias changes sign.",
+    "activityGuidance": "Name the sampled evidence, the noisy estimate, the carried state, and the sign change.",
+    "criteria": [
+      {
+        "id": "sensor-batch-map",
+        "label": "map each minute's sample to a mini-batch"
+      },
+      {
+        "id": "sensor-noisy-gradient",
+        "label": "map sample variation to a noisy update estimate"
+      },
+      {
+        "id": "sensor-velocity",
+        "label": "identify velocity as accumulated past updates"
+      },
+      {
+        "id": "sensor-overshoot",
+        "label": "explain overshoot after the sign change"
+      }
+    ],
+    "demonstratedFeedback": "You transferred both stochastic evidence and optimizer state to a different iterative system.",
+    "unsupportedFeedback": "Treat each minute's sample as the batch and the running velocity as memory from earlier updates."
+  },
+  {
+    "lessonId": "cluster-project",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Three objectives, three geometries",
+    "lessonContext": "Geometry follows an objective\nA plot can show points near one another without saying why proximity matters. K-means, PCA, and learned embeddings each produce geometry under a different success criterion.\nThe same rows can therefore produce different neighborhoods without any algorithm being internally inconsistent.\n\nK-means alternates assignment and relocation\nGiven centroids, assign each point to its nearest centroid under squared distance. Given assignments, replace each centroid with the mean of its assigned points.\nEach step does not increase within-cluster squared distance, but different initial centroids can end at different local solutions. Feature scale and outliers can dominate Euclidean distance.\n\nPCA preserves variance through linear projection\nAfter centering, the first principal direction is the unit direction with greatest projected variance. Keeping only a few directions gives the best linear reconstruction under squared error for that dimensionality.\nPCA does not use class labels and does not promise that the most variable direction is the most predictive one.\n\nLearned embeddings inherit their training signal\nAn embedding is a learned coordinate vector. Which items become close depends on the loss, positive and negative examples, architecture, and data used to train those coordinates.\nA two-dimensional projection of an embedding can distort original distances. Stable neighborhoods should be checked in the original space and across seeds before they support a claim.\n\nName what is optimized before interpreting the picture\nK-means minimizes within-cluster distance, PCA minimizes linear reconstruction error when dimensions are dropped, and a learned embedding minimizes its authored training loss. None of these objectives automatically discovers a unique true grouping.",
+    "activityId": "cluster-objective-explanation",
+    "activityPrompt": "The same dataset shows one split under k-means and another pattern after PCA. Explain why this is not a contradiction, distinguish both objectives from a learned embedding, and name one observation that would challenge your interpretation.",
+    "activityGuidance": "State each objective explicitly and use original-space distances or a replay as the check.",
+    "criteria": [
+      {
+        "id": "cluster-kmeans-objective",
+        "label": "state the k-means objective"
+      },
+      {
+        "id": "cluster-pca-objective",
+        "label": "state the PCA objective"
+      },
+      {
+        "id": "cluster-embedding-objective",
+        "label": "tie embedding geometry to its training loss"
+      },
+      {
+        "id": "cluster-challenge",
+        "label": "name an original-space or stability challenge"
+      }
+    ],
+    "demonstratedFeedback": "You separated the three objectives and treated the displayed geometry as testable evidence.",
+    "unsupportedFeedback": "Do not compare pictures first. Write the quantity each method optimizes."
+  },
+  {
+    "lessonId": "cluster-project",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Three objectives, three geometries",
+    "lessonContext": "Geometry follows an objective\nA plot can show points near one another without saying why proximity matters. K-means, PCA, and learned embeddings each produce geometry under a different success criterion.\nThe same rows can therefore produce different neighborhoods without any algorithm being internally inconsistent.\n\nK-means alternates assignment and relocation\nGiven centroids, assign each point to its nearest centroid under squared distance. Given assignments, replace each centroid with the mean of its assigned points.\nEach step does not increase within-cluster squared distance, but different initial centroids can end at different local solutions. Feature scale and outliers can dominate Euclidean distance.\n\nPCA preserves variance through linear projection\nAfter centering, the first principal direction is the unit direction with greatest projected variance. Keeping only a few directions gives the best linear reconstruction under squared error for that dimensionality.\nPCA does not use class labels and does not promise that the most variable direction is the most predictive one.\n\nLearned embeddings inherit their training signal\nAn embedding is a learned coordinate vector. Which items become close depends on the loss, positive and negative examples, architecture, and data used to train those coordinates.\nA two-dimensional projection of an embedding can distort original distances. Stable neighborhoods should be checked in the original space and across seeds before they support a claim.\n\nName what is optimized before interpreting the picture\nK-means minimizes within-cluster distance, PCA minimizes linear reconstruction error when dimensions are dropped, and a learned embedding minimizes its authored training loss. None of these objectives automatically discovers a unique true grouping.",
+    "activityId": "cluster-library-transfer",
+    "activityPrompt": "A library has books described by topic counts. It needs shelves with compact groups, a two-number catalog preview, and recommendations learned from borrowing pairs. Match k-means, PCA, and a learned embedding to the three jobs and justify each match.",
+    "activityGuidance": "Use compactness, reconstruction, and predictive co-borrowing as three distinct criteria.",
+    "criteria": [
+      {
+        "id": "library-shelves",
+        "label": "use k-means for compact shelf groups"
+      },
+      {
+        "id": "library-preview",
+        "label": "use PCA for the low-dimensional preview"
+      },
+      {
+        "id": "library-recommend",
+        "label": "use learned embeddings for co-borrowing prediction"
+      },
+      {
+        "id": "library-no-equivalence",
+        "label": "state that the resulting neighborhoods need not match"
+      }
+    ],
+    "demonstratedFeedback": "You matched each representation to the job its objective actually supports.",
+    "unsupportedFeedback": "Assign one method to compact groups, one to linear reconstruction, and one to co-borrowing prediction."
+  },
+  {
+    "lessonId": "convolution-field",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Reuse one detector across space",
+    "lessonContext": "One local rule visits every valid location\nA convolution output at one location is the sum of elementwise products between a local input patch and a kernel. Moving one location changes the patch but reuses the same kernel values.\nSharing lets one learned pattern detector operate across space with fewer parameters than a separate detector at every position.\n\nCompute the patch before naming the feature\nFor patch [[1, 2], [0, 1]] and kernel [[1, 0], [0, -1]], the output is 1 * 1 + 2 * 0 + 0 * 0 + 1 * -1 = 0.\nThe arithmetic is known. Calling the result an edge, texture, or object part requires evidence from learned behavior and interventions; the activation alone does not supply that meaning.\n\nReceptive field tracks possible influence\nWith stride 1 and no dilation, each additional width-3 convolution expands the receptive field by two positions. Three such layers give a width-7 receptive field.\nReceptive field says which inputs can influence an output through the graph. It does not say every input has equal actual influence.\n\nA residual block preserves a direct route\nA residual block computes y = x + F(x). Its derivative is dy/dx = 1 + dF/dx, so the identity term provides a direct route for values and gradients.\nResidual paths ease optimization; they do not make every deep model stable or force the learned branch to be small.\n\nSeparate kernel, location, and architecture\nTo test spatial reuse, hold the kernel fixed and move the same pattern. To test receptive field, hold weights fixed and perturb an input at a known distance. To test the residual route, compare the same branch with and without the identity addition.",
+    "activityId": "convolution-sharing-explanation",
+    "activityPrompt": "Explain why a translated pattern moves a convolution response instead of requiring a new detector. Include the nearest misconception about receptive fields and a perturbation that would falsify spatial reuse.",
+    "activityGuidance": "Connect local patches, the same kernel, output location, possible influence, and a controlled shift.",
+    "criteria": [
+      {
+        "id": "convolution-local-patch",
+        "label": "identify the changed local patch"
+      },
+      {
+        "id": "convolution-same-kernel",
+        "label": "state that the same kernel is reused"
+      },
+      {
+        "id": "convolution-field-boundary",
+        "label": "distinguish possible receptive-field influence from equal influence"
+      },
+      {
+        "id": "convolution-falsifier",
+        "label": "state a fixed-kernel translation test"
+      }
+    ],
+    "demonstratedFeedback": "You connected weight sharing to the translated response and bounded the receptive-field claim.",
+    "unsupportedFeedback": "Follow the same kernel from one input patch to the next, then separate possible from actual influence."
+  },
+  {
+    "lessonId": "convolution-field",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Reuse one detector across space",
+    "lessonContext": "One local rule visits every valid location\nA convolution output at one location is the sum of elementwise products between a local input patch and a kernel. Moving one location changes the patch but reuses the same kernel values.\nSharing lets one learned pattern detector operate across space with fewer parameters than a separate detector at every position.\n\nCompute the patch before naming the feature\nFor patch [[1, 2], [0, 1]] and kernel [[1, 0], [0, -1]], the output is 1 * 1 + 2 * 0 + 0 * 0 + 1 * -1 = 0.\nThe arithmetic is known. Calling the result an edge, texture, or object part requires evidence from learned behavior and interventions; the activation alone does not supply that meaning.\n\nReceptive field tracks possible influence\nWith stride 1 and no dilation, each additional width-3 convolution expands the receptive field by two positions. Three such layers give a width-7 receptive field.\nReceptive field says which inputs can influence an output through the graph. It does not say every input has equal actual influence.\n\nA residual block preserves a direct route\nA residual block computes y = x + F(x). Its derivative is dy/dx = 1 + dF/dx, so the identity term provides a direct route for values and gradients.\nResidual paths ease optimization; they do not make every deep model stable or force the learned branch to be small.\n\nSeparate kernel, location, and architecture\nTo test spatial reuse, hold the kernel fixed and move the same pattern. To test receptive field, hold weights fixed and perturb an input at a known distance. To test the residual route, compare the same branch with and without the identity addition.",
+    "activityId": "convolution-audio-transfer",
+    "activityPrompt": "An audio model scans a waveform for a short click pattern. Explain how convolution detects the click at different times, how stacked layers enlarge temporal context, and how y = x + F(x) preserves a direct signal and gradient route.",
+    "activityGuidance": "Map image position to time, spatial patch to waveform window, and the skip connection to the unchanged waveform path.",
+    "criteria": [
+      {
+        "id": "audio-shared-click",
+        "label": "reuse one kernel across time"
+      },
+      {
+        "id": "audio-temporal-field",
+        "label": "connect stacked layers to wider temporal context"
+      },
+      {
+        "id": "audio-residual-value",
+        "label": "identify the direct signal path"
+      },
+      {
+        "id": "audio-residual-gradient",
+        "label": "identify the direct gradient term"
+      }
+    ],
+    "demonstratedFeedback": "You transferred locality, field growth, and the residual route from space to time.",
+    "unsupportedFeedback": "Replace the image patch with a waveform window and preserve the same three mechanisms."
+  },
+  {
+    "lessonId": "attention-routing",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Route information with attention",
+    "lessonContext": "This lesson traces inference, not training\nDuring this forward pass, query, key, and value projection parameters are already fixed. The model computes new token representations; it does not update its weights.\nTraining would add a loss, backpropagate through these operations, and apply optimizer updates across examples. A visible attention pass must not be described as the model learning.\nSelf-attention over content vectors has no inherent token-order signal. Transformers therefore encode position in the input representations or attention computation, for example with positional embeddings, rotary encodings, or position biases. A causal mask only blocks unavailable positions; it is not by itself a full representation of position.\n\nQueries select; values supply content\nFor one token, its query is compared with each allowed key. Scaled dot products become scores; softmax converts them into nonnegative weights summing to one.\nThe output is the weighted sum of value vectors, not key vectors. A key helps determine how much to route; its paired value supplies what is routed.\n\nA causal mask limits available positions\nIn left-to-right inference, the causal mask removes future positions before softmax. Their effective score is negative infinity, so their normalized weight is zero.\nThe mask encodes an information constraint. It is separate from the learned compatibility scores among positions that remain allowed.\n\nA transformer block contains more than attention\nMulti-head attention runs several learned routing projections, then combines their outputs. Residual paths, normalization, and a position-wise feed-forward network transform the representation further.\nTherefore an attention matrix is one intermediate state, not the whole transformer computation.\n\nAttention weight is not causal proof\nA large attention weight shows strong routing under this head and input. It does not by itself prove that the attended token caused the final prediction or expresses the model's reason.\nTrace ML therefore treats a route ablation as an authored causal test: change one route while holding the comparison fixed, then measure whether the output changes. The test can supply intervention evidence; the original attention weight cannot.",
+    "activityId": "attention-routing-explanation",
+    "activityPrompt": "Explain how increasing one allowed query-key score changes the output representation. Then explain why the resulting larger attention weight is not enough to claim that token caused the final prediction, and name a controlled test.",
+    "activityGuidance": "Trace score, softmax weight, value mixture, later paths, and an ablation or replacement.",
+    "criteria": [
+      {
+        "id": "attention-score-weight",
+        "label": "connect compatibility score to softmax weight"
+      },
+      {
+        "id": "attention-value-mixture",
+        "label": "connect the weight to the value mixture"
+      },
+      {
+        "id": "attention-causal-boundary",
+        "label": "deny a complete causal explanation from weights alone"
+      },
+      {
+        "id": "attention-intervention",
+        "label": "propose a controlled route intervention"
+      }
+    ],
+    "demonstratedFeedback": "You traced information routing while keeping the causal claim narrower than the visualization.",
+    "unsupportedFeedback": "Follow score to softmax to value mixture, then ask what an intervention would need to hold fixed."
+  },
+  {
+    "lessonId": "attention-routing",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Route information with attention",
+    "lessonContext": "This lesson traces inference, not training\nDuring this forward pass, query, key, and value projection parameters are already fixed. The model computes new token representations; it does not update its weights.\nTraining would add a loss, backpropagate through these operations, and apply optimizer updates across examples. A visible attention pass must not be described as the model learning.\nSelf-attention over content vectors has no inherent token-order signal. Transformers therefore encode position in the input representations or attention computation, for example with positional embeddings, rotary encodings, or position biases. A causal mask only blocks unavailable positions; it is not by itself a full representation of position.\n\nQueries select; values supply content\nFor one token, its query is compared with each allowed key. Scaled dot products become scores; softmax converts them into nonnegative weights summing to one.\nThe output is the weighted sum of value vectors, not key vectors. A key helps determine how much to route; its paired value supplies what is routed.\n\nA causal mask limits available positions\nIn left-to-right inference, the causal mask removes future positions before softmax. Their effective score is negative infinity, so their normalized weight is zero.\nThe mask encodes an information constraint. It is separate from the learned compatibility scores among positions that remain allowed.\n\nA transformer block contains more than attention\nMulti-head attention runs several learned routing projections, then combines their outputs. Residual paths, normalization, and a position-wise feed-forward network transform the representation further.\nTherefore an attention matrix is one intermediate state, not the whole transformer computation.\n\nAttention weight is not causal proof\nA large attention weight shows strong routing under this head and input. It does not by itself prove that the attended token caused the final prediction or expresses the model's reason.\nTrace ML therefore treats a route ablation as an authored causal test: change one route while holding the comparison fixed, then measure whether the output changes. The test can supply intervention evidence; the original attention weight cannot.",
+    "activityId": "attention-dispatch-transfer",
+    "activityPrompt": "A dispatcher has one request, three depot descriptions, and three depot payloads containing available inventory. Map request, descriptions, and payloads to query, keys, and values. Explain the weighted response and why a high routing weight does not prove the depot caused the final delivery outcome.",
+    "activityGuidance": "Map all three roles, normalization, content mixing, and the downstream causal boundary.",
+    "criteria": [
+      {
+        "id": "dispatch-query",
+        "label": "map the request to the query"
+      },
+      {
+        "id": "dispatch-keys",
+        "label": "map depot descriptions to keys"
+      },
+      {
+        "id": "dispatch-values",
+        "label": "map inventory payloads to values"
+      },
+      {
+        "id": "dispatch-weighted-boundary",
+        "label": "describe normalized mixing without claiming delivery causality"
+      }
+    ],
+    "demonstratedFeedback": "You transferred the routing mechanism and preserved the distinction between an intermediate weight and a final cause.",
+    "unsupportedFeedback": "Assign request, lookup description, and routed content to three different Q-K-V roles."
+  },
+  {
+    "lessonId": "q-learning",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Learn from delayed consequences",
+    "lessonContext": "A bandit has actions but no changing state\nIn the stationary, context-free multi-armed bandit used here, each action produces a reward and the next choice faces the same decision context. Contextual and nonstationary bandits relax those assumptions. The central tension is exploring uncertain actions versus exploiting the best current estimate.\nWhen an action changes what can happen next, the missing state and transition matter. That is the boundary where a Markov decision process is needed.\n\nAn MDP makes consequences explicit\nAn MDP specifies states, available actions, transition behavior, rewards, and a discount factor. The Markov assumption says the current state contains the information used to model the next transition.\nA reward evaluates an observed transition. It is not a correct-action label supplied for every state.\n\nBootstrap from the next state\nSuppose a transition gives reward 2, discount 0.9, and the largest next-state Q value is 5. The Q-learning target is 2 + 0.9 * 5 = 6.5.\nIf the transition ends the episode, there is no future term and the target is only the observed reward.\n\nMove one estimate toward the target\nFor current Q = 1, target 6.5, and learning rate 0.5, the temporal-difference error is 5.5 and the updated Q is 1 + 0.5 * 5.5 = 3.75.\nOnly the visited state-action entry changes in tabular Q-learning. Unvisited estimates do not become correct by association.\n\nThe reward definition is part of the system\nFrom experienced rewards and transitions, Q-learning updates action-value estimates so policy behavior can seek to maximize expected discounted return. It does not optimize the environment's reward function or transition dynamics. Sparse feedback, unsafe exploration, hidden state, changing dynamics, or a misspecified reward can make a numerically correct update produce unwanted behavior.",
+    "activityId": "q-bootstrap-explanation",
+    "activityPrompt": "Explain why increasing the best next-state Q raises a nonterminal target but cannot affect a terminal target. Distinguish reward from a supervised label and state a transition that would falsify your account.",
+    "activityGuidance": "Use reward, discount, next-state value, terminal handling, and one controlled comparison.",
+    "criteria": [
+      {
+        "id": "q-nonterminal-target",
+        "label": "state the nonterminal Bellman target"
+      },
+      {
+        "id": "q-terminal-boundary",
+        "label": "remove future value at a terminal state"
+      },
+      {
+        "id": "q-reward-not-label",
+        "label": "distinguish reward from a correct-action label"
+      },
+      {
+        "id": "q-falsifier",
+        "label": "state a terminal or discount-zero falsifier"
+      }
+    ],
+    "demonstratedFeedback": "You traced the bootstrap term, its terminal boundary, and the difference between consequence and label.",
+    "unsupportedFeedback": "Write separate target equations for continuing and terminal transitions."
+  },
+  {
+    "lessonId": "q-learning",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Learn from delayed consequences",
+    "lessonContext": "A bandit has actions but no changing state\nIn the stationary, context-free multi-armed bandit used here, each action produces a reward and the next choice faces the same decision context. Contextual and nonstationary bandits relax those assumptions. The central tension is exploring uncertain actions versus exploiting the best current estimate.\nWhen an action changes what can happen next, the missing state and transition matter. That is the boundary where a Markov decision process is needed.\n\nAn MDP makes consequences explicit\nAn MDP specifies states, available actions, transition behavior, rewards, and a discount factor. The Markov assumption says the current state contains the information used to model the next transition.\nA reward evaluates an observed transition. It is not a correct-action label supplied for every state.\n\nBootstrap from the next state\nSuppose a transition gives reward 2, discount 0.9, and the largest next-state Q value is 5. The Q-learning target is 2 + 0.9 * 5 = 6.5.\nIf the transition ends the episode, there is no future term and the target is only the observed reward.\n\nMove one estimate toward the target\nFor current Q = 1, target 6.5, and learning rate 0.5, the temporal-difference error is 5.5 and the updated Q is 1 + 0.5 * 5.5 = 3.75.\nOnly the visited state-action entry changes in tabular Q-learning. Unvisited estimates do not become correct by association.\n\nThe reward definition is part of the system\nFrom experienced rewards and transitions, Q-learning updates action-value estimates so policy behavior can seek to maximize expected discounted return. It does not optimize the environment's reward function or transition dynamics. Sparse feedback, unsafe exploration, hidden state, changing dynamics, or a misspecified reward can make a numerically correct update produce unwanted behavior.",
+    "activityId": "q-inventory-transfer",
+    "activityPrompt": "A warehouse chooses how many units to reorder. The choice changes tomorrow's inventory, storage cost, and stockout risk. Explain why this is not a context-free bandit, then define a state, an action, a reward, and the future term in one Bellman target.",
+    "activityGuidance": "Make the changing inventory state and delayed consequence explicit.",
+    "criteria": [
+      {
+        "id": "inventory-not-bandit",
+        "label": "explain that the action changes later decisions"
+      },
+      {
+        "id": "inventory-action",
+        "label": "define the reorder quantity as the action"
+      },
+      {
+        "id": "inventory-reward",
+        "label": "define reward from cost or service outcomes"
+      },
+      {
+        "id": "inventory-future",
+        "label": "include discounted best next-state value"
+      }
+    ],
+    "demonstratedFeedback": "You represented the warehouse as a stateful decision process with delayed consequences.",
+    "unsupportedFeedback": "The key question is whether today's action changes tomorrow's decision state."
+  },
+  {
+    "lessonId": "shift-monitor",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Diagnose the deployed system",
+    "lessonContext": "Capstone incident: the model did not change\nA fixed package-damage model was trained mostly on bright images from Scanner A. The rollout fixture pins model version 3.2, artifact sha256:a65bfe6cceda..., training trace sha256:912fe7955410..., serving code 1.8.4, preprocessing 2.3.1, and threshold 0.60. At the new night facility, Scanner B produces darker images and a rising missing-barcode rate.\nNo lesson, incident detail, or diagnosis branch is generated at runtime. The evidence below is the authored capstone case.\n\nLink each observation to a pipeline layer\nInput brightness mean moves from 0.62 to 0.39 and missing barcodes rise from 2% to 14%. Delayed labels later show accuracy falling from 92% to 83%. False-negative rate is 10% for day parcels and 30% for night parcels.\nThe incident fixture keeps artifact sha256:a65bfe6cceda..., training trace sha256:912fe7955410..., threshold 0.60, serving code 1.8.4, and preprocessing 2.3.1 pinned across the reference and live observations. This evidence first implicates deployment inputs, the measurement path, and operational-slice reliability, not a new optimizer failure.\n\nOperational reliability and fairness are different questions\nAn overall metric averages across the deployment mixture. The day and night scanner slices can expose an operational reliability failure while the aggregate moves only modestly, but that gap alone does not establish a fairness harm.\nFairness analysis must name affected stakeholders or groups, their exposure to the decision, and its consequences. Selection-rate parity or demographic parity can be monitored from decisions and group membership before outcome labels arrive; outcome-dependent false-negative-rate parity or equality-of-opportunity measures require reliable labels. Equalizing one metric can change another and does not replace domain review.\n\nMonitor before and after outcomes arrive\nImmediate monitors can track schema, missingness, feature distributions, model version, latency, score distributions, decision rates, and pre-label selection-rate parity when reliable group membership is available. Outcome-dependent performance and fairness measures such as false-negative-rate parity or equality of opportunity require reliable labels, which may arrive later.\nA drift alert is evidence that behavior or inputs changed, not proof of the root cause. Diagnosis combines monitors with controlled replay, slice evaluation, and incident context.\n\nMitigate, verify, and keep the boundary visible\nThe authored response is to pause unsupported night automation, preserve logs, validate Scanner B preprocessing, collect reviewed night labels, compare the frozen model on matched scanner slices, and release only after overall and night false-negative gates pass.\nRetraining is not the first automatic answer. Repair the measurement path and evaluation coverage before choosing whether model parameters must change.",
+    "activityId": "shift-capstone-diagnosis",
+    "activityPrompt": "Diagnose the fixed Scanner B incident. Build the causal evidence chain, reject optimizer failure as the first explanation, identify the hidden night-slice reliability failure, and state a controlled result that would challenge the data-shift diagnosis.",
+    "activityGuidance": "Use the pinned deployment identity, changed input measurements, delayed outcome slices, and a matched replay.",
+    "criteria": [
+      {
+        "id": "shift-input-evidence",
+        "label": "identify brightness and missingness shift"
+      },
+      {
+        "id": "shift-fixed-model",
+        "label": "use frozen model evidence against optimizer failure"
+      },
+      {
+        "id": "shift-slice-reliability",
+        "label": "identify the night-slice false-negative reliability gap"
+      },
+      {
+        "id": "shift-challenge",
+        "label": "state a matched scanner or preprocessing replay"
+      }
+    ],
+    "demonstratedFeedback": "You localized the incident from changed measurements to an operational-slice reliability failure and proposed a test that could overturn the diagnosis.",
+    "unsupportedFeedback": "Order the evidence by time: pinned deployment identity, immediate input drift, then delayed operational-slice outcomes."
+  },
+  {
+    "lessonId": "shift-monitor",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonTitle": "Diagnose the deployed system",
+    "lessonContext": "Capstone incident: the model did not change\nA fixed package-damage model was trained mostly on bright images from Scanner A. The rollout fixture pins model version 3.2, artifact sha256:a65bfe6cceda..., training trace sha256:912fe7955410..., serving code 1.8.4, preprocessing 2.3.1, and threshold 0.60. At the new night facility, Scanner B produces darker images and a rising missing-barcode rate.\nNo lesson, incident detail, or diagnosis branch is generated at runtime. The evidence below is the authored capstone case.\n\nLink each observation to a pipeline layer\nInput brightness mean moves from 0.62 to 0.39 and missing barcodes rise from 2% to 14%. Delayed labels later show accuracy falling from 92% to 83%. False-negative rate is 10% for day parcels and 30% for night parcels.\nThe incident fixture keeps artifact sha256:a65bfe6cceda..., training trace sha256:912fe7955410..., threshold 0.60, serving code 1.8.4, and preprocessing 2.3.1 pinned across the reference and live observations. This evidence first implicates deployment inputs, the measurement path, and operational-slice reliability, not a new optimizer failure.\n\nOperational reliability and fairness are different questions\nAn overall metric averages across the deployment mixture. The day and night scanner slices can expose an operational reliability failure while the aggregate moves only modestly, but that gap alone does not establish a fairness harm.\nFairness analysis must name affected stakeholders or groups, their exposure to the decision, and its consequences. Selection-rate parity or demographic parity can be monitored from decisions and group membership before outcome labels arrive; outcome-dependent false-negative-rate parity or equality-of-opportunity measures require reliable labels. Equalizing one metric can change another and does not replace domain review.\n\nMonitor before and after outcomes arrive\nImmediate monitors can track schema, missingness, feature distributions, model version, latency, score distributions, decision rates, and pre-label selection-rate parity when reliable group membership is available. Outcome-dependent performance and fairness measures such as false-negative-rate parity or equality of opportunity require reliable labels, which may arrive later.\nA drift alert is evidence that behavior or inputs changed, not proof of the root cause. Diagnosis combines monitors with controlled replay, slice evaluation, and incident context.\n\nMitigate, verify, and keep the boundary visible\nThe authored response is to pause unsupported night automation, preserve logs, validate Scanner B preprocessing, collect reviewed night labels, compare the frozen model on matched scanner slices, and release only after overall and night false-negative gates pass.\nRetraining is not the first automatic answer. Repair the measurement path and evaluation coverage before choosing whether model parameters must change.",
+    "activityId": "shift-water-transfer",
+    "activityPrompt": "A water-quality alert model moves to a river with a replacement turbidity sensor. Labels arrive weekly, and false negatives rise mainly during storm flow. Design the immediate monitors, delayed slice checks, first mitigation, and a controlled test separating sensor shift from model failure.",
+    "activityGuidance": "Name pre-label signals, the storm slice, a reversible safety action, and a matched-sample replay.",
+    "criteria": [
+      {
+        "id": "water-immediate-monitors",
+        "label": "monitor sensor distribution and missingness before labels"
+      },
+      {
+        "id": "water-delayed-slice",
+        "label": "check false negatives on the storm-flow slice"
+      },
+      {
+        "id": "water-mitigation",
+        "label": "state a reversible safety mitigation"
+      },
+      {
+        "id": "water-controlled-test",
+        "label": "compare old and replacement sensors on matched water"
+      }
+    ],
+    "demonstratedFeedback": "You transferred the layered diagnosis to a delayed-label safety system with an explicit control.",
+    "unsupportedFeedback": "Separate signals available today from outcome labels available next week, then compare both sensors on the same water."
+  }
+]

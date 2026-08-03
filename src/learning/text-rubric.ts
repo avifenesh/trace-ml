@@ -447,9 +447,11 @@ export function assessTextResponse(
 ): ExplanationAssessment {
   if (hasGlobalRetraction(response)) {
     return {
+      assessmentMode: "structure",
       level: "unsupported",
       matchedCriteria: [],
       missingCriteria: activity.rubric.criteria.map((criterion) => criterion.id),
+      uncertainCriteria: [],
       feedback:
         "The response retracts its own claims. Submit one consistent explanation so the authored criteria can be checked.",
     };
@@ -469,26 +471,32 @@ export function assessTextResponse(
 
   if (matchedCriteria.length === activity.rubric.criteria.length) {
     return {
+      assessmentMode: "structure",
       level: "partial",
       matchedCriteria,
       missingCriteria: [],
+      uncertainCriteria: [],
       feedback: `All ${matchedCriteria.length} authored elements were found. This local structure check cannot verify causal meaning or correctness; compare the draft with the authored criteria and worked mechanism.`,
     };
   }
 
   if (matchedCriteria.length > 0) {
     return {
+      assessmentMode: "structure",
       level: "partial",
       matchedCriteria,
       missingCriteria: missing.map((criterion) => criterion.id),
+      uncertainCriteria: [],
       feedback: `${matchedCriteria.length} of ${activity.rubric.criteria.length} authored criteria matched. Now ${missing[0]?.label ?? "complete the causal link"}.`,
     };
   }
 
   return {
+    assessmentMode: "structure",
     level: "unsupported",
     matchedCriteria,
     missingCriteria: missing.map((criterion) => criterion.id),
+    uncertainCriteria: [],
     feedback: `No authored criteria matched yet. ${activity.rubric.unsupportedFeedback}`,
   };
 }

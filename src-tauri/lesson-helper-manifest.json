@@ -1,0 +1,2983 @@
+[
+  {
+    "lessonId": "prerequisite-trace",
+    "lessonRevision": "2026-08-03-r3",
+    "lessonNumber": "00",
+    "lessonTitle": "Trace the tools before the model",
+    "lessonQuestion": "Can you trace Python state, array shape, plot axes, slope, and probability without guessing?",
+    "lessonSummary": "Use a compact diagnostic and repair lab for Python, NumPy, plot coordinates, the chain rule, and a probability baseline.",
+    "mechanism": {
+      "input": "A short Python function, a NumPy array, plot coordinates, a composed scalar function, and a class frequency.",
+      "process": "Trace program state and dimensions, map columns to axes, multiply local derivatives, and convert counts into a base rate.",
+      "output": "Verified array and plot shapes, a derivative, and a probability baseline with visible arithmetic."
+    },
+    "chunks": [
+      {
+        "id": "00-diagnostic-contract:p1",
+        "blockId": "00-diagnostic-contract",
+        "heading": "This is a trace, not a placement exam",
+        "text": "Machine-learning mechanisms repeatedly reuse three tools: array dimensions, rates of change, and probabilities. The diagnostic asks you to expose the intermediate quantities instead of recognizing a final answer.",
+        "tags": [
+          "diagnostic",
+          "trace",
+          "dimensions",
+          "derivative",
+          "base rate"
+        ]
+      },
+      {
+        "id": "00-diagnostic-contract:p2",
+        "blockId": "00-diagnostic-contract",
+        "heading": "This is a trace, not a placement exam",
+        "text": "A correct result with no trace is fragile evidence. Keep dimensions beside arrays, name each local derivative, and write the count behind every probability.",
+        "tags": [
+          "diagnostic",
+          "trace",
+          "dimensions",
+          "derivative",
+          "base rate"
+        ]
+      },
+      {
+        "id": "00-shapes:p1",
+        "blockId": "00-shapes",
+        "heading": "Shapes describe which axes can interact",
+        "text": "A batch X with shape 4 by 3 contains four examples and three features per example. Multiplying X by a weight vector with three entries combines the feature axis and leaves one score per example, so the result has shape 4.",
+        "tags": [
+          "Python",
+          "NumPy",
+          "batch",
+          "feature",
+          "matrix",
+          "vector",
+          "shape",
+          "plot axes"
+        ]
+      },
+      {
+        "id": "00-shapes:p2",
+        "blockId": "00-shapes",
+        "heading": "Shapes describe which axes can interact",
+        "text": "The operation is valid because the three feature positions align with the three weights. The batch axis is not summed away.",
+        "tags": [
+          "Python",
+          "NumPy",
+          "batch",
+          "feature",
+          "matrix",
+          "vector",
+          "shape",
+          "plot axes"
+        ]
+      },
+      {
+        "id": "00-shapes:p3",
+        "blockId": "00-shapes",
+        "heading": "Shapes describe which axes can interact",
+        "text": "In NumPy, shape reports axis lengths in order. A plotting table with shape 3 by 2 can store three observations as rows: column zero supplies x coordinates and column one supplies y coordinates. Transposing it to 2 by 3 swaps the meaning of rows and columns.",
+        "tags": [
+          "Python",
+          "NumPy",
+          "batch",
+          "feature",
+          "matrix",
+          "vector",
+          "shape",
+          "plot axes"
+        ]
+      },
+      {
+        "id": "00-chain-rule:p1",
+        "blockId": "00-chain-rule",
+        "heading": "A composed change has two local factors",
+        "text": "Let u = 2x + 1 and y = u squared. At x = 1, u = 3. The outer derivative dy/du is 2u = 6 and the inner derivative du/dx is 2.",
+        "tags": [
+          "chain rule",
+          "local derivative",
+          "composition",
+          "slope"
+        ]
+      },
+      {
+        "id": "00-chain-rule:p2",
+        "blockId": "00-chain-rule",
+        "heading": "A composed change has two local factors",
+        "text": "The chain rule multiplies those local rates: dy/dx = 6 times 2 = 12. Each factor answers how one adjacent quantity changes.",
+        "tags": [
+          "chain rule",
+          "local derivative",
+          "composition",
+          "slope"
+        ]
+      },
+      {
+        "id": "00-base-rate:p1",
+        "blockId": "00-base-rate",
+        "heading": "A baseline states the performance floor",
+        "text": "Classes are the possible target-label categories. In this binary example, 80 of 100 recorded cases are negative and the other 20 are positive. Always predicting the negative majority is therefore correct 80 percent of the time, and that majority baseline uses no features.",
+        "tags": [
+          "probability",
+          "frequency",
+          "majority class",
+          "baseline"
+        ]
+      },
+      {
+        "id": "00-base-rate:p2",
+        "blockId": "00-base-rate",
+        "heading": "A baseline states the performance floor",
+        "text": "A model that scores 75 percent on those same kinds of cases has not beaten the simplest available rule, even if 75 percent sounds high in isolation.",
+        "tags": [
+          "probability",
+          "frequency",
+          "majority class",
+          "baseline"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: For y = (2x + 1)^2, what is dy/dx at x = 1?",
+      "Visible options: 6; 12; 18; 36",
+      "Visual lab: Keep three traces synchronized",
+      "Move x through the composed function while its forward values, array dimensions, and class counts remain visible. Record the shape, both derivative factors, and majority baseline.",
+      "Fixed quantities: The array layout and function stay fixed, as do the two target-label counts: 80 negative cases and 20 positive cases.",
+      "Learner-controlled change: Change only x and inspect how u, the outer slope, and the final derivative change.",
+      "Control: Input x, from -2 to 3",
+      "Explanation prompt: Explain why a 4 by 3 batch times three weights produces four scores, why the derivative at x = 1 is 12, and why 80 percent is the relevant baseline.",
+      "Explanation guidance: Name the preserved axis, both local derivative factors, and the majority count.",
+      "Explanation prompt: A sensor system receives 12 windows with 5 measurements each, averages the five measurements in each window into one scalar t, computes z = 3t - 2 and score = z^2, and has 90 normal versus 10 fault records. State the score-vector shape, dscore/dt at t = 2, and the accuracy of an always-normal baseline.",
+      "Explanation guidance: Reduce each window to one t, map windows to the preserved axis, trace both derivative factors, and use the observed class counts.",
+      "Code lab instructions: Predict the centered list, the NumPy input shape, and the three plotted points before running. Run the working Python function and inspect the malformed 2 by 3 plotting table. Investigate which axis now holds observations. Modify only line_points so it stacks x and prediction as columns, then check the repaired 3 by 2 table.",
+      "Authored starter file array_plot_trace.py:\nimport numpy as np\n\n\ndef center(values):\n    average = sum(values) / len(values)\n    return [value - average for value in values]\n\n\ndef line_points(inputs, weight, bias):\n    x = np.asarray(inputs, dtype=float)\n    prediction = weight * x + bias\n    # REPAIR: each row must be one (x, prediction) point.\n    return np.vstack((x, prediction))\n\n\nINPUTS = np.array([0.0, 1.0, 2.0])\nPLOT_POINTS = line_points(INPUTS, weight=2.0, bias=1.0)\n\nprint(\"centered:\", center([1.0, 2.0, 3.0]))\nprint(\"input shape:\", INPUTS.shape)\nprint(\"plot table shape:\", PLOT_POINTS.shape)\nprint(\"rows interpreted as (x, y):\", PLOT_POINTS.tolist())\n"
+    ]
+  },
+  {
+    "lessonId": "data-and-baseline",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "01",
+    "lessonTitle": "Data gives each quantity a role",
+    "lessonQuestion": "What changes during training, and what exists at prediction time?",
+    "lessonSummary": "Separate features, targets, predictions, parameters, training, inference, and a baseline.",
+    "mechanism": {
+      "input": "Recorded examples with features and targets.",
+      "process": "Fit parameters from training examples, then apply the fixed fitted rule to features at inference.",
+      "output": "Predictions compared with an explicit no-feature baseline."
+    },
+    "chunks": [
+      {
+        "id": "01-row-contract:p1",
+        "blockId": "01-row-contract",
+        "heading": "A recorded row contains evidence, not instructions",
+        "text": "For a completed delivery, distance and package mass can be features, while elapsed minutes is the target. The target is the outcome the prediction is meant to approximate.",
+        "tags": [
+          "feature",
+          "target",
+          "prediction",
+          "availability"
+        ]
+      },
+      {
+        "id": "01-row-contract:p2",
+        "blockId": "01-row-contract",
+        "heading": "A recorded row contains evidence, not instructions",
+        "text": "At inference time for a new delivery, the features are available but the target is not. If elapsed minutes were already known, there would be nothing to predict.",
+        "tags": [
+          "feature",
+          "target",
+          "prediction",
+          "availability"
+        ]
+      },
+      {
+        "id": "01-parameters:p1",
+        "blockId": "01-parameters",
+        "heading": "Parameters belong to the reusable rule",
+        "text": "A parameter is an adjustable number carried by the model across examples. Training uses feature-target pairs to choose parameter values.",
+        "tags": [
+          "input",
+          "parameter",
+          "training",
+          "update"
+        ]
+      },
+      {
+        "id": "01-parameters:p2",
+        "blockId": "01-parameters",
+        "heading": "Parameters belong to the reusable rule",
+        "text": "An input changes when the example changes. A parameter changes when training updates the rule.",
+        "tags": [
+          "input",
+          "parameter",
+          "training",
+          "update"
+        ]
+      },
+      {
+        "id": "01-training-inference:p1",
+        "blockId": "01-training-inference",
+        "heading": "Training and inference run different contracts",
+        "text": "During training, the system predicts on recorded examples, compares predictions with targets, and updates parameters. During inference, it receives new features and uses the fitted parameters without reading a target or updating the rule.",
+        "tags": [
+          "fit",
+          "training",
+          "inference",
+          "state"
+        ]
+      },
+      {
+        "id": "01-training-inference:p2",
+        "blockId": "01-training-inference",
+        "heading": "Training and inference run different contracts",
+        "text": "The same model structure can participate in both stages, but only training changes its fitted state.",
+        "tags": [
+          "fit",
+          "training",
+          "inference",
+          "state"
+        ]
+      },
+      {
+        "id": "01-mean-baseline:p1",
+        "blockId": "01-mean-baseline",
+        "heading": "Start comparison with the mean",
+        "text": "For training targets 8, 10, and 12 minutes, the mean is 10. A mean baseline predicts 10 for every delivery and ignores all features.",
+        "tags": [
+          "mean",
+          "baseline",
+          "regression",
+          "comparison"
+        ]
+      },
+      {
+        "id": "01-mean-baseline:p2",
+        "blockId": "01-mean-baseline",
+        "heading": "Start comparison with the mean",
+        "text": "A learned regression rule earns its complexity only if its evaluation loss improves on that baseline for untouched cases.",
+        "tags": [
+          "mean",
+          "baseline",
+          "regression",
+          "comparison"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: Training targets are 8, 10, and 12 minutes. What does the mean baseline predict for every new case?",
+      "Visible options: 8 minutes; 10 minutes; 12 minutes; It cannot predict",
+      "Visual lab: Compare one fixed rule with the mean baseline",
+      "Predict the output, then move one fitted weight while the feature, bias, target, and mean baseline stay fixed.",
+      "Fixed quantities: The recorded row x = 2, bias 4, target 12, and mean baseline 10 remain fixed.",
+      "Learner-controlled change: Change only the fitted weight; compare its prediction and residual with the fixed target and baseline.",
+      "Control: Fitted parameter, from 0 to 4",
+      "Explanation prompt: Explain why a target may guide a parameter update during training but must be absent during inference, and why the mean prediction is a baseline rather than a learned feature rule.",
+      "Explanation guidance: Use availability time, parameter state, and feature use in your explanation.",
+      "Explanation prompt: A building model predicts tomorrow's electricity use from forecast temperature and occupancy. Historical use values average 240 kWh. Identify features, target, what training changes, what inference may read, and the baseline prediction.",
+      "Explanation guidance: Map the delivery roles to this new domain without changing their timing."
+    ]
+  },
+  {
+    "lessonId": "linear-model",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "02",
+    "lessonTitle": "Two parameters draw one line",
+    "lessonQuestion": "How do weight and bias change a one-feature prediction?",
+    "lessonSummary": "Connect y_hat = wx + b across equation, table, and graph views.",
+    "mechanism": {
+      "input": "One numeric feature x and current parameters w and b.",
+      "process": "Multiply x by w, then add b.",
+      "output": "A prediction y_hat and a line across possible x values."
+    },
+    "chunks": [
+      {
+        "id": "02-visible-rule:p1",
+        "blockId": "02-visible-rule",
+        "heading": "The complete model fits on one line",
+        "text": "A one-feature linear model predicts y_hat = wx + b. The feature x belongs to the case; weight w and bias b belong to the fitted model.",
+        "tags": [
+          "linear model",
+          "feature",
+          "weight",
+          "bias",
+          "prediction"
+        ]
+      },
+      {
+        "id": "02-visible-rule:p2",
+        "blockId": "02-visible-rule",
+        "heading": "The complete model fits on one line",
+        "text": "The formula is the prediction mechanism. Training may later choose w and b, but inference only evaluates the formula with their current values.",
+        "tags": [
+          "linear model",
+          "feature",
+          "weight",
+          "bias",
+          "prediction"
+        ]
+      },
+      {
+        "id": "02-bias:p1",
+        "blockId": "02-bias",
+        "heading": "Bias sets the prediction at zero",
+        "text": "With w = 3 and b = 4, an input x = 0 produces y_hat = 4. Changing b shifts every prediction by the same amount.",
+        "tags": [
+          "bias",
+          "intercept",
+          "vertical shift",
+          "x equals zero"
+        ]
+      },
+      {
+        "id": "02-bias:p2",
+        "blockId": "02-bias",
+        "heading": "Bias sets the prediction at zero",
+        "text": "On a graph, b is where the line crosses the vertical prediction axis.",
+        "tags": [
+          "bias",
+          "intercept",
+          "vertical shift",
+          "x equals zero"
+        ]
+      },
+      {
+        "id": "02-weight:p1",
+        "blockId": "02-weight",
+        "heading": "Weight sets change per input unit",
+        "text": "With w = 3, increasing x by one increases y_hat by three while b stays fixed. The weight is therefore the line's slope.",
+        "tags": [
+          "weight",
+          "slope",
+          "rate",
+          "contribution"
+        ]
+      },
+      {
+        "id": "02-weight:p2",
+        "blockId": "02-weight",
+        "heading": "Weight sets change per input unit",
+        "text": "At x = 5, w = 3 and b = 4 give y_hat = 19. The multiplication contributes 15 and the bias contributes 4.",
+        "tags": [
+          "weight",
+          "slope",
+          "rate",
+          "contribution"
+        ]
+      },
+      {
+        "id": "02-sign-boundary:p1",
+        "blockId": "02-sign-boundary",
+        "heading": "The sign of x matters",
+        "text": "Increasing w raises y_hat when x is positive, changes nothing at x = 0, and lowers y_hat when x is negative. A weight does not have one output direction independent of the input.",
+        "tags": [
+          "negative input",
+          "boundary condition",
+          "direction",
+          "sign"
+        ]
+      },
+      {
+        "id": "02-sign-boundary:p2",
+        "blockId": "02-sign-boundary",
+        "heading": "The sign of x matters",
+        "text": "This boundary condition prevents the shortcut that a larger weight always means a larger prediction.",
+        "tags": [
+          "negative input",
+          "boundary condition",
+          "direction",
+          "sign"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: Hold b = 4 and x = 5 fixed. If w increases from 3 to 4, how does y_hat change?",
+      "Visible options: It decreases by 5; It increases by 1; It increases by 5; It stays the same",
+      "Visual lab: Link equation, table, and line",
+      "Change the weight while the input cases and bias remain fixed. Compare the before and after prediction for every x, including a negative input and x = 0.",
+      "Fixed quantities: The x values and bias b = 4 remain fixed.",
+      "Learner-controlled change: Change only weight w and inspect the corresponding rotation around x = 0.",
+      "Control: Weight w, from -2 to 5",
+      "Explanation prompt: Explain how w and b affect y_hat = wx + b, including what happens at x = 0 and why increasing w can lower a prediction for negative x.",
+      "Explanation guidance: Connect each parameter to a geometric and arithmetic effect, then state the sign boundary.",
+      "Explanation prompt: A thermostat predicts energy change as y_hat = 1.5x - 2, where x is degrees relative to a reference temperature. Interpret the weight and bias, then compute predictions for x = 0 and x = -4 and explain why the negative input reverses the weight contribution.",
+      "Explanation guidance: Map slope and intercept to this signed input rather than to the earlier distance example."
+    ]
+  },
+  {
+    "lessonId": "loss-landscape",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "03",
+    "lessonTitle": "Loss turns many residuals into a surface",
+    "lessonQuestion": "What exactly becomes smaller when a linear model improves?",
+    "lessonSummary": "Trace signed residuals into squared errors, mean squared error, and a parameter-indexed loss landscape.",
+    "mechanism": {
+      "input": "Predictions and targets for fixed examples.",
+      "process": "Subtract target from prediction, square each residual, average, and repeat across parameter values.",
+      "output": "One MSE value at each parameter position on a loss landscape."
+    },
+    "chunks": [
+      {
+        "id": "03-residual:p1",
+        "blockId": "03-residual",
+        "heading": "Start with one signed miss",
+        "text": "For one example, residual = prediction - target. A residual of -3 means the prediction is three units below the target; +3 means it is three units above.",
+        "tags": [
+          "residual",
+          "prediction",
+          "target",
+          "sign",
+          "magnitude"
+        ]
+      },
+      {
+        "id": "03-residual:p2",
+        "blockId": "03-residual",
+        "heading": "Start with one signed miss",
+        "text": "The sign preserves direction. Its magnitude preserves the size of the miss in target units.",
+        "tags": [
+          "residual",
+          "prediction",
+          "target",
+          "sign",
+          "magnitude"
+        ]
+      },
+      {
+        "id": "03-mse:p1",
+        "blockId": "03-mse",
+        "heading": "Square first, then average",
+        "text": "Residuals -1 and +3 would average to 1, hiding part of the error through cancellation. Their squared values are 1 and 9, so MSE is (1 + 9) / 2 = 5.",
+        "tags": [
+          "squared error",
+          "mean",
+          "cancellation",
+          "MSE"
+        ]
+      },
+      {
+        "id": "03-mse:p2",
+        "blockId": "03-mse",
+        "heading": "Square first, then average",
+        "text": "Squaring makes every contribution nonnegative and gives a residual twice as large four times the squared contribution.",
+        "tags": [
+          "squared error",
+          "mean",
+          "cancellation",
+          "MSE"
+        ]
+      },
+      {
+        "id": "03-landscape:p1",
+        "blockId": "03-landscape",
+        "heading": "A landscape indexes loss by parameters",
+        "text": "Hold the examples and loss definition fixed. For each candidate weight and bias, compute all predictions and one MSE. Those parameter-to-loss values form a loss landscape.",
+        "tags": [
+          "objective",
+          "parameter",
+          "surface",
+          "landscape"
+        ]
+      },
+      {
+        "id": "03-landscape:p2",
+        "blockId": "03-landscape",
+        "heading": "A landscape indexes loss by parameters",
+        "text": "The landscape is not physical terrain. It is a graph of the objective produced by a particular dataset, model, and loss.",
+        "tags": [
+          "objective",
+          "parameter",
+          "surface",
+          "landscape"
+        ]
+      },
+      {
+        "id": "03-outlier:p1",
+        "blockId": "03-outlier",
+        "heading": "A large residual can dominate MSE",
+        "text": "Changing one target so its residual grows from 2 to 10 changes its squared contribution from 4 to 100. The row count is unchanged, but that example now has much more influence on MSE.",
+        "tags": [
+          "outlier",
+          "sensitivity",
+          "squared loss",
+          "influence"
+        ]
+      },
+      {
+        "id": "03-outlier:p2",
+        "blockId": "03-outlier",
+        "heading": "A large residual can dominate MSE",
+        "text": "This is a property of the chosen loss, not proof that the row should be deleted. First investigate measurement, scope, and the cost represented by large misses.",
+        "tags": [
+          "outlier",
+          "sensitivity",
+          "squared loss",
+          "influence"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: One residual grows from 2 to 10 while all others stay fixed. By what factor does that row's squared-error contribution grow?",
+      "Visible options: 2 times; 5 times; 10 times; 25 times",
+      "Visual lab: Trace every row into one loss value",
+      "Move the weight while targets, bias, and examples remain fixed. Compare each residual and square before locating the resulting MSE on the landscape.",
+      "Fixed quantities: The examples, targets, bias, and MSE definition remain fixed.",
+      "Learner-controlled change: Change only weight w and inspect how every residual contributes to the new MSE.",
+      "Control: Weight w, from -1 to 4",
+      "Explanation prompt: Explain how fixed examples and one candidate weight produce a point on the MSE landscape, and why a large residual can dominate that point without canceling against an opposite residual.",
+      "Explanation guidance: Trace prediction to residual to square to mean, then connect the mean to the parameter position.",
+      "Explanation prompt: A scale calibration model predicts grams from voltage. Three residuals are -1, +1, and +8 grams. A calibration audit then corrects the third recorded target, changing that residual to +2 at the same parameter setting while the other two rows stay fixed. Compute both MSE values, interpret the +8 sign, and explain why the corrected target defines a new dataset and therefore a new loss landscape.",
+      "Explanation guidance: Use the new units, show both MSE calculations, and distinguish a new dataset and landscape from movement within one fixed landscape.",
+      "Code lab instructions: Predict: calculate the MSE at trial_weight = 1.0 before running. Run the working specimen. Investigate every residual and squared contribution. Modify only trial_weight to 2.0, rerun, and explain why the loss reaches zero. The checks also verify the outlier calculation.",
+      "Authored starter file loss_trace.py:\nPOINTS = [\n    (0.0, 1.0),\n    (1.0, 3.0),\n    (2.0, 5.0),\n]\n\n\ndef predict(x, weight, bias):\n    return weight * x + bias\n\n\ndef residuals(rows, weight, bias):\n    return [predict(x, weight, bias) - target for x, target in rows]\n\n\ndef mean_squared_error(rows, weight, bias):\n    errors = residuals(rows, weight, bias)\n    return sum(error ** 2 for error in errors) / len(errors)\n\n\ntrial_weight = 1.0  # Modify to 2.0 after the first run.\nbias = 1.0\n\nprint(\"residuals:\", residuals(POINTS, trial_weight, bias))\nprint(\"mse:\", mean_squared_error(POINTS, trial_weight, bias))\n"
+    ]
+  },
+  {
+    "lessonId": "gradient-descent",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "04",
+    "lessonTitle": "Gradient descent follows repeated local measurements",
+    "lessonQuestion": "How does a slope become a parameter update?",
+    "lessonSummary": "Predict a descent direction, execute the update equation, and diagnose a learning rate that overshoots.",
+    "mechanism": {
+      "input": "Current parameters, a differentiable loss, and a learning rate.",
+      "process": "Measure the local gradient, move in the opposite direction, and recompute at the new position.",
+      "output": "A parameter and loss trace across repeated updates."
+    },
+    "chunks": [
+      {
+        "id": "04-local-slope:p1",
+        "blockId": "04-local-slope",
+        "heading": "The gradient describes the current neighborhood",
+        "text": "For one parameter, the gradient is the slope of loss with respect to that parameter at its current value. A positive gradient means a small parameter increase raises loss; a negative gradient means it lowers loss.",
+        "tags": [
+          "gradient",
+          "slope",
+          "local",
+          "direction"
+        ]
+      },
+      {
+        "id": "04-local-slope:p2",
+        "blockId": "04-local-slope",
+        "heading": "The gradient describes the current neighborhood",
+        "text": "This is local evidence. It does not describe every distant part of the landscape.",
+        "tags": [
+          "gradient",
+          "slope",
+          "local",
+          "direction"
+        ]
+      },
+      {
+        "id": "04-update:p1",
+        "blockId": "04-update",
+        "heading": "Subtract the measured slope",
+        "text": "Gradient descent applies parameter_new = parameter_old - learning_rate times gradient. The minus sign reverses the uphill direction reported by the gradient.",
+        "tags": [
+          "update equation",
+          "minus gradient",
+          "learning rate"
+        ]
+      },
+      {
+        "id": "04-update:p2",
+        "blockId": "04-update",
+        "heading": "Subtract the measured slope",
+        "text": "The learning rate scales the move without changing the measured gradient itself.",
+        "tags": [
+          "update equation",
+          "minus gradient",
+          "learning rate"
+        ]
+      },
+      {
+        "id": "04-recompute:p1",
+        "blockId": "04-recompute",
+        "heading": "Every new position needs a new measurement",
+        "text": "If weight is 0, gradient is -18.666667, and learning rate is 0.05, one update gives 0 - 0.05(-18.666667) = 0.933333.",
+        "tags": [
+          "recompute",
+          "iteration",
+          "weight",
+          "trace"
+        ]
+      },
+      {
+        "id": "04-recompute:p2",
+        "blockId": "04-recompute",
+        "heading": "Every new position needs a new measurement",
+        "text": "Predictions and residuals change at weight 0.933333, so the next update must use a newly computed gradient there.",
+        "tags": [
+          "recompute",
+          "iteration",
+          "weight",
+          "trace"
+        ]
+      },
+      {
+        "id": "04-overshoot:p1",
+        "blockId": "04-overshoot",
+        "heading": "Direction and distance are separate",
+        "text": "A step can begin in the downhill direction and still cross the low-loss region. Repeated oversized steps can oscillate or diverge.",
+        "tags": [
+          "overshoot",
+          "oscillation",
+          "controlled comparison",
+          "trace"
+        ]
+      },
+      {
+        "id": "04-overshoot:p2",
+        "blockId": "04-overshoot",
+        "heading": "Direction and distance are separate",
+        "text": "To test this diagnosis, keep data, initialization, model, and loss fixed, reduce only the learning rate, and compare complete traces.",
+        "tags": [
+          "overshoot",
+          "oscillation",
+          "controlled comparison",
+          "trace"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: At the current weight, the loss gradient is -6. Which update direction is locally downhill?",
+      "Visible options: Decrease the weight; Increase the weight; Do not change the weight",
+      "Visual lab: Compare descent traces from one start",
+      "Run repeated updates from the same initial weight. Change only the learning rate and compare position, local gradient, and loss after every step.",
+      "Fixed quantities: The data, model, loss, initial weight, iteration count, and seed remain fixed.",
+      "Learner-controlled change: Change only the learning rate to compare slow, stable, and overshooting paths.",
+      "Control: Learning rate, from 0.01 to 0.50",
+      "Explanation prompt: Explain why subtracting a negative gradient increases the parameter, why the next gradient must be recomputed, and how a large learning rate can raise loss despite using the correct local direction.",
+      "Explanation guidance: Separate sign, new position, and step distance.",
+      "Explanation prompt: A controller tunes a valve coefficient. At coefficient 4.0 the loss gradient is +8.0. Compute one update with learning rate 0.1, then explain what a trace alternating between coefficients 3.2 and 4.8 would test and which single variable you would change first.",
+      "Explanation guidance: Map the same local update to a physical coefficient and preserve the controlled comparison.",
+      "Code lab instructions: Predict: determine the first weight update and whether learning_rate = 0.5 will be stable. Run the working specimen and inspect its loss trace. Investigate the gradient at each position. Modify only learning_rate to 0.05 and rerun; the checks verify the gradient and the actual displayed trace driven by that learning rate.",
+      "Authored starter file descent_trace.py:\nROWS = [\n    (1.0, 3.0),\n    (2.0, 5.0),\n    (3.0, 7.0),\n]\n\n\ndef predict(x, weight, bias=1.0):\n    return bias + weight * x\n\n\ndef mean_squared_error(rows, weight):\n    return sum((predict(x, weight) - target) ** 2 for x, target in rows) / len(rows)\n\n\ndef weight_gradient(rows, weight):\n    return sum(\n        2 * (predict(x, weight) - target) * x\n        for x, target in rows\n    ) / len(rows)\n\n\ndef train(rows, weight, learning_rate, steps):\n    history = [mean_squared_error(rows, weight)]\n    for _ in range(steps):\n        weight = weight - learning_rate * weight_gradient(rows, weight)\n        history.append(mean_squared_error(rows, weight))\n    return weight, history\n\n\nlearning_rate = 0.5  # Modify to 0.05 after investigating the first trace.\nfinal_weight, loss_history = train(ROWS, 0.0, learning_rate, 12)\nprint(\"final weight:\", final_weight)\nprint(\"loss trace:\", loss_history)\n"
+    ]
+  },
+  {
+    "lessonId": "split-and-leakage",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "05",
+    "lessonTitle": "Three splits protect three decisions",
+    "lessonQuestion": "How does test information leak into a model choice?",
+    "lessonSummary": "Assign training, validation, and test data distinct jobs, then create and repair a controlled selection leak.",
+    "mechanism": {
+      "input": "Examples partitioned before fitting or model selection.",
+      "process": "Fit on training data, choose among candidates on validation data, and evaluate the frozen choice once on test data.",
+      "output": "A final estimate whose test targets did not influence fitting or selection."
+    },
+    "chunks": [
+      {
+        "id": "05-three-jobs:p1",
+        "blockId": "05-three-jobs",
+        "heading": "Partition before the answer can influence a decision",
+        "text": "Training data fits parameters. Validation data compares model or hyperparameter choices. Test data evaluates the frozen process after fitting and selection are complete.",
+        "tags": [
+          "training",
+          "validation",
+          "test",
+          "role"
+        ]
+      },
+      {
+        "id": "05-three-jobs:p2",
+        "blockId": "05-three-jobs",
+        "heading": "Partition before the answer can influence a decision",
+        "text": "The labels do not make a split. Its role is defined by how information from it is used.",
+        "tags": [
+          "training",
+          "validation",
+          "test",
+          "role"
+        ]
+      },
+      {
+        "id": "05-selection-loop:p1",
+        "blockId": "05-selection-loop",
+        "heading": "Validation closes the development loop",
+        "text": "Fit candidate models on training rows, compare their validation losses, and select one. A validation result can change the next candidate, so it becomes part of development evidence.",
+        "tags": [
+          "model selection",
+          "validation loss",
+          "freeze",
+          "procedure"
+        ]
+      },
+      {
+        "id": "05-selection-loop:p2",
+        "blockId": "05-selection-loop",
+        "heading": "Validation closes the development loop",
+        "text": "After selection, refit only according to the authored procedure and freeze every choice before test evaluation.",
+        "tags": [
+          "model selection",
+          "validation loss",
+          "freeze",
+          "procedure"
+        ]
+      },
+      {
+        "id": "05-leakage:p1",
+        "blockId": "05-leakage",
+        "heading": "Leakage is an information path",
+        "text": "Test leakage occurs when test features, targets, metrics, or repeated feedback influence fitting, preprocessing, feature choices, stopping, or model selection.",
+        "tags": [
+          "leakage",
+          "test peeking",
+          "information path",
+          "independence"
+        ]
+      },
+      {
+        "id": "05-leakage:p2",
+        "blockId": "05-leakage",
+        "heading": "Leakage is an information path",
+        "text": "Calling the same rows test data afterward does not restore independence. A new untouched set is required for an honest final estimate.",
+        "tags": [
+          "leakage",
+          "test peeking",
+          "information path",
+          "independence"
+        ]
+      },
+      {
+        "id": "05-scope:p1",
+        "blockId": "05-scope",
+        "heading": "Untouched does not mean universal",
+        "text": "An untouched test set estimates behavior for cases represented by the same sampling and measurement process. It does not establish behavior for missing locations, users, seasons, or sensors.",
+        "tags": [
+          "coverage",
+          "sampling",
+          "scope",
+          "distribution"
+        ]
+      },
+      {
+        "id": "05-scope:p2",
+        "blockId": "05-scope",
+        "heading": "Untouched does not mean universal",
+        "text": "Independence protects the estimate from selection bias; coverage limits the situations to which that estimate applies.",
+        "tags": [
+          "coverage",
+          "sampling",
+          "scope",
+          "distribution"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: You compare three candidate models using test loss, choose the lowest, and report that same test loss. What happened?",
+      "Visible options: The test remains independent; Test feedback leaked into selection; The test became training data only if gradients used it",
+      "Visual lab: Open and close the test-information path",
+      "Select among fixed candidate predictions first with validation rows, then with test rows. Compare the chosen candidate and mark which decisions consumed each split.",
+      "Fixed quantities: The rows, candidate predictions, loss, and initial training fit remain fixed.",
+      "Learner-controlled change: Change only the split used for candidate selection: validation or test.",
+      "Control: Selection source, from Validation to Test",
+      "Explanation prompt: Explain why choosing a candidate from test loss contaminates the final estimate even when no gradient used test rows, and state the separate jobs of train, validation, and test.",
+      "Explanation guidance: Trace the information path from a metric to a decision.",
+      "Explanation prompt: A factory trains a defect model on Line A, tunes its threshold by repeatedly checking Line B, then reports the best Line B result as the test score for all factories. Identify each data role, the leakage, the repair, and the remaining coverage limit.",
+      "Explanation guidance: Separate independence from representativeness.",
+      "Code lab instructions: Predict: decide which constant prediction validation will select. Run the nearly working specimen and observe that test rows currently drive selection. Investigate validation and test losses for each candidate. Modify only SELECTION_ROWS to VALIDATION_ROWS, rerun, and explain why the test loss is now evaluation rather than selection feedback.",
+      "Authored starter file split_roles.py:\nTRAIN_TARGETS = [8.0, 10.0, 12.0]\nVALIDATION_ROWS = [9.0, 13.0]\nTEST_ROWS = [20.0, 22.0]\nCANDIDATE_PREDICTIONS = [10.0, 11.0, 12.0]\n\n\ndef fit_mean(targets):\n    return sum(targets) / len(targets)\n\n\ndef mean_squared_error(targets, prediction):\n    return sum((prediction - target) ** 2 for target in targets) / len(targets)\n\n\ndef select_prediction(candidates, validation_targets):\n    return min(\n        candidates,\n        key=lambda prediction: mean_squared_error(validation_targets, prediction),\n    )\n\n\ntraining_baseline = fit_mean(TRAIN_TARGETS)\nSELECTION_ROWS = TEST_ROWS  # Leakage: modify this to VALIDATION_ROWS.\nselected_prediction = select_prediction(CANDIDATE_PREDICTIONS, SELECTION_ROWS)\n\nprint(\"training baseline:\", training_baseline)\nprint(\"selected prediction:\", selected_prediction)\nprint(\"final test loss:\", mean_squared_error(TEST_ROWS, selected_prediction))\n"
+    ]
+  },
+  {
+    "lessonId": "capacity-curves",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "06",
+    "lessonTitle": "Capacity changes what a model can fit",
+    "lessonQuestion": "How do fixed train-held-out comparisons separate underfit from overfit?",
+    "lessonSummary": "Compare authored polynomial capacities on fixed data states, and keep that evidence distinct from a learning curve.",
+    "mechanism": {
+      "input": "Authored polynomial capacities, fixed training rows, and separate held-out rows.",
+      "process": "Compare training and held-out losses across capacities and two explicitly different fitted data states.",
+      "output": "A bounded underfit or overfit diagnosis without claiming a multi-size learning curve."
+    },
+    "chunks": [
+      {
+        "id": "06-capacity:p1",
+        "blockId": "06-capacity",
+        "heading": "Capacity is a set of possible rules",
+        "text": "A linear polynomial can represent straight lines. Adding squared and higher-power terms expands the set of curves the model can fit.",
+        "tags": [
+          "capacity",
+          "polynomial",
+          "degree",
+          "function family"
+        ]
+      },
+      {
+        "id": "06-capacity:p2",
+        "blockId": "06-capacity",
+        "heading": "Capacity is a set of possible rules",
+        "text": "More capacity is not automatically better. It can represent the underlying pattern, but it can also follow sample-specific noise.",
+        "tags": [
+          "capacity",
+          "polynomial",
+          "degree",
+          "function family"
+        ]
+      },
+      {
+        "id": "06-underfit:p1",
+        "blockId": "06-underfit",
+        "heading": "High train and validation loss indicate underfit",
+        "text": "If training and held-out loss are both high and close under one fixed evaluation protocol, the current features, model family, or optimization may not capture the pattern.",
+        "tags": [
+          "underfit",
+          "training loss",
+          "validation loss",
+          "bias"
+        ]
+      },
+      {
+        "id": "06-underfit:p2",
+        "blockId": "06-underfit",
+        "heading": "High train and validation loss indicate underfit",
+        "text": "More observations alone do not repair a rule that cannot represent the relationship. First test one controlled change to capacity, features, objective, or optimization.",
+        "tags": [
+          "underfit",
+          "training loss",
+          "validation loss",
+          "bias"
+        ]
+      },
+      {
+        "id": "06-overfit:p1",
+        "blockId": "06-overfit",
+        "heading": "A persistent gap indicates overfit",
+        "text": "Very low training loss with substantially higher validation loss means the fitted rule captured details that did not transfer to validation cases.",
+        "tags": [
+          "overfit",
+          "gap",
+          "variance",
+          "representative data"
+        ]
+      },
+      {
+        "id": "06-overfit:p2",
+        "blockId": "06-overfit",
+        "heading": "A persistent gap indicates overfit",
+        "text": "Reducing capacity or constraining the fit can shrink this gap. More representative data is another possible intervention, but this lesson's local code does not test a data-size sequence.",
+        "tags": [
+          "overfit",
+          "gap",
+          "variance",
+          "representative data"
+        ]
+      },
+      {
+        "id": "06-data-limit:p1",
+        "blockId": "06-data-limit",
+        "heading": "Two fitted data states are not a learning curve",
+        "text": "The visual compares a five-row fit evaluated on three added rows with an eight-row fit evaluated on a separate probe set. Because both the training rows and held-out rows change, the grouped bars are a capacity comparison, not a learning curve.",
+        "tags": [
+          "data size",
+          "curve",
+          "plateau",
+          "test independence"
+        ]
+      },
+      {
+        "id": "06-data-limit:p2",
+        "blockId": "06-data-limit",
+        "heading": "Two fitted data states are not a learning curve",
+        "text": "A learning curve refits across several nested training sizes while preserving one validation or cross-validation protocol. It can support a data-scaling diagnosis for that fixed pipeline and represented distribution, but it never justifies repeated test inspection.",
+        "tags": [
+          "data size",
+          "curve",
+          "plateau",
+          "test independence"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: On one fixed train-validation split, a high-degree polynomial has near-zero training loss and much higher validation loss. Which diagnosis is best supported?",
+      "Visible options: The model is underfitting both sets; The model is overfitting a small sample; The validation targets must have leaked into training; The model already generalizes perfectly",
+      "Visual lab: Compare polynomial capacity at two authored data states",
+      "Change degree, then compare training and held-out MSE from the same deterministic ridge-stabilized least-squares procedure on the authored five-row and eight-row states. Treat the bars as separate capacity comparisons, not a learning curve.",
+      "Fixed quantities: Rows, probe points, raw monomial basis, squared-error loss, lambda = 1e-6 stabilizer, and partial-pivot solver remain fixed.",
+      "Learner-controlled change: Change only polynomial degree; each degree is refit separately on the five-row and eight-row training sets.",
+      "Control: Polynomial degree, from 0 to 9",
+      "Explanation prompt: Explain how train and held-out loss pairs distinguish a capacity bottleneck from sample-specific overfit. Then explain why the two authored data states do not form a learning curve and why slider movement or low training loss alone proves neither diagnosis.",
+      "Explanation guidance: Use both losses and their gap, then name what a multi-size learning-curve protocol would hold fixed.",
+      "Explanation prompt: A spectrometer calibration compares polynomial degrees on one fixed train-validation split. Model A, degree 1, has high similar train and validation errors. Model B, degree 9, has nearly zero train error and high validation error. Diagnose each, prescribe one controlled capacity test for each, and explain why these fits are not a learning curve.",
+      "Explanation guidance: Map each loss pair to a capacity diagnosis, then state the missing multi-size protocol.",
+      "Code lab instructions: Predict: compare train and validation loss for the fixed linear, quadratic, and high-degree specimens. These are hand-authored coefficient fixtures, distinct from the ridge-refitted models in the visual lab. Run the working functions and inspect each pair. Investigate why the high-degree rule matches every training point yet fails between them. Modify only chosen_coefficients from OVERFIT_COEFFICIENTS to QUADRATIC_COEFFICIENTS and rerun. This is a fixed-capacity comparison, not a learning curve.",
+      "Authored starter file capacity_trace.py:\nTRAIN_ROWS = [\n    (-2.0, 4.0),\n    (-1.0, 1.0),\n    (0.0, 0.0),\n    (1.0, 1.0),\n    (2.0, 4.0),\n]\nVALIDATION_ROWS = [\n    (-1.5, 2.25),\n    (0.5, 0.25),\n    (1.5, 2.25),\n]\n\nLINEAR_COEFFICIENTS = [2.0, 0.0]\nQUADRATIC_COEFFICIENTS = [0.0, 0.0, 1.0]\n# Authored interpolation specimen; unlike the visual lab, this file does not fit.\nOVERFIT_COEFFICIENTS = [0.0, 8.0, 1.0, -10.0, 0.0, 2.0]\n\n\ndef polynomial_predict(x, coefficients):\n    return sum(\n        coefficient * x ** power\n        for power, coefficient in enumerate(coefficients)\n    )\n\n\ndef mean_squared_error(rows, coefficients):\n    return sum(\n        (polynomial_predict(x, coefficients) - target) ** 2\n        for x, target in rows\n    ) / len(rows)\n\n\nchosen_coefficients = OVERFIT_COEFFICIENTS  # Modify to QUADRATIC_COEFFICIENTS.\n\nfor name, coefficients in [\n    (\"linear\", LINEAR_COEFFICIENTS),\n    (\"quadratic\", QUADRATIC_COEFFICIENTS),\n    (\"high-degree\", OVERFIT_COEFFICIENTS),\n]:\n    print(\n        name,\n        \"train:\", mean_squared_error(TRAIN_ROWS, coefficients),\n        \"validation:\", mean_squared_error(VALIDATION_ROWS, coefficients),\n    )\n"
+    ]
+  },
+  {
+    "lessonId": "logistic-link",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "07",
+    "lessonTitle": "A linear score becomes a probability",
+    "lessonQuestion": "How can a linear model express a binary probability?",
+    "lessonSummary": "Trace a feature through a logit and sigmoid, then use log loss to measure a probabilistic prediction.",
+    "mechanism": {
+      "input": "Feature values, weights, a bias, and a binary target",
+      "process": "Form a logit, pass it through the sigmoid, and score the resulting probability with log loss",
+      "output": "A mathematical probability strictly between zero and one, subject to floating-point endpoint rounding, and its target-dependent loss"
+    },
+    "chunks": [
+      {
+        "id": "logistic-score-first:p1",
+        "blockId": "logistic-score-first",
+        "heading": "Keep the score visible",
+        "text": "A binary classifier can begin with the same weighted sum used by a linear model: z = w1 x1 + w2 x2 + b. This unbounded number is the logit.",
+        "tags": [
+          "logit",
+          "weighted sum",
+          "score",
+          "boundary"
+        ]
+      },
+      {
+        "id": "logistic-score-first:p2",
+        "blockId": "logistic-score-first",
+        "heading": "Keep the score visible",
+        "text": "The logit is not yet a class label or a probability. Its sign says which side of the boundary the example lies on, and its distance from zero records how strongly the linear score favors that side.",
+        "tags": [
+          "logit",
+          "weighted sum",
+          "score",
+          "boundary"
+        ]
+      },
+      {
+        "id": "logistic-sigmoid-map:p1",
+        "blockId": "logistic-sigmoid-map",
+        "heading": "Sigmoid bends the number line",
+        "text": "The sigmoid is p = 1 / (1 + exp(-z)). At z = 0, p = 0.5. Mathematically, every finite logit maps strictly between zero and one. In finite-precision arithmetic, an extreme finite logit may round to 0.0 or 1.0; that endpoint is numerical saturation, not the exact mathematical value.",
+        "tags": [
+          "sigmoid",
+          "probability",
+          "monotonic",
+          "ln 3"
+        ]
+      },
+      {
+        "id": "logistic-sigmoid-map:p2",
+        "blockId": "logistic-sigmoid-map",
+        "heading": "Sigmoid bends the number line",
+        "text": "For z = ln(3), exp(-z) = 1/3, so p = 1 / (1 + 1/3) = 0.75. The transformation changes the scale, not the ordering: a larger logit always produces a larger probability.",
+        "tags": [
+          "sigmoid",
+          "probability",
+          "monotonic",
+          "ln 3"
+        ]
+      },
+      {
+        "id": "logistic-boundary:p1",
+        "blockId": "logistic-boundary",
+        "heading": "The boundary remains linear",
+        "text": "Using probability 0.5 as the decision cutoff is equivalent to using logit zero, because sigmoid(0) = 0.5. The boundary is therefore the set of inputs where w dot x + b = 0.",
+        "tags": [
+          "decision boundary",
+          "linear",
+          "probability",
+          "threshold"
+        ]
+      },
+      {
+        "id": "logistic-boundary:p2",
+        "blockId": "logistic-boundary",
+        "heading": "The boundary remains linear",
+        "text": "Sigmoid changes how the score is interpreted, but it does not curve the boundary in the original feature space. Nonlinear boundaries require nonlinear features or a nonlinear composition.",
+        "tags": [
+          "decision boundary",
+          "linear",
+          "probability",
+          "threshold"
+        ]
+      },
+      {
+        "id": "logistic-loss:p1",
+        "blockId": "logistic-loss",
+        "heading": "Log loss scores the probability of what happened",
+        "text": "For target y = 1, log loss is -log(p). For target y = 0, it is -log(1 - p). In both cases, the loss reads the probability assigned to the observed target.",
+        "tags": [
+          "log loss",
+          "binary cross entropy",
+          "target",
+          "confidence"
+        ]
+      },
+      {
+        "id": "logistic-loss:p2",
+        "blockId": "logistic-loss",
+        "heading": "Log loss scores the probability of what happened",
+        "text": "Predicting p = 0.8 gives loss about 0.223 when y = 1 but about 1.609 when y = 0. A confident probability aimed at the wrong class is expensive because the probability assigned to the actual target is small.",
+        "tags": [
+          "log loss",
+          "binary cross entropy",
+          "target",
+          "confidence"
+        ]
+      },
+      {
+        "id": "logistic-training-link:p1",
+        "blockId": "logistic-training-link",
+        "heading": "Training still adjusts parameters",
+        "text": "Training adjusts the weights and bias to reduce mean training log loss, tending to increase the probability assigned to observed targets in aggregate; an individual training example can still worsen. Inference holds those learned parameters fixed and computes logits and probabilities for new examples.",
+        "tags": [
+          "training",
+          "inference",
+          "parameters",
+          "generalization"
+        ]
+      },
+      {
+        "id": "logistic-training-link:p2",
+        "blockId": "logistic-training-link",
+        "heading": "Training still adjusts parameters",
+        "text": "A low training log loss is not proof of generalization. The same split discipline from regression still determines whether the probability rule works on unseen data.",
+        "tags": [
+          "training",
+          "inference",
+          "parameters",
+          "generalization"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: The weights and inputs stay fixed while the bias raises the logit from 0 to 2. What happens to the sigmoid probability?",
+      "Visible options: It rises above 0.5; It falls below 0.5; It stays at 0.5",
+      "Visual lab: Move one logit through sigmoid and log loss",
+      "Commit to a probability direction, then compare the exact probability and losses for target 0 and target 1 before and after the move.",
+      "Fixed quantities: The feature vector, target alternatives, and sigmoid equation stay fixed.",
+      "Learner-controlled change: Change only the bias contribution to the logit and inspect the linked probability and losses.",
+      "Control: Bias contribution, from favors target 0 to favors target 1",
+      "Explanation prompt: Explain the complete path from features to log loss. Include why logit zero maps to probability 0.5 and why the same probability has different loss for targets 0 and 1.",
+      "Explanation guidance: Name the weighted sum, sigmoid transformation, target-dependent probability, and negative logarithm.",
+      "Explanation prompt: A factory sensor predicts whether a bearing will fail. For one machine its logit is ln(3), so p(failure) = 0.75. Explain what probability the model assigns to no failure, which side of the 0.5 boundary it occupies, and why observing no failure produces a larger log loss than observing failure.",
+      "Explanation guidance: Use the complementary probability and compare the probability assigned to each possible observed target.",
+      "Code lab instructions: Predict the five check results before running, including the feature-vector logit and extreme-logit stability. Run the nearly working specimen, investigate why the target-0 loss is wrong, then modify log_loss so it reads p for target 1 and 1-p for target 0.",
+      "Authored starter file logistic_link.py:\nimport math\n\n\ndef linear_logit(features, weights, bias):\n    return sum(x * w for x, w in zip(features, weights)) + bias\n\n\ndef sigmoid(logit):\n    if logit >= 0:\n        return 1.0 / (1.0 + math.exp(-logit))\n    exp_logit = math.exp(logit)\n    return exp_logit / (1.0 + exp_logit)\n\n\ndef log_loss(probability, target):\n    probability = min(max(probability, 1e-12), 1.0 - 1e-12)\n    # BUG TO REPAIR: this branch only scores target 1.\n    return -math.log(probability)\n\n\ndef predict_probability(features, weights, bias):\n    return sigmoid(linear_logit(features, weights, bias))\n\n\nprint(\"p(z=0):\", sigmoid(0.0))\nprint(\"p(z=ln(3)):\", sigmoid(math.log(3.0)))\nprint(\"loss(p=.8, y=1):\", log_loss(0.8, 1))\nprint(\"loss(p=.2, y=0):\", log_loss(0.2, 0))\n"
+    ]
+  },
+  {
+    "lessonId": "decision-costs",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "08",
+    "lessonTitle": "A probability becomes a decision",
+    "lessonQuestion": "Which mistakes should a classifier be designed to make?",
+    "lessonSummary": "Hold scores fixed while a threshold changes the confusion matrix, precision, recall, and empirical total validation cost.",
+    "mechanism": {
+      "input": "Fixed probabilities, binary targets, a threshold, and mistake costs",
+      "process": "Threshold the probabilities, count each outcome, compute metrics, and compare empirical total validation cost",
+      "output": "A decision policy with a visible precision-recall-cost tradeoff"
+    },
+    "chunks": [
+      {
+        "id": "decision-policy-separate:p1",
+        "blockId": "decision-policy-separate",
+        "heading": "The model score and policy are different objects",
+        "text": "A model can output the same probability for an example while two applications make different decisions. The threshold belongs to the decision policy, not to the target and not necessarily to training.",
+        "tags": [
+          "score",
+          "threshold",
+          "policy",
+          "decision"
+        ]
+      },
+      {
+        "id": "decision-policy-separate:p2",
+        "blockId": "decision-policy-separate",
+        "heading": "The model score and policy are different objects",
+        "text": "Lowering a threshold makes more examples positive. Raising it makes fewer examples positive. That directional fact holds before any metric is computed.",
+        "tags": [
+          "score",
+          "threshold",
+          "policy",
+          "decision"
+        ]
+      },
+      {
+        "id": "decision-four-cells:p1",
+        "blockId": "decision-four-cells",
+        "heading": "Every decision enters one of four cells",
+        "text": "A true positive and true negative are correct decisions. A false positive is a negative target called positive; a false negative is a positive target called negative.",
+        "tags": [
+          "true positive",
+          "false positive",
+          "true negative",
+          "false negative"
+        ]
+      },
+      {
+        "id": "decision-four-cells:p2",
+        "blockId": "decision-four-cells",
+        "heading": "Every decision enters one of four cells",
+        "text": "The four counts describe decisions at one threshold. If the threshold changes, examples may move between cells even though their scores and targets stay fixed.",
+        "tags": [
+          "true positive",
+          "false positive",
+          "true negative",
+          "false negative"
+        ]
+      },
+      {
+        "id": "decision-precision-recall:p1",
+        "blockId": "decision-precision-recall",
+        "heading": "Precision and recall ask different questions",
+        "text": "Precision = TP / (TP + FP): among positive decisions, how many were truly positive? Recall = TP / (TP + FN): among actual positives, how many did the policy recover?",
+        "tags": [
+          "precision",
+          "recall",
+          "denominator",
+          "tradeoff"
+        ]
+      },
+      {
+        "id": "decision-precision-recall:p2",
+        "blockId": "decision-precision-recall",
+        "heading": "Precision and recall ask different questions",
+        "text": "If TP + FP is zero, there were no positive decisions, so precision is undefined; this lesson reports math.nan rather than inventing a measured zero. Recall is likewise undefined when TP + FN is zero.",
+        "tags": [
+          "precision",
+          "recall",
+          "denominator",
+          "tradeoff"
+        ]
+      },
+      {
+        "id": "decision-precision-recall:p3",
+        "blockId": "decision-precision-recall",
+        "heading": "Precision and recall ask different questions",
+        "text": "A lower threshold often raises recall and lowers precision because it admits more true positives and more false positives. This is a tradeoff, not a law for every finite dataset.",
+        "tags": [
+          "precision",
+          "recall",
+          "denominator",
+          "tradeoff"
+        ]
+      },
+      {
+        "id": "decision-calibration:p1",
+        "blockId": "decision-calibration",
+        "heading": "Ranking is not calibration",
+        "text": "Ranking asks whether higher-scored examples tend to be more positive. Calibration asks whether examples assigned probability 0.7 are positive about 70 percent of the time under the evaluation conditions.",
+        "tags": [
+          "ranking",
+          "calibration",
+          "probability",
+          "frequency"
+        ]
+      },
+      {
+        "id": "decision-calibration:p2",
+        "blockId": "decision-calibration",
+        "heading": "Ranking is not calibration",
+        "text": "A monotonic transformation can preserve ranking while changing calibration. A threshold can then produce the same ordering but a different operating point.",
+        "tags": [
+          "ranking",
+          "calibration",
+          "probability",
+          "frequency"
+        ]
+      },
+      {
+        "id": "decision-costs:p1",
+        "blockId": "decision-costs",
+        "heading": "Costs make the operating point concrete",
+        "text": "If a false negative costs 10 units and a false positive costs 1, the empirical total validation cost is 10 x FN + 1 x FP. The best tested threshold is the one with the lowest total across the fixed validation cases.",
+        "tags": [
+          "cost matrix",
+          "validation",
+          "test set",
+          "selection"
+        ]
+      },
+      {
+        "id": "decision-costs:p2",
+        "blockId": "decision-costs",
+        "heading": "Costs make the operating point concrete",
+        "text": "The test set remains untouched while the threshold is chosen. Otherwise the reported test cost becomes part of tuning rather than an independent estimate.",
+        "tags": [
+          "cost matrix",
+          "validation",
+          "test set",
+          "selection"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: Scores and targets stay fixed while the threshold falls from 0.7 to 0.4. Which statement must be true?",
+      "Visible options: The number of positive decisions cannot decrease; The number of negative decisions cannot decrease; The confusion matrix must stay unchanged",
+      "Visual lab: Move a policy across fixed scores",
+      "Predict the direction first, then compare the exact confusion counts, precision, recall, and weighted cost at two thresholds.",
+      "Fixed quantities: The model probabilities, binary targets, and false-positive and false-negative costs stay fixed.",
+      "Learner-controlled change: Change only the decision threshold that converts probabilities into labels.",
+      "Control: Decision threshold, from more positive decisions to fewer positive decisions",
+      "Explanation prompt: Explain why moving a threshold can change precision and recall without changing model probabilities. Then distinguish a high ranking score from a calibrated probability.",
+      "Explanation guidance: Keep the fixed score list, thresholded labels, confusion counts, metric denominators, and observed frequencies separate.",
+      "Explanation prompt: A wildfire alert system sends a crew to inspect predicted hotspots. A missed fire costs 20 units; an unnecessary inspection costs 2. Explain which threshold direction you would test first, which confusion cells drive cost, and how you would check whether predicted 0.8 risks are calibrated before deployment.",
+      "Explanation guidance: Name the expensive error, the expected directional tradeoff, the cost expression, and an observed-frequency calibration check.",
+      "Code lab instructions: Predict the confusion counts, undefined-precision result, and cheapest candidate threshold. Run the specimen, investigate why it chooses the most expensive threshold, then modify choose_threshold to minimize validation cost.",
+      "Authored starter file decision_costs.py:\nimport math\n\n\ndef confusion_counts(scores, targets, threshold):\n    tp = fp = tn = fn = 0\n    for score, target in zip(scores, targets):\n        prediction = int(score >= threshold)\n        if prediction == 1 and target == 1:\n            tp += 1\n        elif prediction == 1 and target == 0:\n            fp += 1\n        elif prediction == 0 and target == 0:\n            tn += 1\n        else:\n            fn += 1\n    return tp, fp, tn, fn\n\n\ndef precision_recall(counts):\n    tp, fp, _tn, fn = counts\n    precision = tp / (tp + fp) if tp + fp else math.nan\n    recall = tp / (tp + fn) if tp + fn else math.nan\n    return precision, recall\n\n\ndef empirical_total_cost(counts, false_positive_cost, false_negative_cost):\n    _tp, fp, _tn, fn = counts\n    return fp * false_positive_cost + fn * false_negative_cost\n\n\ndef choose_threshold(scores, targets, candidates, fp_cost, fn_cost):\n    scored = []\n    for threshold in candidates:\n        counts = confusion_counts(scores, targets, threshold)\n        scored.append((empirical_total_cost(counts, fp_cost, fn_cost), threshold))\n    # BUG TO REPAIR: policy selection should minimize validation cost.\n    return max(scored)[1]\n\n\nSCORES = [0.9, 0.7, 0.6, 0.4, 0.2]\nTARGETS = [1, 0, 1, 0, 1]\nprint(\"counts:\", confusion_counts(SCORES, TARGETS, 0.5))\nprint(\"precision, recall:\", precision_recall(confusion_counts(SCORES, TARGETS, 0.5)))\nprint(\"no-positive precision:\", precision_recall((0, 0, 3, 2))[0])\nprint(\"chosen:\", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))\n"
+    ]
+  },
+  {
+    "lessonId": "feature-pipeline",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "09",
+    "lessonTitle": "Features need a reproducible path",
+    "lessonQuestion": "How does raw data become model input without leaking the answer?",
+    "lessonSummary": "Fit numeric, categorical, and missing-value transformations on training data, then replay them unchanged.",
+    "mechanism": {
+      "input": "Raw numeric and categorical fields with possible missing values",
+      "process": "Fit transformation state on training rows, then apply the same ordered transformations to every split",
+      "output": "A fixed numeric feature vector with traceable preprocessing state"
+    },
+    "chunks": [
+      {
+        "id": "pipeline-two-phases:p1",
+        "blockId": "pipeline-two-phases",
+        "heading": "Fit once, transform many times",
+        "text": "Some preprocessing learns state: a mean, a scale, a category vocabulary, or an imputation value. That state must be fitted using training rows only.",
+        "tags": [
+          "fit",
+          "transform",
+          "state",
+          "training only"
+        ]
+      },
+      {
+        "id": "pipeline-two-phases:p2",
+        "blockId": "pipeline-two-phases",
+        "heading": "Fit once, transform many times",
+        "text": "Transform then applies the frozen state to training, validation, test, and future rows. Re-fitting on each split silently gives the model a different input definition.",
+        "tags": [
+          "fit",
+          "transform",
+          "state",
+          "training only"
+        ]
+      },
+      {
+        "id": "pipeline-scaling:p1",
+        "blockId": "pipeline-scaling",
+        "heading": "Scaling records a reference system",
+        "text": "In the shared lesson fixture, training temperatures [10, missing, 30] use a training-mean imputation of 20. The fitted population scale is sqrt(200 / 3), about 8.165, so a complete value of 40 becomes about 2.449 after scaling.",
+        "tags": [
+          "scaling",
+          "mean",
+          "distance",
+          "units"
+        ]
+      },
+      {
+        "id": "pipeline-scaling:p2",
+        "blockId": "pipeline-scaling",
+        "heading": "Scaling records a reference system",
+        "text": "Scaling does not create information. It changes numeric geometry so a distance or penalty does not become dominated merely by a larger unit.",
+        "tags": [
+          "scaling",
+          "mean",
+          "distance",
+          "units"
+        ]
+      },
+      {
+        "id": "pipeline-categories:p1",
+        "blockId": "pipeline-categories",
+        "heading": "Categories become stable positions",
+        "text": "A training vocabulary [day, night] can become two indicator positions. Day maps to [1, 0], night to [0, 1], and an unseen category needs an authored policy such as an all-zero unknown encoding.",
+        "tags": [
+          "one hot",
+          "vocabulary",
+          "unknown category",
+          "ordering"
+        ]
+      },
+      {
+        "id": "pipeline-categories:p2",
+        "blockId": "pipeline-categories",
+        "heading": "Categories become stable positions",
+        "text": "Integer codes such as day = 1 and night = 2 invent an ordering and distance that the raw categories did not contain.",
+        "tags": [
+          "one hot",
+          "vocabulary",
+          "unknown category",
+          "ordering"
+        ]
+      },
+      {
+        "id": "pipeline-missing:p1",
+        "blockId": "pipeline-missing",
+        "heading": "Missing is a condition, not a number",
+        "text": "Replacing a missing numeric value with the training mean supplies a usable number, but it does not claim the measurement was actually average. A separate binary missing indicator marks only that the field was absent in the raw row; it does not recover the measurement or explain why it was absent.",
+        "tags": [
+          "imputation",
+          "missing indicator",
+          "measurement",
+          "shift"
+        ]
+      },
+      {
+        "id": "pipeline-missing:p2",
+        "blockId": "pipeline-missing",
+        "heading": "Missing is a condition, not a number",
+        "text": "The reason for missingness may differ across environments. Both the imputation state and the missing rate should therefore remain visible.",
+        "tags": [
+          "imputation",
+          "missing indicator",
+          "measurement",
+          "shift"
+        ]
+      },
+      {
+        "id": "pipeline-order:p1",
+        "blockId": "pipeline-order",
+        "heading": "A pipeline is an ordered contract",
+        "text": "A pipeline fixes transformation order, learned state, output positions, and model application. Feature crosses are built from already defined values, such as scaled temperature multiplied by a night-shift indicator.",
+        "tags": [
+          "feature cross",
+          "order",
+          "reproducibility",
+          "deployment"
+        ]
+      },
+      {
+        "id": "pipeline-order:p2",
+        "blockId": "pipeline-order",
+        "heading": "A pipeline is an ordered contract",
+        "text": "The same raw row must produce the same vector under the same fitted pipeline revision. This reproducibility is what makes debugging and deployment comparisons possible.",
+        "tags": [
+          "feature cross",
+          "order",
+          "reproducibility",
+          "deployment"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: Training temperatures are 10, 20, and 30. A held-out temperature is 100. Which mean may the fitted scaler store?",
+      "Visible options: 20, from training rows only; 40, from all four rows; 100, from the held-out row",
+      "Visual lab: Scale one complete night row",
+      "Predict the output vector, then vary only the temperature of one complete night row through the same frozen scaler and encoder.",
+      "Fixed quantities: The row remains observed and night; training fixture [10, missing, 30], imputed mean 20, fitted scale sqrt(200 / 3), category order [day, night], and output positions stay fixed.",
+      "Learner-controlled change: Change only the incoming temperature and inspect its scaled value and final vector.",
+      "Control: Incoming temperature, from below training mean to above training mean",
+      "Explanation prompt: Explain why a scaler mean and imputation value fitted on all rows leak information, while applying training-fitted values to a held-out row does not.",
+      "Explanation guidance: Separate learning transformation state from using already frozen state.",
+      "Explanation prompt: A maintenance model receives vibration, machine type, and operator shift. Validation contains a new machine type, and some vibration readings are missing. Specify a leak-free transformation path, including the unknown category, missing indicator, and when any feature cross is computed.",
+      "Explanation guidance: Describe fit state, transform order, stable output positions, and an explicit unknown-category policy.",
+      "Code lab instructions: Predict the training mean, output width, and unknown-category row before running. Run the scikit-learn specimen and inspect how fitting again on validation silently replaces learned state. Modify only the validation call from fit_transform to transform, rerun, and verify that the training imputer, scaler, missing indicator, and category positions stay frozen.",
+      "Authored starter file feature_pipeline.py:\nimport numpy as np\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.impute import MissingIndicator, SimpleImputer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\n\n\ndef make_preprocessor():\n    numeric = Pipeline([\n        (\"imputer\", SimpleImputer(strategy=\"mean\")),\n        (\"scaler\", StandardScaler()),\n    ])\n    missing = MissingIndicator(missing_values=None, features=\"all\")\n    category = OneHotEncoder(handle_unknown=\"ignore\", sparse_output=False)\n    return ColumnTransformer(\n        [\n            (\"numeric\", numeric, [0]),\n            (\"missing\", missing, [0]),\n            (\"shift\", category, [1]),\n        ],\n        verbose_feature_names_out=False,\n    )\n\n\nTRAIN = np.array([\n    [10.0, \"day\"],\n    [None, \"night\"],\n    [30.0, \"day\"],\n], dtype=object)\nVALIDATION = np.array([\n    [None, \"weekend\"],\n    [40.0, \"night\"],\n], dtype=object)\n\nPREPROCESSOR = make_preprocessor()\nTRAIN_FEATURES = PREPROCESSOR.fit_transform(TRAIN)\n# LEAK TO REPAIR: validation must replay state, not fit new state.\nVALIDATION_FEATURES = PREPROCESSOR.fit_transform(VALIDATION)\n\nprint(\"training features:\", np.round(TRAIN_FEATURES, 3))\nprint(\"validation features:\", np.round(VALIDATION_FEATURES, 3))\nprint(\"feature names:\", PREPROCESSOR.get_feature_names_out().tolist())\n"
+    ]
+  },
+  {
+    "lessonId": "knn-versus-tree",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "10",
+    "lessonTitle": "Two models draw different neighborhoods",
+    "lessonQuestion": "What assumptions do k-nearest neighbors and decision trees make?",
+    "lessonSummary": "Compare a distance-based vote with recursive axis-aligned splits and expose the inductive bias of each.",
+    "mechanism": {
+      "input": "Labeled feature points and one query point",
+      "process": "Either vote among nearby stored examples or route the query through learned feature thresholds",
+      "output": "A class prediction and a boundary shaped by the model's inductive bias"
+    },
+    "chunks": [
+      {
+        "id": "knn-memory:p1",
+        "blockId": "knn-memory",
+        "heading": "kNN predicts from stored examples",
+        "text": "k-nearest neighbors stores the labeled training examples. For a new point, it computes distances, selects the k closest examples, and combines their labels.",
+        "tags": [
+          "distance",
+          "neighbors",
+          "vote",
+          "local similarity"
+        ]
+      },
+      {
+        "id": "knn-memory:p2",
+        "blockId": "knn-memory",
+        "heading": "kNN predicts from stored examples",
+        "text": "The method assumes that nearby points should often have similar targets. That local-similarity assumption is its central inductive bias.",
+        "tags": [
+          "distance",
+          "neighbors",
+          "vote",
+          "local similarity"
+        ]
+      },
+      {
+        "id": "knn-k-scale:p1",
+        "blockId": "knn-k-scale",
+        "heading": "k and scale change the neighborhood",
+        "text": "A small k follows local detail and can react strongly to one mislabeled point. A larger k averages over a wider region and can erase a small but real cluster.",
+        "tags": [
+          "k",
+          "variance",
+          "smoothing",
+          "scale"
+        ]
+      },
+      {
+        "id": "knn-k-scale:p2",
+        "blockId": "knn-k-scale",
+        "heading": "k and scale change the neighborhood",
+        "text": "Distance depends on feature scale. If age ranges over tens and income over hundreds of thousands, unscaled income can dominate which points count as near.",
+        "tags": [
+          "k",
+          "variance",
+          "smoothing",
+          "scale"
+        ]
+      },
+      {
+        "id": "tree-rules:p1",
+        "blockId": "tree-rules",
+        "heading": "A tree predicts by routing",
+        "text": "A decision tree asks a sequence of questions such as temperature < 18 or pressure >= 4.5. Each split partitions the current rows, and a leaf returns a prediction.",
+        "tags": [
+          "split",
+          "threshold",
+          "leaf",
+          "axis aligned"
+        ]
+      },
+      {
+        "id": "tree-rules:p2",
+        "blockId": "tree-rules",
+        "heading": "A tree predicts by routing",
+        "text": "A standard numeric split is axis-aligned: one feature and one threshold at a time. Repeated splits create rectangular regions in feature space.",
+        "tags": [
+          "split",
+          "threshold",
+          "leaf",
+          "axis aligned"
+        ]
+      },
+      {
+        "id": "tree-depth:p1",
+        "blockId": "tree-depth",
+        "heading": "Depth controls partition detail",
+        "text": "A shallow tree has few large regions and may miss a real interaction. A deep tree can isolate individual training examples and become unstable when the sample changes.",
+        "tags": [
+          "depth",
+          "overfit",
+          "instability",
+          "capacity"
+        ]
+      },
+      {
+        "id": "tree-depth:p2",
+        "blockId": "tree-depth",
+        "heading": "Depth controls partition detail",
+        "text": "Unlike kNN, a fitted tree stores split rules rather than consulting every training point for each prediction. Both can overfit, but through different mechanisms.",
+        "tags": [
+          "depth",
+          "overfit",
+          "instability",
+          "capacity"
+        ]
+      },
+      {
+        "id": "compare-bias:p1",
+        "blockId": "compare-bias",
+        "heading": "Model choice is a claim about structure",
+        "text": "kNN favors local similarity under a chosen distance. A tree favors a hierarchy of threshold rules. Neither bias is universally correct.",
+        "tags": [
+          "comparison",
+          "validation",
+          "boundary",
+          "assumption"
+        ]
+      },
+      {
+        "id": "compare-bias:p2",
+        "blockId": "compare-bias",
+        "heading": "Model choice is a claim about structure",
+        "text": "Compare them under the same preprocessing, splits, and metric. A more flexible boundary on training data is not enough; the choice must survive validation and transfer to new cases.",
+        "tags": [
+          "comparison",
+          "validation",
+          "boundary",
+          "assumption"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: A 1D kNN query is x=3.6. The training points are (1,0), (2,0), (4,1), and (5,1). With k=3, what is the majority prediction?",
+      "Visible options: Class 1; Class 0; A tie",
+      "Visual lab: Compare a moving neighborhood with a fixed split",
+      "Predict both labels first, then move one query across the same data and inspect neighbor membership beside tree routing.",
+      "Fixed quantities: The labeled training points, feature scaling, k, and fitted tree split stay fixed.",
+      "Learner-controlled change: Move only the query point and compare which neighbors vote and which tree branch receives it.",
+      "Control: Query position, from left region to right region",
+      "Explanation prompt: Explain how kNN and a decision tree can assign different labels to the same point. Trace each computation and name the structural assumption responsible.",
+      "Explanation guidance: For kNN, name distance, k, and voting. For the tree, name learned thresholds, routing, and leaves.",
+      "Explanation prompt: An emergency dispatcher predicts whether a call needs a specialist team from response distance and symptom severity. Similar past calls form curved local clusters, but policy also requires an auditable rule. Compare kNN and a shallow tree, including scaling, boundary shape, noise sensitivity, and the operational tradeoff.",
+      "Explanation guidance: Do not name a universal winner. State what each model assumes and what evidence would decide.",
+      "Code lab instructions: Predict the kNN vote and stump route before running. The specimen's stump routing is reversed; investigate the failed checks and repair only that comparison.",
+      "Authored starter file knn_vs_tree.py:\ndef majority(labels):\n    return int(sum(labels) * 2 >= len(labels))\n\n\ndef knn_predict(points, query, k):\n    ranked = sorted(points, key=lambda point: (abs(point[0] - query), point[0]))\n    return majority([label for _x, label in ranked[:k]])\n\n\ndef stump_predict(query, threshold, left_label, right_label):\n    # BUG TO REPAIR: values below threshold must route left.\n    return right_label if query < threshold else left_label\n\n\ndef stump_error(points, threshold, left_label, right_label):\n    return sum(\n        stump_predict(x, threshold, left_label, right_label) != label\n        for x, label in points\n    )\n\n\nPOINTS = [(1.0, 0), (2.0, 0), (4.0, 1), (5.0, 1)]\nprint(\"kNN at 3.6:\", knn_predict(POINTS, 3.6, 3))\nprint(\"stump at 2.5:\", stump_predict(2.5, 3.0, 0, 1))\nprint(\"stump error:\", stump_error(POINTS, 3.0, 0, 1))\n"
+    ]
+  },
+  {
+    "lessonId": "regularization-path",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "11",
+    "lessonTitle": "Control flexibility without touching the test set",
+    "lessonQuestion": "How do regularization and cross-validation constrain model selection?",
+    "lessonSummary": "Predict coefficient shrinkage, compare L1 with L2, and select a penalty from validation folds while preserving a final test.",
+    "mechanism": {
+      "input": "Training folds, candidate penalty strengths, model coefficients, and validation losses",
+      "process": "Fit penalized models repeatedly, aggregate validation loss, and freeze the selected setting",
+      "output": "A regularized model selected without using final test outcomes"
+    },
+    "chunks": [
+      {
+        "id": "regularization-objective:p1",
+        "blockId": "regularization-objective",
+        "heading": "Penalize complexity inside the training objective",
+        "text": "Regularized fitting minimizes data loss plus a coefficient penalty. The penalty changes which parameter values count as cheap even when two models fit training data similarly.",
+        "tags": [
+          "penalty",
+          "lambda",
+          "coefficient",
+          "hyperparameter"
+        ]
+      },
+      {
+        "id": "regularization-objective:p2",
+        "blockId": "regularization-objective",
+        "heading": "Penalize complexity inside the training objective",
+        "text": "The regularization strength lambda is a hyperparameter: training optimizes coefficients for a fixed lambda, while validation evidence helps choose lambda.",
+        "tags": [
+          "penalty",
+          "lambda",
+          "coefficient",
+          "hyperparameter"
+        ]
+      },
+      {
+        "id": "regularization-l2:p1",
+        "blockId": "regularization-l2",
+        "heading": "L2 spreads shrinkage",
+        "text": "L2 adds lambda times the sum of squared coefficients. For one feature through the origin, the fitted weight becomes sum(xy) / (sum(x squared) + lambda).",
+        "tags": [
+          "L2",
+          "ridge",
+          "shrinkage",
+          "closed form"
+        ]
+      },
+      {
+        "id": "regularization-l2:p2",
+        "blockId": "regularization-l2",
+        "heading": "L2 spreads shrinkage",
+        "text": "With x = [1, 2] and y = [2, 4], the unregularized weight is 10/5 = 2. At lambda = 5 it becomes 10/10 = 1. Larger lambda pulls it toward zero.",
+        "tags": [
+          "L2",
+          "ridge",
+          "shrinkage",
+          "closed form"
+        ]
+      },
+      {
+        "id": "regularization-l1:p1",
+        "blockId": "regularization-l1",
+        "heading": "L1 can create exact zeros",
+        "text": "L1 adds lambda times the sum of absolute coefficients. Its sharp corner at zero can make some fitted coefficients exactly zero.",
+        "tags": [
+          "L1",
+          "lasso",
+          "sparsity",
+          "correlation"
+        ]
+      },
+      {
+        "id": "regularization-l1:p2",
+        "blockId": "regularization-l1",
+        "heading": "L1 can create exact zeros",
+        "text": "A zero coefficient does not prove the feature is useless or causal. With correlated features, small data changes can alter which one L1 retains.",
+        "tags": [
+          "L1",
+          "lasso",
+          "sparsity",
+          "correlation"
+        ]
+      },
+      {
+        "id": "regularization-cv:p1",
+        "blockId": "regularization-cv",
+        "heading": "Cross-validation rotates the validation role",
+        "text": "In k-fold cross-validation, split the available training data into k folds. Fit on k-1 folds and evaluate on the remaining fold, rotating until every fold has served as validation.",
+        "tags": [
+          "fold",
+          "validation",
+          "average",
+          "pipeline"
+        ]
+      },
+      {
+        "id": "regularization-cv:p2",
+        "blockId": "regularization-cv",
+        "heading": "Cross-validation rotates the validation role",
+        "text": "Each candidate lambda must use the same folds and the complete fitted pipeline inside each training fold. Average validation loss estimates the selection criterion.",
+        "tags": [
+          "fold",
+          "validation",
+          "average",
+          "pipeline"
+        ]
+      },
+      {
+        "id": "regularization-test:p1",
+        "blockId": "regularization-test",
+        "heading": "Selection ends before final testing",
+        "text": "After selecting lambda, refit the pipeline and model on the full development data under that frozen setting. Evaluate the final test set once for an independent estimate.",
+        "tags": [
+          "test set",
+          "selection",
+          "refit",
+          "optimism"
+        ]
+      },
+      {
+        "id": "regularization-test:p2",
+        "blockId": "regularization-test",
+        "heading": "Selection ends before final testing",
+        "text": "Repeatedly checking test performance while changing lambda turns the test set into another validation set. The optimistic result no longer answers how the frozen procedure handles untouched data.",
+        "tags": [
+          "test set",
+          "selection",
+          "refit",
+          "optimism"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: For ridge weight sum(xy)/(sum(x^2)+lambda), what happens to the weight magnitude when lambda increases from 0 to 5?",
+      "Visible options: It shrinks toward zero; It grows away from zero; It cannot change",
+      "Visual lab: Follow coefficients and validation loss along lambda",
+      "Predict shrinkage first, then compare coefficient paths, training loss, and mean fold loss at two penalty strengths.",
+      "Fixed quantities: The data, folds, feature pipeline, model family, and loss definition stay fixed.",
+      "Learner-controlled change: Change only lambda and inspect fitted coefficients plus training and cross-validation losses.",
+      "Control: Regularization strength, from weak penalty to strong penalty",
+      "Explanation prompt: Explain why stronger regularization can raise training loss yet lower cross-validation loss. Include how L1 and L2 differ and why lambda is not chosen on the test set.",
+      "Explanation guidance: Connect coefficient flexibility to fit, fold-to-fold generalization, penalty shape, and the role of the untouched test.",
+      "Explanation prompt: A vibration model has 40 correlated sensor features and only 160 machines. Describe a defensible comparison of L1 and L2, including fold-local preprocessing, the evidence used to select lambda, what coefficient patterns you expect, and when the test set is opened.",
+      "Explanation guidance: Account for correlation, pipeline fitting inside folds, repeated validation, and the final frozen evaluation.",
+      "Code lab instructions: Predict the manual ridge weights and soft-threshold outputs. Run the specimen, compare the explicit formula with scikit-learn Ridge, investigate why cross-validation chooses the worst candidate, then repair choose_lambda to minimize mean fold loss.",
+      "Authored starter file regularization_path.py:\nimport numpy as np\nfrom sklearn.linear_model import Ridge\n\n\ndef ridge_weight(xs, ys, penalty):\n    numerator = sum(x * y for x, y in zip(xs, ys))\n    denominator = sum(x * x for x in xs) + penalty\n    return numerator / denominator\n\n\ndef soft_threshold(value, penalty):\n    if value > penalty:\n        return value - penalty\n    if value < -penalty:\n        return value + penalty\n    return 0.0\n\n\ndef mean(values):\n    return sum(values) / len(values)\n\n\ndef sklearn_ridge_weight(xs, ys, penalty):\n    features = np.asarray(xs, dtype=float).reshape(-1, 1)\n    targets = np.asarray(ys, dtype=float)\n    model = Ridge(alpha=penalty, fit_intercept=False)\n    model.fit(features, targets)\n    return float(model.coef_[0])\n\n\ndef choose_lambda(fold_losses):\n    scored = [(mean(losses), penalty) for penalty, losses in fold_losses.items()]\n    # BUG TO REPAIR: lower validation loss is better.\n    return max(scored)[1]\n\n\nFOLD_LOSSES = {\n    0.0: [0.52, 0.66, 0.61],\n    0.5: [0.48, 0.51, 0.50],\n    2.0: [0.62, 0.57, 0.65],\n}\nALTERNATE_FOLD_LOSSES = {\n    0.0: [0.10, 0.90, 0.80],\n    0.5: [0.30, 0.35, 0.40],\n    2.0: [0.40, 0.45, 0.50],\n}\nprint(\"ridge lambda 0:\", ridge_weight([1.0, 2.0], [2.0, 4.0], 0.0))\nprint(\"ridge lambda 5:\", ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))\nprint(\"scikit-learn lambda 5:\", sklearn_ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))\nprint(\"chosen lambda:\", choose_lambda(FOLD_LOSSES))\n"
+    ]
+  },
+  {
+    "lessonId": "ensemble-votes",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "12",
+    "lessonTitle": "Many weak views can form one stronger model",
+    "lessonQuestion": "When do bagging, random forests, and boosting improve a predictor?",
+    "lessonSummary": "Separate parallel averaging from sequential correction and identify whether each ensemble attacks variance or bias.",
+    "mechanism": {
+      "input": "Training rows, base learners, resampled datasets or residual errors",
+      "process": "Train diverse learners in parallel and aggregate them, or train learners sequentially to correct remaining error",
+      "output": "An ensemble prediction with changed variance or bias"
+    },
+    "chunks": [
+      {
+        "id": "ensemble-diversity:p1",
+        "blockId": "ensemble-diversity",
+        "heading": "Aggregation needs disagreement",
+        "text": "Averaging can stabilize predictions only when component errors are not perfectly aligned. Copying one deterministic model many times produces the same prediction and no variance reduction.",
+        "tags": [
+          "ensemble",
+          "diversity",
+          "correlation",
+          "aggregation"
+        ]
+      },
+      {
+        "id": "ensemble-diversity:p2",
+        "blockId": "ensemble-diversity",
+        "heading": "Aggregation needs disagreement",
+        "text": "An ensemble therefore combines two ideas: create meaningfully different base learners, then aggregate or sequence their outputs.",
+        "tags": [
+          "ensemble",
+          "diversity",
+          "correlation",
+          "aggregation"
+        ]
+      },
+      {
+        "id": "ensemble-bagging:p1",
+        "blockId": "ensemble-bagging",
+        "heading": "Bagging trains in parallel",
+        "text": "Bagging draws bootstrap samples from the training rows, fits one base learner per sample, then averages regression predictions or votes on classes.",
+        "tags": [
+          "bootstrap",
+          "parallel",
+          "average",
+          "variance"
+        ]
+      },
+      {
+        "id": "ensemble-bagging:p2",
+        "blockId": "ensemble-bagging",
+        "heading": "Bagging trains in parallel",
+        "text": "Deep trees are unstable: a changed sample can change early splits. Averaging many such trees can reduce this sample-driven variance while retaining flexible fits.",
+        "tags": [
+          "bootstrap",
+          "parallel",
+          "average",
+          "variance"
+        ]
+      },
+      {
+        "id": "ensemble-forest:p1",
+        "blockId": "ensemble-forest",
+        "heading": "Random forests also vary the available features",
+        "text": "If one strong feature dominates every tree, bootstrap trees can remain highly correlated. A random forest offers only a random subset of features at each candidate split.",
+        "tags": [
+          "feature subsampling",
+          "decorrelation",
+          "tree",
+          "forest"
+        ]
+      },
+      {
+        "id": "ensemble-forest:p2",
+        "blockId": "ensemble-forest",
+        "heading": "Random forests also vary the available features",
+        "text": "Feature subsampling can force different useful structures to appear, reducing correlation among trees. It may weaken individual trees while strengthening their average.",
+        "tags": [
+          "feature subsampling",
+          "decorrelation",
+          "tree",
+          "forest"
+        ]
+      },
+      {
+        "id": "ensemble-boosting:p1",
+        "blockId": "ensemble-boosting",
+        "heading": "Boosting trains in sequence",
+        "text": "Boosting adds a small learner that focuses on what the current ensemble still gets wrong. For squared error, one simple view fits the next learner to residuals target minus current prediction.",
+        "tags": [
+          "sequential",
+          "residual",
+          "correction",
+          "learning rate"
+        ]
+      },
+      {
+        "id": "ensemble-boosting:p2",
+        "blockId": "ensemble-boosting",
+        "heading": "Boosting trains in sequence",
+        "text": "If the current prediction is 2 for a target of 4, the residual is 2. Adding half of that correction moves the prediction to 3. The learning rate controls how much of each stage is accepted.",
+        "tags": [
+          "sequential",
+          "residual",
+          "correction",
+          "learning rate"
+        ]
+      },
+      {
+        "id": "ensemble-bias-variance:p1",
+        "blockId": "ensemble-bias-variance",
+        "heading": "Name the failure before choosing the ensemble",
+        "text": "Bagging and random forests primarily address unstable, high-variance learners. Boosting can reduce systematic underfit by composing many small corrections, though it also needs regularization and validation.",
+        "tags": [
+          "bias",
+          "variance",
+          "underfit",
+          "validation"
+        ]
+      },
+      {
+        "id": "ensemble-bias-variance:p2",
+        "blockId": "ensemble-bias-variance",
+        "heading": "Name the failure before choosing the ensemble",
+        "text": "The labels variance and bias are diagnostic summaries, not guarantees. Compare learning curves, multi-seed variation, and held-out error under the same protocol.",
+        "tags": [
+          "bias",
+          "variance",
+          "underfit",
+          "validation"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: Ten trees use identical rows, features, and deterministic fitting. Their predictions are identical. What does averaging them change?",
+      "Visible options: Nothing; the average is the same prediction; It guarantees zero test error; It becomes boosting",
+      "Visual lab: Change correlation, not the target",
+      "Predict the ensemble spread first, then compare repeated samples as tree correlation changes while individual error scale stays fixed.",
+      "Fixed quantities: The target function, number of learners, individual error scale, split, and aggregation rule stay fixed.",
+      "Learner-controlled change: Change only how correlated the base learners are and inspect ensemble variability across repeated samples.",
+      "Control: Base-learner correlation, from diverse errors to aligned errors",
+      "Explanation prompt: Explain why bootstrap trees can reduce variance, why random feature subsets may improve their average, and why boosting is not bagging.",
+      "Explanation guidance: Contrast parallel resampling and aggregation with sequential error correction.",
+      "Explanation prompt: A power-grid tree model changes sharply when a few training days are replaced, and most trees always split first on temperature. A separate shallow model underfits every fold. Propose one ensemble intervention for each failure and state the evidence that would support it.",
+      "Explanation guidance: Diagnose instability, correlated trees, and systematic underfit separately.",
+      "Code lab instructions: Predict the vote, average, and one residual correction before running. Run the specimen, investigate the boosting sign error, then modify boost_step so it moves predictions toward targets.",
+      "Authored starter file ensemble_votes.py:\ndef majority_vote(predictions):\n    return int(sum(predictions) * 2 >= len(predictions))\n\n\ndef average_predictions(model_predictions):\n    columns = zip(*model_predictions)\n    return [sum(values) / len(values) for values in columns]\n\n\ndef residuals(predictions, targets):\n    return [target - prediction for prediction, target in zip(predictions, targets)]\n\n\ndef boost_step(predictions, targets, learning_rate):\n    corrections = residuals(predictions, targets)\n    # BUG TO REPAIR: add the residual correction instead of moving away from it.\n    return [\n        prediction - learning_rate * correction\n        for prediction, correction in zip(predictions, corrections)\n    ]\n\n\ndef mse(predictions, targets):\n    return sum((prediction - target) ** 2 for prediction, target in zip(predictions, targets)) / len(targets)\n\n\nprint(\"vote:\", majority_vote([1, 0, 1]))\nprint(\"average:\", average_predictions([[1.0, 3.0], [3.0, 5.0], [5.0, 7.0]]))\nprint(\"boosted:\", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))\n"
+    ]
+  },
+  {
+    "lessonId": "xor-hidden-space",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "13",
+    "lessonTitle": "Hidden units can rebuild the space",
+    "lessonQuestion": "How can nonlinear composition solve XOR?",
+    "lessonSummary": "Construct two nonlinear hidden features that turn XOR into a linearly separable hidden representation.",
+    "mechanism": {
+      "input": "Two binary inputs, hidden weights and biases, and an output rule",
+      "process": "Apply nonlinear hidden units to create new coordinates, then combine those coordinates linearly",
+      "output": "An XOR score that is positive exactly when one input is active"
+    },
+    "chunks": [
+      {
+        "id": "xor-pattern:p1",
+        "blockId": "xor-pattern",
+        "heading": "XOR labels opposite corners together",
+        "text": "XOR is 1 when exactly one binary input is 1. Its four cases are (0,0) -> 0, (1,0) -> 1, (0,1) -> 1, and (1,1) -> 0.",
+        "tags": [
+          "XOR",
+          "binary",
+          "linearly separable",
+          "corners"
+        ]
+      },
+      {
+        "id": "xor-pattern:p2",
+        "blockId": "xor-pattern",
+        "heading": "XOR labels opposite corners together",
+        "text": "In the input plane, the positive examples occupy opposite corners. Any single straight boundary that isolates one positive corner places the other on the wrong side.",
+        "tags": [
+          "XOR",
+          "binary",
+          "linearly separable",
+          "corners"
+        ]
+      },
+      {
+        "id": "xor-linear-collapse:p1",
+        "blockId": "xor-linear-collapse",
+        "heading": "Stacked linear maps remain linear",
+        "text": "If one layer computes h = A x + a and the next computes z = B h + b, substitution gives z = B A x + B a + b. The composition is still one linear map plus a bias.",
+        "tags": [
+          "linear map",
+          "composition",
+          "substitution",
+          "activation"
+        ]
+      },
+      {
+        "id": "xor-linear-collapse:p2",
+        "blockId": "xor-linear-collapse",
+        "heading": "Stacked linear maps remain linear",
+        "text": "Depth alone does not create a curved or disconnected boundary. A nonlinear activation between layers changes that algebra.",
+        "tags": [
+          "linear map",
+          "composition",
+          "substitution",
+          "activation"
+        ]
+      },
+      {
+        "id": "xor-hidden-features:p1",
+        "blockId": "xor-hidden-features",
+        "heading": "Rectification exposes disagreement",
+        "text": "ReLU(a) = max(0, a): positive inputs pass through unchanged, while negative inputs become zero. This is the nonlinear activation used in the two authored hidden features.",
+        "tags": [
+          "ReLU",
+          "hidden unit",
+          "coordinate",
+          "difference"
+        ]
+      },
+      {
+        "id": "xor-hidden-features:p2",
+        "blockId": "xor-hidden-features",
+        "heading": "Rectification exposes disagreement",
+        "text": "Let h1 = ReLU(x1 - x2) and h2 = ReLU(x2 - x1). For (1,0), the hidden pair is (1,0); for (0,1), it is (0,1).",
+        "tags": [
+          "ReLU",
+          "hidden unit",
+          "coordinate",
+          "difference"
+        ]
+      },
+      {
+        "id": "xor-hidden-features:p3",
+        "blockId": "xor-hidden-features",
+        "heading": "Rectification exposes disagreement",
+        "text": "For both equal-input cases, (0,0) and (1,1), the hidden pair is (0,0). The hidden coordinates have turned opposite positive corners into points that share a simple property: h1 + h2 is positive.",
+        "tags": [
+          "ReLU",
+          "hidden unit",
+          "coordinate",
+          "difference"
+        ]
+      },
+      {
+        "id": "xor-output:p1",
+        "blockId": "xor-output",
+        "heading": "The output layer reads the new geometry",
+        "text": "An output score s = h1 + h2 is 1 for unequal inputs and 0 for equal inputs. Thresholding at 0.5 reproduces the XOR truth table.",
+        "tags": [
+          "output layer",
+          "hidden space",
+          "threshold",
+          "truth table"
+        ]
+      },
+      {
+        "id": "xor-output:p2",
+        "blockId": "xor-output",
+        "heading": "The output layer reads the new geometry",
+        "text": "The output operation is linear in hidden space. The model succeeds because the nonlinear hidden transformation changed the representation before that final line was drawn.",
+        "tags": [
+          "output layer",
+          "hidden space",
+          "threshold",
+          "truth table"
+        ]
+      },
+      {
+        "id": "xor-interpretation:p1",
+        "blockId": "xor-interpretation",
+        "heading": "Hidden coordinates are computations, not little names",
+        "text": "Here each hidden unit has a transparent authored formula. In a trained network, useful coordinates are learned jointly and need not correspond to stable human concepts.",
+        "tags": [
+          "interpretation",
+          "learned representation",
+          "causality",
+          "boundary"
+        ]
+      },
+      {
+        "id": "xor-interpretation:p2",
+        "blockId": "xor-interpretation",
+        "heading": "Hidden coordinates are computations, not little names",
+        "text": "A visual boundary can show what the network computes on a small domain, but it does not by itself explain generalization, calibration, or causality.",
+        "tags": [
+          "interpretation",
+          "learned representation",
+          "causality",
+          "boundary"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: Two layers contain only weighted sums and biases, with no activation between them. Can their composition separate XOR?",
+      "Visible options: No; the composition is still linear; Yes; two layers always curve the boundary; Yes; adding any bias solves XOR",
+      "Visual lab: Watch XOR become separable",
+      "Predict all four hidden pairs first, then move from a linear pass-through to the authored ReLU difference features and compare fixed targets with changing predictions.",
+      "Fixed quantities: The four XOR inputs, immutable targets, final output weights, and threshold stay fixed.",
+      "Learner-controlled change: Change only the strength of the nonlinear hidden transformation and inspect input coordinates, hidden coordinates, and output scores.",
+      "Control: Hidden nonlinearity strength, from linear pass-through to ReLU difference features",
+      "Explanation prompt: Explain why one linear boundary fails on XOR and trace all four inputs through h1 = ReLU(x1 - x2), h2 = ReLU(x2 - x1), and score h1 + h2.",
+      "Explanation guidance: Name the input geometry, hidden coordinates for equal and unequal inputs, and the final threshold.",
+      "Explanation prompt: A safety lamp should turn on when exactly one of two override switches is active, but stay off when both are equal. Map this problem to XOR, give two hidden ReLU features, and explain why the final output can be linear in hidden space.",
+      "Explanation guidance: Use the switch states as binary inputs and show the equal versus unequal hidden coordinates.",
+      "Code lab instructions: Predict the hidden coordinates and truth table before running. Run the nearly working specimen, find the duplicated hidden direction, then repair h2 so it responds to the opposite unequal input.",
+      "Authored starter file xor_hidden_space.py:\ndef relu(value):\n    return max(0.0, value)\n\n\ndef hidden_features(x1, x2):\n    h1 = relu(x1 - x2)\n    # BUG TO REPAIR: h2 must detect the opposite directed difference.\n    h2 = relu(x1 - x2)\n    return h1, h2\n\n\ndef xor_score(x1, x2):\n    h1, h2 = hidden_features(x1, x2)\n    return h1 + h2\n\n\ndef xor_predict(x1, x2):\n    return int(xor_score(x1, x2) >= 0.5)\n\n\nCASES = [(0, 0), (1, 0), (0, 1), (1, 1)]\nprint(\"hidden:\", [hidden_features(x1, x2) for x1, x2 in CASES])\nprint(\"predictions:\", [xor_predict(x1, x2) for x1, x2 in CASES])\n"
+    ]
+  },
+  {
+    "lessonId": "backprop-graph",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "14",
+    "lessonTitle": "Trace credit through a graph",
+    "lessonQuestion": "How does one loss assign credit to every earlier operation?",
+    "lessonSummary": "Run a branched scalar graph forward, add both gradient paths into one shared parameter, and verify the result numerically.",
+    "mechanism": {
+      "input": "A scalar graph, its forward values, and a loss sensitivity",
+      "process": "Multiply each downstream sensitivity by the operation's local derivative, adding contributions where paths meet",
+      "output": "A gradient for every differentiable input and parameter"
+    },
+    "chunks": [
+      {
+        "id": "backprop-graph-forward:p1",
+        "blockId": "backprop-graph-forward",
+        "heading": "A graph is a record of operations",
+        "text": "For x = 2, w = 1, b = 0, and target = 1, the graph p = w * x, q = w^2, y_hat = p + q + b, and L = 0.5 * (y_hat - target)^2 produces p = 2, q = 1, y_hat = 3, and L = 2. The shared value w fans out into two operations before their results meet again.",
+        "tags": [
+          "forward pass",
+          "node",
+          "edge",
+          "loss",
+          "scalar graph"
+        ]
+      },
+      {
+        "id": "backprop-graph-forward:p2",
+        "blockId": "backprop-graph-forward",
+        "heading": "A graph is a record of operations",
+        "text": "The forward pass computes values. It does not yet say which earlier value should change.",
+        "tags": [
+          "forward pass",
+          "node",
+          "edge",
+          "loss",
+          "scalar graph"
+        ]
+      },
+      {
+        "id": "backprop-local-chain:p1",
+        "blockId": "backprop-local-chain",
+        "heading": "Backward credit is a chain of local facts",
+        "text": "At the loss, dL/dy_hat = y_hat - target = 2. The product path contributes 2 * dp/dw = 2 * x = 4. The square path contributes 2 * dq/dw = 2 * 2w = 4.",
+        "tags": [
+          "local derivative",
+          "sensitivity",
+          "gradient",
+          "reverse order"
+        ]
+      },
+      {
+        "id": "backprop-local-chain:p2",
+        "blockId": "backprop-local-chain",
+        "heading": "Backward credit is a chain of local facts",
+        "text": "Both paths originate at the same w, so reverse accumulation adds them: dL/dw = 4 + 4 = 8. The number 8 is the local rate at which this loss would change for a small change in the shared parameter.",
+        "tags": [
+          "local derivative",
+          "sensitivity",
+          "gradient",
+          "reverse order"
+        ]
+      },
+      {
+        "id": "backprop-paths-add:p1",
+        "blockId": "backprop-paths-add",
+        "heading": "Products follow paths; sums join paths",
+        "text": "Along one path, chain-rule factors multiply. If a value influences the loss through several paths, the gradient contributions add because each path changes the same final loss.",
+        "tags": [
+          "path",
+          "accumulation",
+          "branch",
+          "zero derivative"
+        ]
+      },
+      {
+        "id": "backprop-paths-add:p2",
+        "blockId": "backprop-paths-add",
+        "heading": "Products follow paths; sums join paths",
+        "text": "The product branch and square branch each provide one contribution to w. Keeping only either 4 would silently discard a real route from w to the loss.",
+        "tags": [
+          "path",
+          "accumulation",
+          "branch",
+          "zero derivative"
+        ]
+      },
+      {
+        "id": "backprop-autodiff-boundary:p1",
+        "blockId": "backprop-autodiff-boundary",
+        "heading": "Autodiff automates bookkeeping, not meaning",
+        "text": "Reverse-mode autodiff records the forward operations and applies their derivative rules in reverse topological order. It computes the same chain-rule products and sums as the hand trace.",
+        "tags": [
+          "reverse mode",
+          "operation tape",
+          "objective",
+          "implementation"
+        ]
+      },
+      {
+        "id": "backprop-autodiff-boundary:p2",
+        "blockId": "backprop-autodiff-boundary",
+        "heading": "Autodiff automates bookkeeping, not meaning",
+        "text": "Autodiff can return the exact derivative of the program and still optimize the wrong objective or propagate through a mistaken graph.",
+        "tags": [
+          "reverse mode",
+          "operation tape",
+          "objective",
+          "implementation"
+        ]
+      },
+      {
+        "id": "backprop-gradient-check:p1",
+        "blockId": "backprop-gradient-check",
+        "heading": "A nearby perturbation checks the implementation",
+        "text": "Finite differences compare the accumulated analytic gradient with [L(w + epsilon) - L(w - epsilon)] / (2 * epsilon). PyTorch's gradcheck applies this same analytical-versus-numerical idea to floating-point tensor inputs. Agreement across several signed cases supports the derivative code; it does not prove the model or loss is appropriate.",
+        "tags": [
+          "finite difference",
+          "gradient check",
+          "epsilon",
+          "verification"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: In the worked branched graph, what is dL/dw after both paths back to w are accumulated?",
+      "Visible options: 8: add 4 from each path; 4: keep one path only; 2: use only the loss sensitivity; 0: the two paths cancel",
+      "Visual lab: Watch two paths accumulate into one parameter",
+      "Commit the two-path gradient first, then capture two shared-weight states and inspect each branch contribution before their sum.",
+      "Fixed quantities: The branched topology, x = 2, b = 0, target = 1, loss, and derivative rules remain fixed.",
+      "Learner-controlled change: Change only the shared parameter w that feeds both branches.",
+      "Control: Shared weight w, from negative shared value to positive shared value",
+      "Explanation prompt: Why must dL/dw in the worked graph contain two terms? Trace both routes, show where multiplication and addition occur, and name a numerical result that would falsify your sum.",
+      "Explanation guidance: Name the shared parameter, each local derivative, both path contributions, their sum, and a finite-difference check.",
+      "Explanation prompt: A heater computes direct_heat = gain * command, resistive_heat = gain^2, temperature = direct_heat + resistive_heat + ambient, and discomfort = 0.5 * (temperature - target)^2. Explain d(discomfort)/d(gain) and map both gain paths to the worked graph.",
+      "Explanation guidance: Use the residual, command, 2 * gain, both path contributions, and their sum. Do not answer only with a final formula.",
+      "Code lab instructions: Predict both path contributions before running. Inspect the printed branched trace, then complete branch_contributions so it returns the product-route term, square-route term, and their sum. Verify several signed cases with finite differences and the pinned autograd library, then confirm a small negative-gradient step lowers loss.",
+      "Authored starter file backprop_trace.py:\nimport autograd.numpy as anp\nfrom autograd import grad\n\n\ndef forward(x, w, b, target):\n    product_branch = w * x\n    square_branch = w * w\n    prediction = product_branch + square_branch + b\n    residual = prediction - target\n    loss = 0.5 * residual * residual\n    return {\n        \"product_branch\": product_branch,\n        \"square_branch\": square_branch,\n        \"prediction\": prediction,\n        \"residual\": residual,\n        \"loss\": loss,\n    }\n\n\ndef branch_contributions(x, w, b, target):\n    trace = forward(x, w, b, target)\n    dloss_dprediction = trace[\"residual\"]\n    product_contribution = dloss_dprediction * x\n    square_contribution = dloss_dprediction * (2.0 * w)\n    # Modify: return both path contributions and their accumulated sum.\n    return None\n\n\ndef backward(x, w, b, target):\n    _, _, grad_w = branch_contributions(x, w, b, target)\n    grad_b = forward(x, w, b, target)[\"residual\"]\n    return grad_w, grad_b\n\n\ndef finite_difference_w(x, w, b, target, epsilon=1e-5):\n    high = forward(x, w + epsilon, b, target)[\"loss\"]\n    low = forward(x, w - epsilon, b, target)[\"loss\"]\n    return (high - low) / (2.0 * epsilon)\n\n\ndef loss_for_autodiff(w, x, b, target):\n    residual = anp.multiply(w, x) + anp.square(w) + b - target\n    return 0.5 * anp.square(residual)\n\n\nautodiff_w = grad(loss_for_autodiff)\n\n\ndef one_step(x, w, b, target, learning_rate):\n    grad_w, grad_b = backward(x, w, b, target)\n    return w - learning_rate * grad_w, b - learning_rate * grad_b\n\n\nCASES = [\n    (2.0, 1.0, 0.0, 1.0),\n    (-2.0, -0.5, 0.25, 1.0),\n    (0.5, -1.0, 0.2, 0.0),\n]\nprint(\"authored forward:\", forward(*CASES[0]))\nprint(\"branch contributions:\", branch_contributions(*CASES[0]))\n"
+    ]
+  },
+  {
+    "lessonId": "optimizer-traces",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "15",
+    "lessonTitle": "Read the optimizer's trace",
+    "lessonQuestion": "Which mechanism produced this training curve?",
+    "lessonSummary": "Diagnose exact plain-SGD learning-rate regimes, then trace mini-batch, momentum, and Adam state in executable code.",
+    "mechanism": {
+      "input": "Initialized parameters and a sequence of mini-batch gradients",
+      "process": "Aggregate each batch gradient and transform it with a learning-rate and optimizer state",
+      "output": "A parameter trajectory and loss trace across updates"
+    },
+    "chunks": [
+      {
+        "id": "optimizer-batches:p1",
+        "blockId": "optimizer-batches",
+        "heading": "A mini-batch is a noisy view of the objective",
+        "text": "The full gradient averages every training example. A mini-batch averages a selected subset, so its direction can differ even when the model and loss are unchanged.",
+        "tags": [
+          "batch",
+          "gradient estimate",
+          "noise",
+          "full gradient"
+        ]
+      },
+      {
+        "id": "optimizer-batches:p2",
+        "blockId": "optimizer-batches",
+        "heading": "A mini-batch is a noisy view of the objective",
+        "text": "Smaller batches usually expose more variation between updates. That variation is not automatically evidence of a bug.",
+        "tags": [
+          "batch",
+          "gradient estimate",
+          "noise",
+          "full gradient"
+        ]
+      },
+      {
+        "id": "optimizer-initialization:p1",
+        "blockId": "optimizer-initialization",
+        "heading": "Initialization chooses the first regime",
+        "text": "Identical zero initialization can keep symmetric hidden units identical. Excessively large values can push nonlinear units into saturated regions or make early activations and gradients unstable.",
+        "tags": [
+          "symmetry",
+          "scale",
+          "saturation",
+          "starting point"
+        ]
+      },
+      {
+        "id": "optimizer-initialization:p2",
+        "blockId": "optimizer-initialization",
+        "heading": "Initialization chooses the first regime",
+        "text": "Initialization changes where optimization starts; it does not change which examples belong to the training objective.",
+        "tags": [
+          "symmetry",
+          "scale",
+          "saturation",
+          "starting point"
+        ]
+      },
+      {
+        "id": "optimizer-rate:p1",
+        "blockId": "optimizer-rate",
+        "heading": "Learning rate scales every proposed update",
+        "text": "For gradient 4, plain gradient descent with rate 0.01 moves by 0.04; rate 0.5 moves by 2. A very small rate can look flat, while a large rate can cross the minimum repeatedly or diverge.",
+        "tags": [
+          "step size",
+          "overshoot",
+          "divergence",
+          "controlled comparison"
+        ]
+      },
+      {
+        "id": "optimizer-rate:p2",
+        "blockId": "optimizer-rate",
+        "heading": "Learning rate scales every proposed update",
+        "text": "A jagged curve alone does not identify the cause: batch order, initialization, and optimizer state must be held fixed before blaming the learning rate.",
+        "tags": [
+          "step size",
+          "overshoot",
+          "divergence",
+          "controlled comparison"
+        ]
+      },
+      {
+        "id": "optimizer-state:p1",
+        "blockId": "optimizer-state",
+        "heading": "Momentum and Adam carry state",
+        "text": "Momentum accumulates a decaying history of gradients, so it can preserve motion through a shallow region and overshoot after direction changes. Adam tracks decaying first and second gradient moments, bias-corrects them, and scales the update coordinate by coordinate.",
+        "tags": [
+          "velocity",
+          "first moment",
+          "second moment",
+          "bias correction"
+        ]
+      },
+      {
+        "id": "optimizer-state:p2",
+        "blockId": "optimizer-state",
+        "heading": "Momentum and Adam carry state",
+        "text": "Neither optimizer chooses the objective, fixes bad data, or guarantees generalization.",
+        "tags": [
+          "velocity",
+          "first moment",
+          "second moment",
+          "bias correction"
+        ]
+      },
+      {
+        "id": "optimizer-diagnosis:p1",
+        "blockId": "optimizer-diagnosis",
+        "heading": "Change one cause, then replay",
+        "text": "A useful diagnosis preserves data order, initialization, model, and seed while changing one optimizer mechanism. Compare exact traces rather than interpreting one smooth or dramatic curve in isolation.",
+        "tags": [
+          "seed",
+          "replay",
+          "ablation",
+          "trace"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: For the fixed quadratic replay, the error update is e(t+1) = (1 - 2 eta)e(t). What happens at eta = 1 exactly?",
+      "Visible options: It oscillates without shrinking; It converges without crossing; It oscillates and shrinks; It oscillates and grows",
+      "Visual lab: Replay one trace at several step sizes",
+      "Predict convergence, shrinking oscillation, non-convergent oscillation, or divergence, then replay 12 plain-SGD steps on the same objective while changing only learning rate.",
+      "Fixed quantities: Targets [1, 3], initialization 0, squared-error objective, full-batch gradient, plain-SGD update, and 12-step budget remain fixed.",
+      "Learner-controlled change: Change only the learning rate.",
+      "Control: Learning rate, from small steps to divergent oscillation",
+      "Explanation prompt: A replay with the same seed, batches, and initialization becomes oscillatory only after the learning rate is increased. Explain the causal chain, name the nearest competing explanation, and state a result that would falsify the learning-rate diagnosis.",
+      "Explanation guidance: Connect gradient, step scale, crossing the minimum, the held-fixed controls, and a controlled replay.",
+      "Explanation prompt: A factory estimates sensor bias from a different small sample each minute and smooths updates with a running velocity. Map mini-batch noise and momentum to this estimator. Explain why a stale velocity can overshoot after the true bias changes sign.",
+      "Explanation guidance: Name the sampled evidence, the noisy estimate, the carried state, and the sign change.",
+      "Code lab instructions: Predict each update from the printed gradient before running. Inspect the working SGD and momentum trace, including optimizer state, weights, and losses. Then complete the missing Adam parameter update from its supplied bias-corrected moments and run the exact checks across multiple gradient signs.",
+      "Authored starter file optimizer_trace.py:\nimport numpy as np\n\n\ndef example_gradient(weight, target):\n    return 2.0 * (weight - target)\n\n\ndef initialize_pair(seed, scale):\n    first = (((seed * 17 + 11) % 100) / 100.0 * 2.0 - 1.0) * scale\n    second = (((seed * 29 + 7) % 100) / 100.0 * 2.0 - 1.0) * scale\n    return first, second\n\n\ndef batch_gradient(weight, targets):\n    gradients = np.asarray(\n        [example_gradient(weight, target) for target in targets],\n        dtype=float,\n    )\n    return float(np.mean(gradients))\n\n\ndef sgd_step(weight, gradient, learning_rate):\n    return weight - learning_rate * gradient\n\n\ndef momentum_step(weight, velocity, gradient, learning_rate, beta):\n    next_velocity = beta * velocity + gradient\n    next_weight = weight - learning_rate * next_velocity\n    return next_weight, next_velocity\n\n\ndef adam_step(weight, first, second, gradient, step, learning_rate,\n              beta1=0.9, beta2=0.999, epsilon=1e-8):\n    next_first = beta1 * first + (1.0 - beta1) * gradient\n    next_second = beta2 * second + (1.0 - beta2) * gradient * gradient\n    corrected_first = next_first / (1.0 - beta1 ** step)\n    corrected_second = next_second / (1.0 - beta2 ** step)\n    # Modify: apply the bias-corrected Adam parameter update.\n    next_weight = None\n    return next_weight, next_first, next_second\n\n\ndef batch_loss(weight, targets):\n    targets_array = np.asarray(targets, dtype=float)\n    return float(np.mean((weight - targets_array) ** 2))\n\n\ndef reference_trace(targets=(1.0, 3.0), steps=4, learning_rate=0.1, beta=0.5):\n    sgd_weight = 0.0\n    momentum_weight = 0.0\n    velocity = 0.0\n    rows = []\n    print(\"step | sgd_grad sgd_w | momentum_grad velocity momentum_w | losses\")\n    for step in range(1, steps + 1):\n        sgd_gradient = batch_gradient(sgd_weight, targets)\n        momentum_gradient = batch_gradient(momentum_weight, targets)\n        sgd_weight = sgd_step(sgd_weight, sgd_gradient, learning_rate)\n        momentum_weight, velocity = momentum_step(\n            momentum_weight,\n            velocity,\n            momentum_gradient,\n            learning_rate,\n            beta,\n        )\n        row = {\n            \"step\": step,\n            \"sgd_gradient\": sgd_gradient,\n            \"sgd_weight\": sgd_weight,\n            \"momentum_gradient\": momentum_gradient,\n            \"velocity\": velocity,\n            \"momentum_weight\": momentum_weight,\n            \"sgd_loss\": batch_loss(sgd_weight, targets),\n            \"momentum_loss\": batch_loss(momentum_weight, targets),\n        }\n        rows.append(row)\n        print(\n            f\"{step:>4} | {sgd_gradient:>8.4f} {sgd_weight:>5.3f} | \"\n            f\"{momentum_gradient:>13.4f} {velocity:>8.4f} \"\n            f\"{momentum_weight:>10.4f} | \"\n            f\"{row['sgd_loss']:.5f} {row['momentum_loss']:.5f}\"\n        )\n    return rows\n\n\ndef adam_trace(targets=(1.0, 3.0), steps=4, learning_rate=0.1):\n    weight = 0.0\n    first = 0.0\n    second = 0.0\n    rows = []\n    for step in range(1, steps + 1):\n        gradient = batch_gradient(weight, targets)\n        weight, first, second = adam_step(\n            weight,\n            first,\n            second,\n            gradient,\n            step,\n            learning_rate,\n        )\n        rows.append((step, gradient, first, second, weight, batch_loss(weight, targets)))\n    return rows\n\n\nREFERENCE_TRACE = reference_trace()\n"
+    ]
+  },
+  {
+    "lessonId": "cluster-project",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "16",
+    "lessonTitle": "Three objectives, three geometries",
+    "lessonQuestion": "What does a representation preserve, and why?",
+    "lessonSummary": "Contrast k-means clustering, PCA projection, and embeddings learned for a predictive objective.",
+    "mechanism": {
+      "input": "Vectors plus a clustering, reconstruction, or predictive objective",
+      "process": "Optimize assignments and centroids, projection directions, or learned coordinates for that objective",
+      "output": "A geometry whose distances and directions reflect the chosen objective"
+    },
+    "chunks": [
+      {
+        "id": "cluster-objectives-first:p1",
+        "blockId": "cluster-objectives-first",
+        "heading": "Geometry follows an objective",
+        "text": "A plot can show points near one another without saying why proximity matters. K-means, PCA, and learned embeddings each produce geometry under a different success criterion.",
+        "tags": [
+          "geometry",
+          "objective",
+          "distance",
+          "representation"
+        ]
+      },
+      {
+        "id": "cluster-objectives-first:p2",
+        "blockId": "cluster-objectives-first",
+        "heading": "Geometry follows an objective",
+        "text": "The same rows can therefore produce different neighborhoods without any algorithm being internally inconsistent.",
+        "tags": [
+          "geometry",
+          "objective",
+          "distance",
+          "representation"
+        ]
+      },
+      {
+        "id": "cluster-kmeans:p1",
+        "blockId": "cluster-kmeans",
+        "heading": "K-means alternates assignment and relocation",
+        "text": "Given centroids, assign each point to its nearest centroid under squared distance. Given assignments, replace each centroid with the mean of its assigned points.",
+        "tags": [
+          "centroid",
+          "assignment",
+          "squared distance",
+          "local minimum"
+        ]
+      },
+      {
+        "id": "cluster-kmeans:p2",
+        "blockId": "cluster-kmeans",
+        "heading": "K-means alternates assignment and relocation",
+        "text": "Each step does not increase within-cluster squared distance, but different initial centroids can end at different local solutions. Feature scale and outliers can dominate Euclidean distance.",
+        "tags": [
+          "centroid",
+          "assignment",
+          "squared distance",
+          "local minimum"
+        ]
+      },
+      {
+        "id": "cluster-pca:p1",
+        "blockId": "cluster-pca",
+        "heading": "PCA preserves variance through linear projection",
+        "text": "After centering, the first principal direction is the unit direction with greatest projected variance. Keeping only a few directions gives the best linear reconstruction under squared error for that dimensionality.",
+        "tags": [
+          "projection",
+          "variance",
+          "centering",
+          "reconstruction"
+        ]
+      },
+      {
+        "id": "cluster-pca:p2",
+        "blockId": "cluster-pca",
+        "heading": "PCA preserves variance through linear projection",
+        "text": "PCA does not use class labels and does not promise that the most variable direction is the most predictive one.",
+        "tags": [
+          "projection",
+          "variance",
+          "centering",
+          "reconstruction"
+        ]
+      },
+      {
+        "id": "cluster-embeddings:p1",
+        "blockId": "cluster-embeddings",
+        "heading": "Learned embeddings inherit their training signal",
+        "text": "An embedding is a learned coordinate vector. Which items become close depends on the loss, positive and negative examples, architecture, and data used to train those coordinates.",
+        "tags": [
+          "embedding",
+          "training signal",
+          "projection distortion",
+          "seed"
+        ]
+      },
+      {
+        "id": "cluster-embeddings:p2",
+        "blockId": "cluster-embeddings",
+        "heading": "Learned embeddings inherit their training signal",
+        "text": "A two-dimensional projection of an embedding can distort original distances. Stable neighborhoods should be checked in the original space and across seeds before they support a claim.",
+        "tags": [
+          "embedding",
+          "training signal",
+          "projection distortion",
+          "seed"
+        ]
+      },
+      {
+        "id": "cluster-discriminate:p1",
+        "blockId": "cluster-discriminate",
+        "heading": "Name what is optimized before interpreting the picture",
+        "text": "K-means minimizes within-cluster distance, PCA minimizes linear reconstruction error when dimensions are dropped, and a learned embedding minimizes its authored training loss. None of these objectives automatically discovers a unique true grouping.",
+        "tags": [
+          "discrimination",
+          "interpretation",
+          "assumption"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: All assignments are fixed. One point moves far to the right. What happens to the mean centroid of its cluster?",
+      "Visible options: It moves right; It moves left; It cannot move; It becomes a class label",
+      "Visual lab: Stress one coordinate without changing the points",
+      "Predict the centroid and principal-direction change, then rescale one feature while preserving every row and initialization.",
+      "Fixed quantities: Rows, initialization, number of clusters, and algorithm steps remain fixed.",
+      "Learner-controlled change: Change only the scale applied to one coordinate.",
+      "Control: Second-coordinate scale, from compressed to dominant",
+      "Explanation prompt: The same dataset shows one split under k-means and another pattern after PCA. Explain why this is not a contradiction, distinguish both objectives from a learned embedding, and name one observation that would challenge your interpretation.",
+      "Explanation guidance: State each objective explicitly and use original-space distances or a replay as the check.",
+      "Explanation prompt: A library has books described by topic counts. It needs shelves with compact groups, a two-number catalog preview, and recommendations learned from borrowing pairs. Match k-means, PCA, and a learned embedding to the three jobs and justify each match.",
+      "Explanation guidance: Use compactness, reconstruction, and predictive co-borrowing as three distinct criteria.",
+      "Code lab instructions: PRIMM: Predict the assignments and new centroids before running. Run the working distance and projection code, investigate the reconstruction error, then complete nearest-centroid assignment. Modify one point or axis and explain which objective changes.",
+      "Authored starter file geometry_objectives.py:\ndef squared_distance(left, right):\n    return sum((a - b) ** 2 for a, b in zip(left, right))\n\n\ndef assign_points(points, centroids):\n    # Modify: return the index of the nearest centroid for every point.\n    return None\n\n\ndef recompute_centroids(points, assignments, cluster_count):\n    dimensions = len(points[0])\n    totals = [[0.0] * dimensions for _ in range(cluster_count)]\n    counts = [0] * cluster_count\n    for point, cluster in zip(points, assignments):\n        counts[cluster] += 1\n        for dimension, value in enumerate(point):\n            totals[cluster][dimension] += value\n    return [\n        tuple(value / counts[cluster] for value in totals[cluster])\n        for cluster in range(cluster_count)\n    ]\n\n\ndef project(point, unit_axis):\n    return sum(value * axis_value for value, axis_value in zip(point, unit_axis))\n\n\ndef reconstruct(coordinate, unit_axis):\n    return tuple(coordinate * axis_value for axis_value in unit_axis)\n\n\ndef dot(left, right):\n    return sum(a * b for a, b in zip(left, right))\n\n\nPOINTS = [(0.0, 0.0), (0.0, 2.0), (8.0, 8.0), (10.0, 8.0)]\nSTART = [(0.0, 0.0), (10.0, 10.0)]\n"
+    ]
+  },
+  {
+    "lessonId": "convolution-field",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "17",
+    "lessonTitle": "Reuse one detector across space",
+    "lessonQuestion": "What does convolution share, and what can each output see?",
+    "lessonSummary": "Compute a tiny convolution, grow its receptive field, and trace the direct gradient path in a residual block.",
+    "mechanism": {
+      "input": "A spatial grid, a shared local kernel, and an optional residual branch",
+      "process": "Slide the same kernel across locations, compose local layers, and add the identity path to the learned branch",
+      "output": "Location-indexed features with controlled receptive fields and a direct residual route"
+    },
+    "chunks": [
+      {
+        "id": "convolution-local-rule:p1",
+        "blockId": "convolution-local-rule",
+        "heading": "One local rule visits every valid location",
+        "text": "A convolution output at one location is the sum of elementwise products between a local input patch and a kernel. Moving one location changes the patch but reuses the same kernel values.",
+        "tags": [
+          "kernel",
+          "patch",
+          "local",
+          "shared parameter"
+        ]
+      },
+      {
+        "id": "convolution-local-rule:p2",
+        "blockId": "convolution-local-rule",
+        "heading": "One local rule visits every valid location",
+        "text": "Sharing lets one learned pattern detector operate across space with fewer parameters than a separate detector at every position.",
+        "tags": [
+          "kernel",
+          "patch",
+          "local",
+          "shared parameter"
+        ]
+      },
+      {
+        "id": "convolution-manual:p1",
+        "blockId": "convolution-manual",
+        "heading": "Compute the patch before naming the feature",
+        "text": "For patch [[1, 2], [0, 1]] and kernel [[1, 0], [0, -1]], the output is 1 * 1 + 2 * 0 + 0 * 0 + 1 * -1 = 0.",
+        "tags": [
+          "manual trace",
+          "activation",
+          "interpretation"
+        ]
+      },
+      {
+        "id": "convolution-manual:p2",
+        "blockId": "convolution-manual",
+        "heading": "Compute the patch before naming the feature",
+        "text": "The arithmetic is known. Calling the result an edge, texture, or object part requires evidence from learned behavior and interventions; the activation alone does not supply that meaning.",
+        "tags": [
+          "manual trace",
+          "activation",
+          "interpretation"
+        ]
+      },
+      {
+        "id": "convolution-receptive-field:p1",
+        "blockId": "convolution-receptive-field",
+        "heading": "Receptive field tracks possible influence",
+        "text": "With stride 1 and no dilation, each additional width-3 convolution expands the receptive field by two positions. Three such layers give a width-7 receptive field.",
+        "tags": [
+          "depth",
+          "stride",
+          "dilation",
+          "possible influence"
+        ]
+      },
+      {
+        "id": "convolution-receptive-field:p2",
+        "blockId": "convolution-receptive-field",
+        "heading": "Receptive field tracks possible influence",
+        "text": "Receptive field says which inputs can influence an output through the graph. It does not say every input has equal actual influence.",
+        "tags": [
+          "depth",
+          "stride",
+          "dilation",
+          "possible influence"
+        ]
+      },
+      {
+        "id": "convolution-residual:p1",
+        "blockId": "convolution-residual",
+        "heading": "A residual block preserves a direct route",
+        "text": "A residual block computes y = x + F(x). Its derivative is dy/dx = 1 + dF/dx, so the identity term provides a direct route for values and gradients.",
+        "tags": [
+          "identity",
+          "skip connection",
+          "gradient path"
+        ]
+      },
+      {
+        "id": "convolution-residual:p2",
+        "blockId": "convolution-residual",
+        "heading": "A residual block preserves a direct route",
+        "text": "Residual paths ease optimization; they do not make every deep model stable or force the learned branch to be small.",
+        "tags": [
+          "identity",
+          "skip connection",
+          "gradient path"
+        ]
+      },
+      {
+        "id": "convolution-controls:p1",
+        "blockId": "convolution-controls",
+        "heading": "Separate kernel, location, and architecture",
+        "text": "To test spatial reuse, hold the kernel fixed and move the same pattern. To test receptive field, hold weights fixed and perturb an input at a known distance. To test the residual route, compare the same branch with and without the identity addition.",
+        "tags": [
+          "intervention",
+          "control",
+          "ablation"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: The same local pattern moves one cell right and the shared kernel is unchanged. What should happen in the ideal valid region?",
+      "Visible options: The matching activation moves right; All activations become zero; A new kernel is learned immediately; The activation must stay in the old cell",
+      "Visual lab: Move one pattern under a fixed kernel",
+      "Predict the output location, then translate only the input pattern while preserving kernel values, padding, and stride.",
+      "Fixed quantities: Kernel values, stride, padding, and input pattern remain fixed.",
+      "Learner-controlled change: Translate the pattern across the input grid.",
+      "Control: Pattern position, from left to right",
+      "Explanation prompt: Explain why a translated pattern moves a convolution response instead of requiring a new detector. Include the nearest misconception about receptive fields and a perturbation that would falsify spatial reuse.",
+      "Explanation guidance: Connect local patches, the same kernel, output location, possible influence, and a controlled shift.",
+      "Explanation prompt: An audio model scans a waveform for a short click pattern. Explain how convolution detects the click at different times, how stacked layers enlarge temporal context, and how y = x + F(x) preserves a direct signal and gradient route.",
+      "Explanation guidance: Map image position to time, spatial patch to waveform window, and the skip connection to the unchanged waveform path.",
+      "Code lab instructions: PRIMM: Predict the four output cells before running. Run the receptive-field and residual specimens, investigate their arithmetic, then complete the shared-kernel accumulation. Modify one image cell and identify exactly which outputs can change.",
+      "Authored starter file convolution_trace.py:\n# This is the unflipped cross-correlation convention that deep-learning\n# libraries commonly call convolution.\ndef conv2d_valid(image, kernel):\n    output_height = len(image) - len(kernel) + 1\n    output_width = len(image[0]) - len(kernel[0]) + 1\n    output = []\n    for row in range(output_height):\n        output_row = []\n        for column in range(output_width):\n            # Modify: accumulate patch values times the same kernel values.\n            value = None\n            output_row.append(value)\n        output.append(output_row)\n    return output\n\n\ndef receptive_field_width(kernel_width, layer_count):\n    return 1 + layer_count * (kernel_width - 1)\n\n\ndef residual_forward(value, branch_value):\n    return value + branch_value\n\n\ndef residual_backward(upstream_gradient, branch_derivative):\n    return upstream_gradient * (1.0 + branch_derivative)\n\n\nIMAGE = [\n    [1.0, 2.0, 0.0],\n    [0.0, 1.0, 3.0],\n    [2.0, 1.0, 0.0],\n]\nKERNEL = [\n    [1.0, 0.0],\n    [0.0, -1.0],\n]\n"
+    ]
+  },
+  {
+    "lessonId": "attention-routing",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "18",
+    "lessonTitle": "Route information with attention",
+    "lessonQuestion": "Where did this token's new information come from?",
+    "lessonSummary": "Compute a tiny query-key-softmax-value pass while separating inference, training, and causal explanation.",
+    "mechanism": {
+      "input": "Position-aware token representations transformed into queries, keys, and values",
+      "process": "Score query-key compatibility, normalize allowed scores, and mix value vectors with those weights",
+      "output": "A context-dependent representation for each query position"
+    },
+    "chunks": [
+      {
+        "id": "attention-inference-scope:p1",
+        "blockId": "attention-inference-scope",
+        "heading": "This lesson traces inference, not training",
+        "text": "During this forward pass, query, key, and value projection parameters are already fixed. The model computes new token representations; it does not update its weights.",
+        "tags": [
+          "inference",
+          "training",
+          "fixed weights",
+          "forward pass",
+          "position"
+        ]
+      },
+      {
+        "id": "attention-inference-scope:p2",
+        "blockId": "attention-inference-scope",
+        "heading": "This lesson traces inference, not training",
+        "text": "Training would add a loss, backpropagate through these operations, and apply optimizer updates across examples. A visible attention pass must not be described as the model learning.",
+        "tags": [
+          "inference",
+          "training",
+          "fixed weights",
+          "forward pass",
+          "position"
+        ]
+      },
+      {
+        "id": "attention-inference-scope:p3",
+        "blockId": "attention-inference-scope",
+        "heading": "This lesson traces inference, not training",
+        "text": "Self-attention over content vectors has no inherent token-order signal. Transformers therefore encode position in the input representations or attention computation, for example with positional embeddings, rotary encodings, or position biases. A causal mask only blocks unavailable positions; it is not by itself a full representation of position.",
+        "tags": [
+          "inference",
+          "training",
+          "fixed weights",
+          "forward pass",
+          "position"
+        ]
+      },
+      {
+        "id": "attention-qkv:p1",
+        "blockId": "attention-qkv",
+        "heading": "Queries select; values supply content",
+        "text": "For one token, its query is compared with each allowed key. Scaled dot products become scores; softmax converts them into nonnegative weights summing to one.",
+        "tags": [
+          "query",
+          "key",
+          "value",
+          "dot product",
+          "softmax"
+        ]
+      },
+      {
+        "id": "attention-qkv:p2",
+        "blockId": "attention-qkv",
+        "heading": "Queries select; values supply content",
+        "text": "The output is the weighted sum of value vectors, not key vectors. A key helps determine how much to route; its paired value supplies what is routed.",
+        "tags": [
+          "query",
+          "key",
+          "value",
+          "dot product",
+          "softmax"
+        ]
+      },
+      {
+        "id": "attention-mask:p1",
+        "blockId": "attention-mask",
+        "heading": "A causal mask limits available positions",
+        "text": "In left-to-right inference, the causal mask removes future positions before softmax. Their effective score is negative infinity, so their normalized weight is zero.",
+        "tags": [
+          "causal mask",
+          "future token",
+          "information constraint"
+        ]
+      },
+      {
+        "id": "attention-mask:p2",
+        "blockId": "attention-mask",
+        "heading": "A causal mask limits available positions",
+        "text": "The mask encodes an information constraint. It is separate from the learned compatibility scores among positions that remain allowed.",
+        "tags": [
+          "causal mask",
+          "future token",
+          "information constraint"
+        ]
+      },
+      {
+        "id": "attention-block:p1",
+        "blockId": "attention-block",
+        "heading": "A transformer block contains more than attention",
+        "text": "Multi-head attention runs several learned routing projections, then combines their outputs. Residual paths, normalization, and a position-wise feed-forward network transform the representation further.",
+        "tags": [
+          "multi-head",
+          "feed-forward",
+          "normalization",
+          "residual"
+        ]
+      },
+      {
+        "id": "attention-block:p2",
+        "blockId": "attention-block",
+        "heading": "A transformer block contains more than attention",
+        "text": "Therefore an attention matrix is one intermediate state, not the whole transformer computation.",
+        "tags": [
+          "multi-head",
+          "feed-forward",
+          "normalization",
+          "residual"
+        ]
+      },
+      {
+        "id": "attention-not-explanation:p1",
+        "blockId": "attention-not-explanation",
+        "heading": "Attention weight is not causal proof",
+        "text": "A large attention weight shows strong routing under this head and input. It does not by itself prove that the attended token caused the final prediction or expresses the model's reason.",
+        "tags": [
+          "interpretability",
+          "causality",
+          "ablation",
+          "intervention"
+        ]
+      },
+      {
+        "id": "attention-not-explanation:p2",
+        "blockId": "attention-not-explanation",
+        "heading": "Attention weight is not causal proof",
+        "text": "Trace ML therefore treats a route ablation as an authored causal test: change one route while holding the comparison fixed, then measure whether the output changes. The test can supply intervention evidence; the original attention weight cannot.",
+        "tags": [
+          "interpretability",
+          "causality",
+          "ablation",
+          "intervention"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: One query has equal scores for two allowed keys. What weights does softmax assign across those two positions?",
+      "Visible options: 0.5 and 0.5; 1 and 0; The raw key values; It updates the model weights",
+      "Visual lab: Change one key match and trace the routed value",
+      "Predict which value contributes more, then vary one query-key score while preserving values, the mask, and every other score.",
+      "Fixed quantities: Value vectors, causal mask, query position, and all other scores remain fixed.",
+      "Learner-controlled change: Change only one query-key compatibility score.",
+      "Control: Selected key score, from routes less to routes more",
+      "Explanation prompt: Explain how increasing one allowed query-key score changes the output representation. Then explain why the resulting larger attention weight is not enough to claim that token caused the final prediction, and name a controlled test.",
+      "Explanation guidance: Trace score, softmax weight, value mixture, later paths, and an ablation or replacement.",
+      "Explanation prompt: A dispatcher has one request, three depot descriptions, and three depot payloads containing available inventory. Map request, descriptions, and payloads to query, keys, and values. Explain the weighted response and why a high routing weight does not prove the depot caused the final delivery outcome.",
+      "Explanation guidance: Map all three roles, normalization, content mixing, and the downstream causal boundary.",
+      "Code lab instructions: PRIMM: Predict the equal-score mixture before running. Run the working softmax and causal mask, investigate the weights, then complete the value-weighted sum. Modify one key score and trace the output change. This isolated inference pass assumes position information was already supplied; it performs no training update.",
+      "Authored starter file attention_inference.py:\nfrom math import exp, log\n\n\ndef softmax(scores):\n    maximum = max(scores)\n    numerators = [exp(score - maximum) for score in scores]\n    denominator = sum(numerators)\n    return [value / denominator for value in numerators]\n\n\ndef causal_scores(scores, query_position):\n    return [\n        score if key_position <= query_position else float(\"-inf\")\n        for key_position, score in enumerate(scores)\n    ]\n\n\ndef scalar_attention(query, keys, values):\n    scores = [query * key for key in keys]\n    weights = softmax(scores)\n    # Modify: return weights and their weighted sum of values.\n    output = None\n    return weights, output\n\n\nLOG_THREE = log(3.0)\n"
+    ]
+  },
+  {
+    "lessonId": "q-learning",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "19",
+    "lessonTitle": "Learn from delayed consequences",
+    "lessonQuestion": "How does a reward update an earlier decision?",
+    "lessonSummary": "Separate bandits from stateful decisions, compute a Bellman target, and execute a tabular Q-learning update.",
+    "mechanism": {
+      "input": "A state, action, observed reward, next state, and current Q table",
+      "process": "Bootstrap a target from immediate reward plus discounted best next-state value, then move the selected entry toward it",
+      "output": "An updated estimate of expected discounted return for one state-action pair"
+    },
+    "chunks": [
+      {
+        "id": "q-bandit-boundary:p1",
+        "blockId": "q-bandit-boundary",
+        "heading": "A bandit has actions but no changing state",
+        "text": "In the stationary, context-free multi-armed bandit used here, each action produces a reward and the next choice faces the same decision context. Contextual and nonstationary bandits relax those assumptions. The central tension is exploring uncertain actions versus exploiting the best current estimate.",
+        "tags": [
+          "action",
+          "reward",
+          "exploration",
+          "state"
+        ]
+      },
+      {
+        "id": "q-bandit-boundary:p2",
+        "blockId": "q-bandit-boundary",
+        "heading": "A bandit has actions but no changing state",
+        "text": "When an action changes what can happen next, the missing state and transition matter. That is the boundary where a Markov decision process is needed.",
+        "tags": [
+          "action",
+          "reward",
+          "exploration",
+          "state"
+        ]
+      },
+      {
+        "id": "q-mdp:p1",
+        "blockId": "q-mdp",
+        "heading": "An MDP makes consequences explicit",
+        "text": "An MDP specifies states, available actions, transition behavior, rewards, and a discount factor. The Markov assumption says the current state contains the information used to model the next transition.",
+        "tags": [
+          "transition",
+          "discount",
+          "Markov",
+          "reward versus label"
+        ]
+      },
+      {
+        "id": "q-mdp:p2",
+        "blockId": "q-mdp",
+        "heading": "An MDP makes consequences explicit",
+        "text": "A reward evaluates an observed transition. It is not a correct-action label supplied for every state.",
+        "tags": [
+          "transition",
+          "discount",
+          "Markov",
+          "reward versus label"
+        ]
+      },
+      {
+        "id": "q-bellman-target:p1",
+        "blockId": "q-bellman-target",
+        "heading": "Bootstrap from the next state",
+        "text": "Suppose a transition gives reward 2, discount 0.9, and the largest next-state Q value is 5. The Q-learning target is 2 + 0.9 * 5 = 6.5.",
+        "tags": [
+          "target",
+          "bootstrap",
+          "terminal",
+          "discounted return"
+        ]
+      },
+      {
+        "id": "q-bellman-target:p2",
+        "blockId": "q-bellman-target",
+        "heading": "Bootstrap from the next state",
+        "text": "If the transition ends the episode, there is no future term and the target is only the observed reward.",
+        "tags": [
+          "target",
+          "bootstrap",
+          "terminal",
+          "discounted return"
+        ]
+      },
+      {
+        "id": "q-update:p1",
+        "blockId": "q-update",
+        "heading": "Move one estimate toward the target",
+        "text": "For current Q = 1, target 6.5, and learning rate 0.5, the temporal-difference error is 5.5 and the updated Q is 1 + 0.5 * 5.5 = 3.75.",
+        "tags": [
+          "TD error",
+          "learning rate",
+          "table",
+          "off-policy"
+        ]
+      },
+      {
+        "id": "q-update:p2",
+        "blockId": "q-update",
+        "heading": "Move one estimate toward the target",
+        "text": "Only the visited state-action entry changes in tabular Q-learning. Unvisited estimates do not become correct by association.",
+        "tags": [
+          "TD error",
+          "learning rate",
+          "table",
+          "off-policy"
+        ]
+      },
+      {
+        "id": "q-limits:p1",
+        "blockId": "q-limits",
+        "heading": "The reward definition is part of the system",
+        "text": "From experienced rewards and transitions, Q-learning updates action-value estimates so policy behavior can seek to maximize expected discounted return. It does not optimize the environment's reward function or transition dynamics. Sparse feedback, unsafe exploration, hidden state, changing dynamics, or a misspecified reward can make a numerically correct update produce unwanted behavior.",
+        "tags": [
+          "reward design",
+          "hidden state",
+          "safety",
+          "nonstationarity"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: A transition ends the episode with reward 2. What is its Q-learning target?",
+      "Visible options: 2; 6.5; 5; 0",
+      "Visual lab: Change delayed value while preserving the transition",
+      "Predict the target, then vary only the best next-state value while holding reward, discount, terminal flag, and current Q fixed.",
+      "Fixed quantities: Immediate reward, discount, terminal flag, current Q, and learning rate remain fixed.",
+      "Learner-controlled change: Change only the estimated best value of the next state.",
+      "Control: Best next-state Q, from poor future to valuable future",
+      "Explanation prompt: Explain why increasing the best next-state Q raises a nonterminal target but cannot affect a terminal target. Distinguish reward from a supervised label and state a transition that would falsify your account.",
+      "Explanation guidance: Use reward, discount, next-state value, terminal handling, and one controlled comparison.",
+      "Explanation prompt: A warehouse chooses how many units to reorder. The choice changes tomorrow's inventory, storage cost, and stockout risk. Explain why this is not a context-free bandit, then define a state, an action, a reward, and the future term in one Bellman target.",
+      "Explanation guidance: Make the changing inventory state and delayed consequence explicit.",
+      "Code lab instructions: PRIMM: Predict both terminal and nonterminal targets before running. Run the working bandit mean and table lookup, investigate the temporal-difference error, then complete the Bellman target. Modify discount and explain the changed update.",
+      "Authored starter file q_update.py:\ndef update_bandit_mean(old_mean, old_count, reward):\n    new_count = old_count + 1\n    new_mean = old_mean + (reward - old_mean) / new_count\n    return new_mean, new_count\n\n\ndef bellman_target(reward, discount, next_values, terminal):\n    # Modify: terminal uses reward only; otherwise bootstrap from max next value.\n    return None\n\n\ndef q_update(current_q, target, learning_rate):\n    td_error = target - current_q\n    return current_q + learning_rate * td_error\n\n\ndef update_table(table, state, action, reward, next_state,\n                 discount, learning_rate, terminal=False):\n    next_values = [] if terminal else list(table[next_state].values())\n    target = bellman_target(reward, discount, next_values, terminal)\n    table[state][action] = q_update(table[state][action], target, learning_rate)\n    return table[state][action]\n"
+    ]
+  },
+  {
+    "lessonId": "shift-monitor",
+    "lessonRevision": "2026-08-03-r2",
+    "lessonNumber": "20",
+    "lessonTitle": "Diagnose the deployed system",
+    "lessonQuestion": "Which part of the pipeline failed after deployment?",
+    "lessonSummary": "Complete a fixed capstone diagnosis spanning distribution shift, operational-slice reliability, delayed outcomes, and monitoring.",
+    "mechanism": {
+      "input": "Versioned model, deployment inputs, decisions, delayed outcomes, and operational slices",
+      "process": "Compare live distributions and error slices with a reference, then localize evidence across data, objective, optimization, evaluation, and operations",
+      "output": "A bounded diagnosis, mitigation, and monitored verification plan"
+    },
+    "chunks": [
+      {
+        "id": "shift-fixed-capstone:p1",
+        "blockId": "shift-fixed-capstone",
+        "heading": "Capstone incident: the model did not change",
+        "text": "A fixed package-damage model was trained mostly on bright images from Scanner A. The rollout fixture pins model version 3.2, artifact sha256:a65bfe6cceda..., training trace sha256:912fe7955410..., serving code 1.8.4, preprocessing 2.3.1, and threshold 0.60. At the new night facility, Scanner B produces darker images and a rising missing-barcode rate.",
+        "tags": [
+          "capstone",
+          "deployment",
+          "scanner",
+          "fixed case"
+        ]
+      },
+      {
+        "id": "shift-fixed-capstone:p2",
+        "blockId": "shift-fixed-capstone",
+        "heading": "Capstone incident: the model did not change",
+        "text": "No lesson, incident detail, or diagnosis branch is generated at runtime. The evidence below is the authored capstone case.",
+        "tags": [
+          "capstone",
+          "deployment",
+          "scanner",
+          "fixed case"
+        ]
+      },
+      {
+        "id": "shift-observations:p1",
+        "blockId": "shift-observations",
+        "heading": "Link each observation to a pipeline layer",
+        "text": "Input brightness mean moves from 0.62 to 0.39 and missing barcodes rise from 2% to 14%. Delayed labels later show accuracy falling from 92% to 83%. False-negative rate is 10% for day parcels and 30% for night parcels.",
+        "tags": [
+          "input drift",
+          "missingness",
+          "accuracy",
+          "false negative rate"
+        ]
+      },
+      {
+        "id": "shift-observations:p2",
+        "blockId": "shift-observations",
+        "heading": "Link each observation to a pipeline layer",
+        "text": "The incident fixture keeps artifact sha256:a65bfe6cceda..., training trace sha256:912fe7955410..., threshold 0.60, serving code 1.8.4, and preprocessing 2.3.1 pinned across the reference and live observations. This evidence first implicates deployment inputs, the measurement path, and operational-slice reliability, not a new optimizer failure.",
+        "tags": [
+          "input drift",
+          "missingness",
+          "accuracy",
+          "false negative rate"
+        ]
+      },
+      {
+        "id": "shift-fairness:p1",
+        "blockId": "shift-fairness",
+        "heading": "Operational reliability and fairness are different questions",
+        "text": "An overall metric averages across the deployment mixture. The day and night scanner slices can expose an operational reliability failure while the aggregate moves only modestly, but that gap alone does not establish a fairness harm.",
+        "tags": [
+          "operational slice",
+          "selection rate",
+          "label delay",
+          "tradeoff"
+        ]
+      },
+      {
+        "id": "shift-fairness:p2",
+        "blockId": "shift-fairness",
+        "heading": "Operational reliability and fairness are different questions",
+        "text": "Fairness analysis must name affected stakeholders or groups, their exposure to the decision, and its consequences. Selection-rate parity or demographic parity can be monitored from decisions and group membership before outcome labels arrive; outcome-dependent false-negative-rate parity or equality-of-opportunity measures require reliable labels. Equalizing one metric can change another and does not replace domain review.",
+        "tags": [
+          "operational slice",
+          "selection rate",
+          "label delay",
+          "tradeoff"
+        ]
+      },
+      {
+        "id": "shift-monitoring-layers:p1",
+        "blockId": "shift-monitoring-layers",
+        "heading": "Monitor before and after outcomes arrive",
+        "text": "Immediate monitors can track schema, missingness, feature distributions, model version, latency, score distributions, decision rates, and pre-label selection-rate parity when reliable group membership is available. Outcome-dependent performance and fairness measures such as false-negative-rate parity or equality of opportunity require reliable labels, which may arrive later.",
+        "tags": [
+          "label delay",
+          "schema",
+          "score drift",
+          "root cause"
+        ]
+      },
+      {
+        "id": "shift-monitoring-layers:p2",
+        "blockId": "shift-monitoring-layers",
+        "heading": "Monitor before and after outcomes arrive",
+        "text": "A drift alert is evidence that behavior or inputs changed, not proof of the root cause. Diagnosis combines monitors with controlled replay, slice evaluation, and incident context.",
+        "tags": [
+          "label delay",
+          "schema",
+          "score drift",
+          "root cause"
+        ]
+      },
+      {
+        "id": "shift-response:p1",
+        "blockId": "shift-response",
+        "heading": "Mitigate, verify, and keep the boundary visible",
+        "text": "The authored response is to pause unsupported night automation, preserve logs, validate Scanner B preprocessing, collect reviewed night labels, compare the frozen model on matched scanner slices, and release only after overall and night false-negative gates pass.",
+        "tags": [
+          "mitigation",
+          "rollback",
+          "replay",
+          "release gate"
+        ]
+      },
+      {
+        "id": "shift-response:p2",
+        "blockId": "shift-response",
+        "heading": "Mitigate, verify, and keep the boundary visible",
+        "text": "Retraining is not the first automatic answer. Repair the measurement path and evaluation coverage before choosing whether model parameters must change.",
+        "tags": [
+          "mitigation",
+          "rollback",
+          "replay",
+          "release gate"
+        ]
+      }
+    ],
+    "activityContext": [
+      "Prediction prompt: Artifact sha256:a65bfe6cceda..., training trace sha256:912fe7955410..., threshold 0.60, serving code 1.8.4, and preprocessing 2.3.1 remain pinned while scanner brightness and missingness move sharply. Which layer should be investigated first?",
+      "Visible options: Deployment data and preprocessing; The old optimizer momentum; Transformer attention weights; Generate a new lesson",
+      "Visual lab: Change positive-case mix under frozen slice rates",
+      "Predict aggregate FNR, then change what fraction of a fixed 100 actual-positive evaluation cases comes from the Scanner B night slice.",
+      "Fixed quantities: Total actual-positive support, model 3.2, artifact sha256:a65bfe6cceda..., training trace sha256:912fe7955410..., threshold 0.60, serving code 1.8.4, preprocessing 2.3.1, per-slice false-negative rates, and label definition remain fixed.",
+      "Learner-controlled change: Reallocate only the fixed actual-positive support between day and night slices; no overall parcel share is implied.",
+      "Control: Night share among actual positives, from all day positives to all night positives",
+      "Explanation prompt: Diagnose the fixed Scanner B incident. Build the causal evidence chain, reject optimizer failure as the first explanation, identify the hidden night-slice reliability failure, and state a controlled result that would challenge the data-shift diagnosis.",
+      "Explanation guidance: Use the pinned deployment identity, changed input measurements, delayed outcome slices, and a matched replay.",
+      "Explanation prompt: A water-quality alert model moves to a river with a replacement turbidity sensor. Labels arrive weekly, and false negatives rise mainly during storm flow. Design the immediate monitors, delayed slice checks, first mitigation, and a controlled test separating sensor shift from model failure.",
+      "Explanation guidance: Name pre-label signals, the storm slice, a reversible safety action, and a matched-sample replay.",
+      "Code lab instructions: PRIMM: Predict the overall accuracy, overall false-negative rate, and night-slice gap before running. Run the working metric and release-gate functions, investigate which aggregate hides the night slice, then complete the fixed diagnostic rule. Modify an alert threshold and explain why release still requires both overall and night false-negative gates.",
+      "Authored starter file deployment_monitor.py:\nMODEL_VERSION = \"3.2\"\nMODEL_ARTIFACT_DIGEST = \"sha256:a65bfe6cceda707830acb47678e888d21dd677464e31f07872420b550e0a2cfe\"\nTRAINING_TRACE_DIGEST = \"sha256:912fe7955410e96ff4f931c33686af5ed845de62458ceb0624dce990031bc117\"\nSERVING_CODE_VERSION = \"1.8.4\"\nPREPROCESSING_VERSION = \"2.3.1\"\nDECISION_THRESHOLD = 0.6\n\n\ndef mean(values):\n    return sum(values) / len(values)\n\n\ndef mean_shift(reference, live):\n    return abs(mean(live) - mean(reference))\n\n\ndef accuracy(records):\n    return sum(prediction == target for _, target, prediction in records) / len(records)\n\n\ndef false_negative_rate(records, group):\n    positives = [\n        prediction\n        for record_group, target, prediction in records\n        if record_group == group and target == 1\n    ]\n    if not positives:\n        return None\n    return sum(prediction == 0 for prediction in positives) / len(positives)\n\n\ndef overall_false_negative_rate(records):\n    positives = [\n        prediction\n        for _, target, prediction in records\n        if target == 1\n    ]\n    if not positives:\n        return None\n    return sum(prediction == 0 for prediction in positives) / len(positives)\n\n\ndef release_ready(\n    records,\n    overall_fnr_max=0.1,\n    night_fnr_max=0.15,\n):\n    overall_rate = overall_false_negative_rate(records)\n    night_rate = false_negative_rate(records, \"night\")\n    return (\n        overall_rate is not None\n        and night_rate is not None\n        and overall_rate <= overall_fnr_max\n        and night_rate <= night_fnr_max\n    )\n\n\ndef diagnose(reference_brightness, live_brightness, records,\n             shift_threshold=0.2,\n             gap_threshold=0.15):\n    shift = mean_shift(reference_brightness, live_brightness)\n    night_rate = false_negative_rate(records, \"night\")\n    day_rate = false_negative_rate(records, \"day\")\n    if night_rate is None or day_rate is None:\n        return \"insufficient-positive-support\"\n    gap = abs(night_rate - day_rate)\n    # Modify: return the fixed diagnosis for both, one, or no alert.\n    return None\n\n\nREFERENCE_BRIGHTNESS = [0.56,0.62,0.64,0.66]\nLIVE_BRIGHTNESS = [0.32,0.38,0.4,0.46]\nLIVE_RECORDS = (\n    [(\"day\", 1, 1)] * 72\n    + [(\"day\", 1, 0)] * 8\n    + [(\"day\", 0, 0)] * 34\n    + [(\"day\", 0, 1)] * 6\n    + [(\"night\", 1, 1)] * 14\n    + [(\"night\", 1, 0)] * 6\n    + [(\"night\", 0, 0)] * 46\n    + [(\"night\", 0, 1)] * 14\n)\n"
+    ]
+  }
+]

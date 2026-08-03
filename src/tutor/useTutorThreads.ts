@@ -3,9 +3,13 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
-import type { Lesson } from "../content/types";
+import {
+  pageChunksForLesson,
+  type Lesson,
+} from "../content/types";
 import {
   readLocalStorage,
   writeLocalStorage,
@@ -16,8 +20,16 @@ import {
   revisionForLesson,
   titleFromQuestion,
   type ConversationThread,
+  type TutorClaim,
   type TutorMessage,
 } from "./conversations";
+import {
+  answerLessonQuestion,
+  cancelLessonAnswer,
+  lessonHelperError,
+  lessonHelperReady,
+  nativeLessonHelperAvailable,
+} from "./lesson-helper";
 
 const STORAGE_KEY = "trace-ml:tutor-threads:v1";
 const ACTIVE_THREAD_KEY = "trace-ml:active-thread:v1";
@@ -31,6 +43,14 @@ interface StoredThreads {
 
 interface TutorState extends StoredThreads {
   activeThreadId: string;
+}
+
+export type LessonHelperMode = "checking" | "semantic" | "local";
+
+interface PendingLessonAnswer {
+  requestId: string;
+  threadId: string;
+  cancelling: boolean;
 }
 
 function activeThreadKey(lesson: Lesson) {
@@ -65,6 +85,33 @@ function stringList(value: unknown) {
     : [];
 }
 
+function normalizeClaims(value: unknown): TutorClaim[] | undefined {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 5) {
+    return undefined;
+  }
+  const claims: TutorClaim[] = [];
+  for (const rawClaim of value) {
+    const claim = objectRecord(rawClaim);
+    if (
+      !claim ||
+      typeof claim.text !== "string" ||
+      !claim.text.trim() ||
+      typeof claim.sourceChunkId !== "string" ||
+      !claim.sourceChunkId ||
+      typeof claim.quote !== "string" ||
+      !claim.quote.trim()
+    ) {
+      return undefined;
+    }
+    claims.push({
+      text: claim.text.trim().slice(0, 2_000),
+      sourceChunkId: claim.sourceChunkId.slice(0, 300),
+      quote: claim.quote.trim().slice(0, 10_000),
+    });
+  }
+  return claims;
+}
+
 function normalizeMessage(
   value: unknown,
   lessonId: string,
@@ -93,6 +140,7 @@ function normalizeMessage(
         : lessonRevision,
     sourceBlockIds: stringList(message.sourceBlockIds),
     sourceChunkIds: stringList(message.sourceChunkIds),
+    claims: normalizeClaims(message.claims),
   };
 }
 
@@ -223,9 +271,51 @@ function loadState(lesson: Lesson): TutorState {
 export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
   const lessonRevision = revisionForLesson(lesson);
   const [state, setState] = useState<TutorState>(() => loadState(lesson));
+  const stateRef = useRef(state);
+  const nativeHelper = nativeLessonHelperAvailable();
+  const [helperMode, setHelperMode] = useState<LessonHelperMode>(
+    nativeHelper ? "checking" : "local",
+  );
+  const [pendingAnswer, setPendingAnswer] =
+    useState<PendingLessonAnswer | null>(null);
+  const pendingAnswerRef = useRef<PendingLessonAnswer | null>(null);
+  const [helperErrorMessage, setHelperErrorMessage] =
+    useState<string | null>(null);
+  const [helperNotice, setHelperNotice] = useState<string | null>(null);
   const [persistenceStatus, setPersistenceStatus] = useState<
     "persistent" | "memory-only"
   >("persistent");
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    if (!nativeHelper) {
+      setHelperMode("local");
+      return;
+    }
+    let current = true;
+    setHelperMode("checking");
+    void lessonHelperReady().then((ready) => {
+      if (current) setHelperMode(ready ? "semantic" : "local");
+    });
+    return () => {
+      current = false;
+    };
+  }, [nativeHelper]);
+
+  useEffect(
+    () => () => {
+      const pending = pendingAnswerRef.current;
+      pendingAnswerRef.current = null;
+      setPendingAnswer(null);
+      setHelperErrorMessage(null);
+      setHelperNotice(null);
+      if (pending) void cancelLessonAnswer(pending.requestId);
+    },
+    [lesson.id, lessonRevision],
+  );
 
   useEffect(() => {
     const stored = parseStoredThreads(readLocalStorage(STORAGE_KEY), lesson);
@@ -325,7 +415,10 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
   );
 
   const newThread = useCallback(() => {
+    if (pendingAnswerRef.current) return;
     const thread = createConversationThread(lesson);
+    setHelperErrorMessage(null);
+    setHelperNotice(null);
     setState((current) => ({
       ...current,
       threads: limitThreads([thread, ...current.threads]),
@@ -335,6 +428,9 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
 
   const selectThread = useCallback(
     (threadId: string) => {
+      if (pendingAnswerRef.current) return;
+      setHelperErrorMessage(null);
+      setHelperNotice(null);
       setState((current) => {
         const selected = current.threads.find(
           (thread) =>
@@ -353,7 +449,13 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
   const send = useCallback(
     (question: string) => {
       const trimmed = question.trim();
-      if (!trimmed) return;
+      if (
+        !trimmed ||
+        pendingAnswerRef.current ||
+        helperMode === "checking"
+      ) {
+        return;
+      }
       const createdAt = new Date().toISOString();
       const learnerMessage: TutorMessage = {
         id: messageId(),
@@ -366,16 +468,24 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
         sourceChunkIds: [],
       };
       const tutorMessageId = messageId();
+      const current = stateRef.current;
+      const activeThread = current.threads.find(
+        (thread) =>
+          thread.id === current.activeThreadId &&
+          thread.lessonId === lesson.id &&
+          thread.lessonRevision === lessonRevision,
+      );
+      if (!activeThread) return;
+      const hasLearnerMessage = activeThread.messages.some(
+        (message) => message.role === "learner",
+      );
+      const title = hasLearnerMessage
+        ? activeThread.title
+        : titleFromQuestion(trimmed);
+      setHelperErrorMessage(null);
+      setHelperNotice(null);
 
-      setState((current) => {
-        const activeThread = current.threads.find(
-          (thread) =>
-            thread.id === current.activeThreadId &&
-            thread.lessonId === lesson.id &&
-            thread.lessonRevision === lessonRevision,
-        );
-        if (!activeThread) return current;
-
+      if (helperMode === "local") {
         const answer = answerFromLesson(
           trimmed,
           lesson,
@@ -392,19 +502,13 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
           sourceBlockIds: answer.sources.map((source) => source.blockId),
           sourceChunkIds: answer.sources.map((source) => source.chunkId),
         };
-        const hasLearnerMessage = activeThread.messages.some(
-          (message) => message.role === "learner",
-        );
-
-        return {
-          ...current,
-          threads: current.threads.map((thread) =>
+        setState((latest) => ({
+          ...latest,
+          threads: latest.threads.map((thread) =>
             thread.id === activeThread.id
               ? {
                   ...thread,
-                  title: hasLearnerMessage
-                    ? thread.title
-                    : titleFromQuestion(trimmed),
+                  title,
                   updatedAt: createdAt,
                   messages: [
                     ...thread.messages,
@@ -414,18 +518,143 @@ export function useTutorThreads(lesson: Lesson, activeBlockId?: string) {
                 }
               : thread,
           ),
+        }));
+        return;
+      }
+
+      const requestId = [
+        "lesson-answer",
+        Date.now().toString(36),
+        tutorMessageId,
+      ].join("-");
+      const pending: PendingLessonAnswer = {
+        requestId,
+        threadId: activeThread.id,
+        cancelling: false,
+      };
+      pendingAnswerRef.current = pending;
+      setPendingAnswer(pending);
+      setState((latest) => ({
+        ...latest,
+        threads: latest.threads.map((thread) =>
+          thread.id === activeThread.id
+            ? {
+                ...thread,
+                title,
+                updatedAt: createdAt,
+                messages: [...thread.messages, learnerMessage].slice(-80),
+              }
+            : thread
+        ),
+      }));
+
+      const appendAnswer = (
+        text: string,
+        claims: TutorClaim[],
+        fallbackSourceChunkIds: string[] = [],
+      ) => {
+        const sourceChunkIds = claims.length > 0
+          ? [...new Set(claims.map((claim) => claim.sourceChunkId))]
+          : fallbackSourceChunkIds;
+        const chunks = new Map(
+          pageChunksForLesson(lesson).map((chunk) => [chunk.id, chunk]),
+        );
+        const sourceBlockIds = sourceChunkIds
+          .map((id) => chunks.get(id)?.blockId)
+          .filter((id): id is string => Boolean(id));
+        const answeredAt = new Date().toISOString();
+        const tutorMessage: TutorMessage = {
+          id: tutorMessageId,
+          role: "tutor",
+          text,
+          createdAt: answeredAt,
+          lessonId: lesson.id,
+          lessonRevision,
+          sourceBlockIds,
+          sourceChunkIds,
+          ...(claims.length > 0 ? { claims } : {}),
         };
-      });
+        setState((latest) => ({
+          ...latest,
+          threads: latest.threads.map((thread) =>
+            thread.id === activeThread.id &&
+              thread.lessonId === lesson.id &&
+              thread.lessonRevision === lessonRevision
+              ? {
+                  ...thread,
+                  updatedAt: answeredAt,
+                  messages: [...thread.messages, tutorMessage].slice(-80),
+                }
+              : thread
+          ),
+        }));
+      };
+
+      void answerLessonQuestion(
+        lesson,
+        trimmed,
+        activeThread.messages,
+        requestId,
+      )
+        .then((answer) => {
+          if (pendingAnswerRef.current?.requestId !== requestId) return;
+          appendAnswer(answer.text, answer.claims);
+        })
+        .catch((error) => {
+          if (pendingAnswerRef.current?.requestId !== requestId) return;
+          const message = lessonHelperError(error);
+          if (message.toLocaleLowerCase().includes("cancel")) {
+            setHelperNotice(message);
+            return;
+          }
+          setHelperErrorMessage(
+            `${message} Showing the exact-page fallback instead.`,
+          );
+          const fallback = answerFromLesson(
+            trimmed,
+            lesson,
+            activeBlockId,
+            activeThread.messages,
+          );
+          appendAnswer(
+            fallback.text,
+            [],
+            fallback.sources.map((source) => source.chunkId),
+          );
+        })
+        .finally(() => {
+          if (pendingAnswerRef.current?.requestId !== requestId) return;
+          pendingAnswerRef.current = null;
+          setPendingAnswer(null);
+        });
     },
-    [activeBlockId, lesson, lessonRevision],
+    [activeBlockId, helperMode, lesson, lessonRevision],
   );
+
+  const cancelAnswer = useCallback(() => {
+    const pending = pendingAnswerRef.current;
+    if (!pending || pending.cancelling) return;
+    pendingAnswerRef.current = null;
+    setPendingAnswer(null);
+    setHelperNotice("Lesson answer cancelled. Your thread is saved.");
+    setHelperErrorMessage(null);
+    void cancelLessonAnswer(pending.requestId).catch((error) => {
+      const message = lessonHelperError(error);
+      setHelperErrorMessage(message);
+    });
+  }, []);
 
   return {
     threads: lessonThreads,
     activeThread,
     persistenceStatus,
+    helperMode,
+    pendingAnswer,
+    helperErrorMessage,
+    helperNotice,
     newThread,
     selectThread,
     send,
+    cancelAnswer,
   };
 }

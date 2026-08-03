@@ -102,4 +102,40 @@ describe("useActivityStateStore", () => {
     });
     expect(result.current.persistenceStatus).toBe("memory-only");
   });
+
+  it("rehydrates the semantic review with its submitted prose", () => {
+    const first = renderHook(() => useActivityStateStore());
+    act(() => {
+      first.result.current.saveActivityState(scope, {
+        kind: "text-response",
+        response: "The feature axis is combined while the batch axis remains.",
+        submittedResponse:
+          "The feature axis is combined while the batch axis remains.",
+        assessment: {
+          assessmentMode: "semantic",
+          level: "partial",
+          matchedCriteria: ["batch-axis"],
+          missingCriteria: ["chain-rule"],
+          uncertainCriteria: [],
+          feedback:
+            "The batch-axis idea is supported. Now trace both derivative factors.",
+        },
+      });
+    });
+    first.unmount();
+
+    const second = renderHook(() => useActivityStateStore());
+    expect(second.result.current.getActivityState(scope)).toMatchObject({
+      kind: "text-response",
+      submittedResponse:
+        "The feature axis is combined while the batch axis remains.",
+      assessment: {
+        assessmentMode: "semantic",
+        level: "partial",
+        matchedCriteria: ["batch-axis"],
+        missingCriteria: ["chain-rule"],
+        uncertainCriteria: [],
+      },
+    });
+  });
 });

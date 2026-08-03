@@ -5,9 +5,8 @@ React web app and a Tauri desktop app. The curriculum is fixed and pre-authored:
 all 21 published lessons are visible and selectable from the first run.
 Objective checkpoints record supported predictions, controlled comparisons,
 and executable checks; they do not claim durable retention, unlock, generate,
-or reorder course material. Free-form explanation and transfer prompts are
-formative drafts. Their local checker reports structural coverage only and
-never certifies semantic correctness.
+or reorder course material. Free-form explanation and transfer prompts remain
+formative drafts and never control access or objective completion.
 
 ## Course
 
@@ -31,9 +30,17 @@ pages. Opening a resource records exposure only; authored activities provide
 immediate evidence without inferring retention or mastery.
 
 Lesson completion uses only objectively checkable prediction, comparison, and
-code activities. The prose surface exposes the authored review criteria and
-can point out missing terms, but it records at most partial evidence because a
-deterministic keyword matcher cannot judge causal meaning.
+code activities. In the desktop app, a bounded Bedrock model reviews prose
+against the current authored page and rubric, then gives novice-appropriate
+direction on the most important mistake. It accepts reasonable paraphrases and
+does not require expert wording. The browser build retains a deterministic
+structure-only fallback when the desktop command is unavailable.
+
+The prose assessor may label the submitted activity `unsupported`, `partial`,
+or `demonstrated`, but that immediate formative label is not evidence of
+retention or mastery and is excluded from lesson completion. It cannot change
+the rubric, lesson sequence, course material, helper conversation, or learner
+access.
 
 Each of the 195 authored page paragraphs carries source IDs from a
 103-source research registry. The compact editorial citations under reading
@@ -45,16 +52,26 @@ enables those labs; correctness changes the feedback, not course access.
 
 ## Page-Grounded Helper
 
-The optional helper answers questions about the current lesson. It is a local,
-deterministic retrieval helper, not an LLM-directed teacher:
+The optional helper answers questions about the current lesson. In the desktop
+app, a bounded Bedrock model explains page wording; the browser build uses a
+deterministic exact-page fallback. Neither path is an LLM-directed teacher:
 
-- Only paragraphs from the active authored lesson are searchable.
-- Lexical retrieval selects up to three relevant page chunks and cites them.
-- CBR-style question cases choose a response frame for definition, causal,
-  contrast, or boundary questions. They do not supply facts.
+- Rust resolves only the active lesson and revision from a generated manifest
+  compiled into the app.
+- Every semantic claim carries an adjacent page citation and an exact authored
+  quote that Rust validates before the answer reaches the webview.
+- A deterministic preflight rejects grading, hints, activity answers,
+  generated material, sequencing, progression, prompt overrides, and
+  cross-page requests before inference.
+- The browser fallback retrieves up to three page chunks and uses CBR-style
+  question frames that never supply facts.
 - If the active page does not support an answer, the helper abstains.
 - It never creates or selects material, teaches a separate lesson, sequences
   work, grades, estimates mastery, unlocks lessons, or changes progress.
+
+The helper and prose assessor are separate features. Asking the helper to grade
+an answer is still refused; only the authored explanation form can invoke the
+bounded rubric review.
 
 Conversation history is stored in separate lesson-scoped threads. Each answer
 is still grounded from the submitted question and the current page, rather than
@@ -104,12 +121,30 @@ Trace ML persists local state with `localStorage`:
 - `trace-ml:tutor-threads:v1`: lesson-scoped helper conversations.
 - `trace-ml:active-thread:v1`: the selected helper thread.
 - `trace-ml:active-lesson:v1`: the last selected authored lesson.
+- `trace-ml:activity-state:v1:*`: revision-scoped drafts and formative prose
+  feedback.
 
 State belongs to the current browser or Tauri webview profile. There is no
 account or cloud sync, and clearing site storage resets it. Same-origin windows
 serialize learner-record writes with the Web Locks API, re-read and merge the
 latest ledger inside the lock, and synchronize subsequent storage events.
 Malformed or orphaned evidence is discarded during normalization.
+
+Desktop Q&A sends the current authored lesson, the question, and bounded recent
+thread context to the configured Amazon Bedrock model. Desktop prose review
+sends the authored lesson text, activity prompt and guidance, rubric labels and
+feedback, and the submitted draft. The webview supplies only authored IDs and
+learner text; Rust resolves trusted material from generated manifests compiled
+into the app. The backend sends direct HTTPS requests to the documented Mantle
+Responses endpoint with strict structured output, `tool_choice: "none"`,
+`store: false`, fixed timeouts, bounded input and output, request cancellation,
+and per-feature rate limits. The protected credential remains in Rust.
+Browser Q&A and structure checks send nothing remotely. `store: false`
+disables retrievable Responses state but does not guarantee zero retention;
+AWS documents that classifier-flagged GPT-5.6 Sol traffic may be retained for
+up to 30 days. Account/project retention and provider-sharing policy still
+apply. Live model metadata reported `provider_data_share` on 2026-08-03, so
+this installation does not establish zero data retention.
 
 If browser storage is unavailable, activity continues in memory for that
 session and the compact toolbar displays **Session only**. That warning means
@@ -188,14 +223,14 @@ launcher; startup diagnostics are written to
 - `src/content/`: the fixed course, lesson types, activities, resources, and
   authored checks.
 - `src/learning/`: evidence recording, rubrics, progression state, and local
-  learner persistence.
+  learner persistence, including the bounded prose-assessment client.
 - `src/tutor/`: page-chunk retrieval, CBR response framing, and persisted
   lesson threads.
 - `src/runtime/`: the Pyodide worker, execution limits, and clean assessment
   protocol.
 - `e2e/`: browser course-flow and real-runtime Playwright tests.
 - `src-tauri/`: Tauri 2 application, permissions, bundle configuration, and
-  Rust entry points.
+  the compiled authored-rubric manifest and validated direct-Bedrock command.
 
 The research synthesis is in
 [`agent-knowledge/ml-course-research.md`](agent-knowledge/ml-course-research.md).

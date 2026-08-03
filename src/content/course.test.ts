@@ -21,10 +21,12 @@ import {
 import { CAPSTONE_INCIDENT } from "./capstone-incident";
 import {
   COURSE_REVISION,
+  PREREQUISITE_TRACE_REVISION,
   PYODIDE_ENVIRONMENT,
 } from "./lesson-helpers";
 import {
   pageChunksForLesson,
+  type LessonActivity,
 } from "./types";
 
 const EXPECTED_MODULES = [
@@ -210,6 +212,26 @@ const researchRegistry = JSON.parse(
   ),
 ) as ResearchRegistry;
 
+const proseAssessmentManifest = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../src-tauri/prose-assessment-manifest.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+) as unknown[];
+
+const lessonHelperManifest = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../src-tauri/lesson-helper-manifest.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+) as unknown[];
+
 const allOutcomes = lessons.flatMap((lesson) => lesson.outcomes);
 const allBlocks = lessons.flatMap((lesson) => lesson.blocks);
 const allActivities = lessons.flatMap((lesson) => lesson.activities);
@@ -237,6 +259,42 @@ function expectUnique(values: string[]) {
 
 function expectNonBlank(value: string) {
   expect(value.trim()).not.toBe("");
+}
+
+function helperActivityContext(activity: LessonActivity) {
+  switch (activity.kind) {
+    case "prediction":
+      return [
+        `Prediction prompt: ${activity.checkpoint.prompt}`,
+        `Visible options: ${
+          activity.checkpoint.options.map((option) => option.label).join("; ")
+        }`,
+      ];
+    case "text-response":
+      return [
+        `Explanation prompt: ${activity.prompt}`,
+        `Explanation guidance: ${activity.guidance}`,
+      ];
+    case "visual-lab":
+      return [
+        `Visual lab: ${activity.title}`,
+        activity.prompt,
+        activity.invariant ? `Fixed quantities: ${activity.invariant}` : "",
+        activity.intervention
+          ? `Learner-controlled change: ${activity.intervention}`
+          : "",
+        activity.control
+          ? `Control: ${activity.control.label}, from ${activity.control.lowLabel} to ${activity.control.highLabel}`
+          : "",
+      ].filter(Boolean);
+    case "code-lab":
+      return [
+        `Code lab instructions: ${activity.spec.instructions}`,
+        ...activity.spec.starterFiles.map(
+          (file) => `Authored starter file ${file.path}:\n${file.contents}`,
+        ),
+      ];
+  }
 }
 
 function forbiddenMetadataPaths(value: unknown, path = "$"): string[] {
@@ -286,6 +344,55 @@ function supportsEvidence(
 }
 
 describe("fixed authored course integrity", () => {
+  it("keeps the compiled lesson-helper authority synchronized", () => {
+    const expected = lessons.map((lesson) => ({
+      lessonId: lesson.id,
+      lessonRevision: lesson.revision ?? "unversioned",
+      lessonNumber: lesson.number,
+      lessonTitle: lesson.title,
+      lessonQuestion: lesson.question,
+      lessonSummary: lesson.summary,
+      mechanism: lesson.mechanism ?? null,
+      chunks: pageChunksForLesson(lesson).map((chunk) => ({
+        id: chunk.id,
+        blockId: chunk.blockId,
+        heading: chunk.heading,
+        text: chunk.text,
+        tags: chunk.tags,
+      })),
+      activityContext: lesson.activities.flatMap(helperActivityContext),
+    }));
+
+    expect(lessonHelperManifest).toEqual(expected);
+  });
+
+  it("keeps the compiled prose-assessment authority synchronized", () => {
+    const expected = lessons.flatMap((lesson) => {
+      const lessonContext = lesson.blocks
+        .map((block) => [block.heading, ...block.body].join("\n"))
+        .join("\n\n");
+      return lesson.activities
+        .filter((activity) => activity.kind === "text-response")
+        .map((activity) => ({
+          lessonId: lesson.id,
+          lessonRevision: lesson.revision ?? "unversioned",
+          lessonTitle: lesson.title,
+          lessonContext,
+          activityId: activity.id,
+          activityPrompt: activity.prompt,
+          activityGuidance: activity.guidance,
+          criteria: activity.rubric.criteria.map(({ id, label }) => ({
+            id,
+            label,
+          })),
+          demonstratedFeedback: activity.rubric.demonstratedFeedback,
+          unsupportedFeedback: activity.rubric.unsupportedFeedback,
+        }));
+    });
+
+    expect(proseAssessmentManifest).toEqual(expected);
+  });
+
   it("preserves the exact 21-lesson spine and module ordering", () => {
     expect(lessons).toHaveLength(21);
     expect(lessons.map((lesson) => lesson.id)).toEqual(EXPECTED_LESSON_IDS);
@@ -326,7 +433,11 @@ describe("fixed authored course integrity", () => {
 
     lessons.forEach((lesson) => {
       expect(lesson.published, lesson.id).toBe(true);
-      expect(lesson.revision, lesson.id).toBe(COURSE_REVISION);
+      expect(lesson.revision, lesson.id).toBe(
+        lesson.id === "prerequisite-trace"
+          ? PREREQUISITE_TRACE_REVISION
+          : COURSE_REVISION,
+      );
       expect(
         lessonState(lesson, "__no-active-lesson__", emptyRecord),
         lesson.id,

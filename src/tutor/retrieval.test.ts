@@ -121,4 +121,19 @@ describe("page-context retrieval", () => {
 
     expect(results[0]?.chunkId).toBe("01-row-contract:p2");
   });
+
+  it("explains the classes named by the 80-to-20 baseline", () => {
+    const prerequisiteLesson = requireLesson("prerequisite-trace");
+    const question =
+      "Explain what are the classes mentioned in 80-to-20 classes still give an 80% majority baseline.";
+    const answer = answerFromLesson(question, prerequisiteLesson);
+
+    expect(answer.sources[0]?.chunkId).toBe("00-base-rate:p1");
+    expect(answer.text).toContain(
+      "Classes are the possible target-label categories.",
+    );
+    expect(answer.text).toContain(
+      "80 of 100 recorded cases are negative and the other 20 are positive",
+    );
+  });
 });

@@ -144,8 +144,10 @@ export interface LearnerRecord {
 }
 
 export interface ExplanationAssessment {
+  assessmentMode: "semantic" | "structure";
   level: EvidenceLevel;
   matchedCriteria: string[];
   missingCriteria: string[];
+  uncertainCriteria: string[];
   feedback: string;
 }

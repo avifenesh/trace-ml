@@ -614,7 +614,7 @@ export function visualMechanismObservation(
         primary: `u = ${formatNumber(u)}; y = ${formatNumber(y)}`,
         secondary: `dy/dx = ${formatNumber(outerDerivative)} x 2 = ${formatNumber(derivative)}`,
         explanation:
-          "Only x changes. The 4 x 3 batch still produces four scores, and the fixed 80-to-20 classes still give an 80% majority baseline.",
+          "Only x changes. The 4 x 3 batch still produces four scores. The target labels stay fixed at 80 negative and 20 positive cases, so always predicting the negative majority gives an 80% baseline.",
         metrics: {
           x: boundedValue,
           u,
