@@ -27,7 +27,8 @@ export const modelLessons: Lesson[] = [
       input: "Feature values, weights, a bias, and a binary target",
       process:
         "Form a logit, pass it through the sigmoid, and score the resulting probability with log loss",
-      output: "A probability between zero and one and its target-dependent loss",
+      output:
+        "A mathematical probability strictly between zero and one, subject to floating-point endpoint rounding, and its target-dependent loss",
     },
     starterQuestions: [
       "What does the sign of a logit tell us?",
@@ -78,7 +79,7 @@ export const modelLessons: Lesson[] = [
         heading: "Sigmoid bends the number line",
         sourceIds: ["S73"],
         body: [
-          "The sigmoid is p = 1 / (1 + exp(-z)). At z = 0, p = 0.5. Positive logits map above 0.5, negative logits map below 0.5, and no finite logit reaches exactly zero or one.",
+          "The sigmoid is p = 1 / (1 + exp(-z)). At z = 0, p = 0.5. Mathematically, every finite logit maps strictly between zero and one. In finite-precision arithmetic, an extreme finite logit may round to 0.0 or 1.0; that endpoint is numerical saturation, not the exact mathematical value.",
           "For z = ln(3), exp(-z) = 1/3, so p = 1 / (1 + 1/3) = 0.75. The transformation changes the scale, not the ordering: a larger logit always produces a larger probability.",
         ],
         conceptIds: ["logit", "sigmoid"],
@@ -185,7 +186,8 @@ export const modelLessons: Lesson[] = [
           },
           {
             id: "sigmoid-bounds",
-            label: "state that sigmoid maps the logit between zero and one",
+            label:
+              "state that mathematical sigmoid maps the logit strictly between zero and one",
             keywordGroups: [
               ["sigmoid"],
               ["zero and one", "0 and 1", "probability"],
@@ -254,7 +256,7 @@ export const modelLessons: Lesson[] = [
         "logistic-python-lab",
         ["logit", "sigmoid", "log-loss"],
         "logistic_link.py",
-        "Predict the five check results before running, including the feature-vector logit. Run the nearly working specimen, investigate why the target-0 loss is wrong, then modify log_loss so it reads p for target 1 and 1-p for target 0.",
+        "Predict the five check results before running, including the feature-vector logit and extreme-logit stability. Run the nearly working specimen, investigate why the target-0 loss is wrong, then modify log_loss so it reads p for target 1 and 1-p for target 0.",
         `import math
 
 
@@ -263,7 +265,10 @@ def linear_logit(features, weights, bias):
 
 
 def sigmoid(logit):
-    return 1.0 / (1.0 + math.exp(-logit))
+    if logit >= 0:
+        return 1.0 / (1.0 + math.exp(-logit))
+    exp_logit = math.exp(logit)
+    return exp_logit / (1.0 + exp_logit)
 
 
 def log_loss(probability, target):
@@ -299,9 +304,11 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
           },
           {
             id: "logistic-ln-three-check",
-            label: "Logit ln(3) maps to three quarters",
-            expression: "round(sigmoid(math.log(3.0)), 6)",
-            expected: 0.75,
+            label:
+              "Large finite logits stay stable and may round to endpoints",
+            expression:
+              "str(tuple(round(sigmoid(z), 6) for z in (-1000.0, math.log(3.0), 1000.0)))",
+            expected: "(0.0, 0.75, 1.0)",
             conceptIds: ["logit", "sigmoid"],
           },
           {
@@ -427,6 +434,7 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
         sourceIds: ["S76"],
         body: [
           "Precision = TP / (TP + FP): among positive decisions, how many were truly positive? Recall = TP / (TP + FN): among actual positives, how many did the policy recover?",
+          "If TP + FP is zero, there were no positive decisions, so precision is undefined; this lesson reports math.nan rather than inventing a measured zero. Recall is likewise undefined when TP + FN is zero.",
           "A lower threshold often raises recall and lowers precision because it admits more true positives and more false positives. This is a tradeoff, not a law for every finite dataset.",
         ],
         conceptIds: ["confusion-matrix", "decision-threshold"],
@@ -498,6 +506,11 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
           "confusion-matrix",
           "decision-cost",
           "calibration",
+        ],
+        evidenceConceptIds: [
+          "decision-threshold",
+          "confusion-matrix",
+          "decision-cost",
         ],
         evidenceKind: "manipulation",
         title: "Move a policy across fixed scores",
@@ -614,8 +627,11 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
         "decision-python-lab",
         ["decision-threshold", "confusion-matrix", "decision-cost"],
         "decision_costs.py",
-        "Predict the confusion counts and cheapest candidate threshold. Run the specimen, investigate why it chooses the most expensive threshold, then modify choose_threshold to minimize validation cost.",
-        `def confusion_counts(scores, targets, threshold):
+        "Predict the confusion counts, undefined-precision result, and cheapest candidate threshold. Run the specimen, investigate why it chooses the most expensive threshold, then modify choose_threshold to minimize validation cost.",
+        `import math
+
+
+def confusion_counts(scores, targets, threshold):
     tp = fp = tn = fn = 0
     for score, target in zip(scores, targets):
         prediction = int(score >= threshold)
@@ -632,8 +648,8 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
 
 def precision_recall(counts):
     tp, fp, _tn, fn = counts
-    precision = tp / (tp + fp) if tp + fp else 0.0
-    recall = tp / (tp + fn) if tp + fn else 0.0
+    precision = tp / (tp + fp) if tp + fp else math.nan
+    recall = tp / (tp + fn) if tp + fn else math.nan
     return precision, recall
 
 
@@ -655,6 +671,7 @@ SCORES = [0.9, 0.7, 0.6, 0.4, 0.2]
 TARGETS = [1, 0, 1, 0, 1]
 print("counts:", confusion_counts(SCORES, TARGETS, 0.5))
 print("precision, recall:", precision_recall(confusion_counts(SCORES, TARGETS, 0.5)))
+print("no-positive precision:", precision_recall((0, 0, 3, 2))[0])
 print("chosen:", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))
 `,
         [
@@ -668,10 +685,11 @@ print("chosen:", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))
           },
           {
             id: "decision-metrics-check",
-            label: "Precision and recall use different denominators",
+            label:
+              "Metrics use their denominators and undefined precision is NaN",
             expression:
-              "str(tuple(round(v, 6) for v in precision_recall((2, 1, 1, 1))))",
-            expected: "(0.666667, 0.666667)",
+              "str((tuple(round(v, 6) for v in precision_recall((2, 1, 1, 1))), math.isnan(precision_recall((0, 0, 3, 2))[0])))",
+            expected: "((0.666667, 0.666667), True)",
             conceptIds: ["confusion-matrix"],
           },
           {
@@ -804,7 +822,7 @@ print("chosen:", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))
         heading: "Missing is a condition, not a number",
         sourceIds: ["S07", "S77"],
         body: [
-          "Replacing a missing numeric value with the training mean supplies a usable number, but it does not claim the measurement was actually average. A separate missing indicator preserves the fact that no value was observed.",
+          "Replacing a missing numeric value with the training mean supplies a usable number, but it does not claim the measurement was actually average. A separate binary missing indicator marks only that the field was absent in the raw row; it does not recover the measurement or explain why it was absent.",
           "The reason for missingness may differ across environments. Both the imputation state and the missing rate should therefore remain visible.",
         ],
         conceptIds: ["missing-values", "pipeline"],
@@ -854,6 +872,11 @@ print("chosen:", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))
           "feature-scaling",
           "categorical-encoding",
           "missing-values",
+          "pipeline",
+        ],
+        evidenceConceptIds: [
+          "feature-scaling",
+          "categorical-encoding",
           "pipeline",
         ],
         evidenceKind: "manipulation",
@@ -1044,9 +1067,10 @@ print("feature names:", PREPROCESSOR.get_feature_names_out().tolist())
           },
           {
             id: "pipeline-missing-check",
-            label: "Missing uses training mean and preserves an indicator",
+            label:
+              "Stored training mean imputes the value and the indicator marks absence",
             expression:
-              "abs(float(VALIDATION_FEATURES[0, 0])) < 1e-12 and float(VALIDATION_FEATURES[0, 1]) == 1.0",
+              "float(PREPROCESSOR.named_transformers_['numeric'].named_steps['imputer'].statistics_[0]) == 20.0 and abs(float(VALIDATION_FEATURES[0, 0])) < 1e-12 and float(VALIDATION_FEATURES[0, 1]) == 1.0",
             expected: true,
             conceptIds: ["missing-values", "pipeline"],
           },
