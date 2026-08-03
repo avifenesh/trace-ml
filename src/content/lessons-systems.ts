@@ -10,6 +10,11 @@ import {
 import { CAPSTONE_INCIDENT } from "./capstone-incident";
 import type { Lesson } from "./types";
 
+const CAPSTONE_ARTIFACT_DISPLAY_ID =
+  `${CAPSTONE_INCIDENT.model.artifactDigest.slice(0, 19)}...`;
+const CAPSTONE_TRAINING_DISPLAY_ID =
+  `${CAPSTONE_INCIDENT.model.trainingTraceDigest.slice(0, 19)}...`;
+
 export const systemLessons: Lesson[] = [
   {
     id: "backprop-graph",
@@ -1882,7 +1887,8 @@ LOG_THREE = log(3.0)
       input: "A state, action, observed reward, next state, and current Q table",
       process:
         "Bootstrap a target from immediate reward plus discounted best next-state value, then move the selected entry toward it",
-      output: "An updated estimate of long-run return for one state-action pair",
+      output:
+        "An updated estimate of expected discounted return for one state-action pair",
     },
     starterQuestions: [
       "When is a bandit enough, and when is an MDP required?",
@@ -1969,7 +1975,7 @@ LOG_THREE = log(3.0)
         heading: "The reward definition is part of the system",
         sourceIds: ["S92", "S93"],
         body: [
-          "Q-learning optimizes the rewards and transitions it experiences. Sparse feedback, unsafe exploration, hidden state, changing dynamics, or a misspecified reward can make a numerically correct update produce unwanted behavior.",
+          "From experienced rewards and transitions, Q-learning updates action-value estimates so policy behavior can seek to maximize expected discounted return. It does not optimize the environment's reward function or transition dynamics. Sparse feedback, unsafe exploration, hidden state, changing dynamics, or a misspecified reward can make a numerically correct update produce unwanted behavior.",
         ],
         conceptIds: ["mdp", "q-learning"],
         tags: ["reward design", "hidden state", "safety", "nonstationarity"],
@@ -1980,6 +1986,7 @@ LOG_THREE = log(3.0)
         id: "q-terminal-prediction",
         kind: "prediction",
         conceptIds: ["bellman-update", "q-learning"],
+        evidenceConceptIds: ["bellman-update"],
         evidenceKind: "prediction",
         renderer: "choice",
         checkpoint: {
@@ -2147,9 +2154,11 @@ def update_table(table, state, action, reward, next_state,
           },
           {
             id: "q-bellman-continuing",
-            label: "Continuing target includes discounted next value",
-            expression: "bellman_target(2.0, 0.9, [3.0, 5.0], False)",
-            expected: 6.5,
+            label:
+              "Continuing targets use each supplied reward, discount, and next value",
+            expression:
+              "str([bellman_target(2.0, 0.9, [3.0, 5.0], False), bellman_target(-1.0, 0.25, [8.0, -4.0], False), bellman_target(4.0, 0.5, [-2.0, -6.0], False)])",
+            expected: "[6.5, 1.0, 3.0]",
             conceptIds: ["bellman-update"],
           },
           {
@@ -2218,19 +2227,20 @@ def update_table(table, state, action, reward, next_state,
     title: "Diagnose the deployed system",
     question: "Which part of the pipeline failed after deployment?",
     summary:
-      "Complete a fixed capstone diagnosis spanning distribution shift, subgroup harm, delayed outcomes, and monitoring.",
+      "Complete a fixed capstone diagnosis spanning distribution shift, operational-slice reliability, delayed outcomes, and monitoring.",
     durationMinutes: 50,
     revision: COURSE_REVISION,
     sourceIds: ["S94", "S95", "S99", "S01"],
     mechanism: {
-      input: "Versioned model, deployment inputs, decisions, delayed outcomes, and subgroup slices",
+      input:
+        "Versioned model, deployment inputs, decisions, delayed outcomes, and operational slices",
       process:
         "Compare live distributions and error slices with a reference, then localize evidence across data, objective, optimization, evaluation, and operations",
       output: "A bounded diagnosis, mitigation, and monitored verification plan",
     },
     starterQuestions: [
       "Which signals can detect shift before labels arrive?",
-      "Why can an overall metric hide subgroup harm?",
+      "Why can an overall metric hide an operational-slice failure?",
       "What evidence separates data shift from optimization failure?",
     ],
     prerequisiteConceptIds: [
@@ -2255,8 +2265,8 @@ def update_table(table, state, action, reward, next_state,
       },
       {
         id: "shift-code-monitor",
-        conceptId: "fairness",
-        text: "Compute drift, overall error, subgroup false-negative gaps, and explicit release gates.",
+        conceptId: "monitoring",
+        text: "Pin deployment identity, compute input drift and operational-slice error rates, and enforce explicit reliability release gates.",
         requiredEvidenceKinds: ["code-check"],
       },
     ],
@@ -2267,7 +2277,7 @@ def update_table(table, state, action, reward, next_state,
         heading: "Capstone incident: the model did not change",
         sourceIds: ["S99", "S94"],
         body: [
-          `A fixed package-damage model was trained mostly on bright images from Scanner A. Version ${CAPSTONE_INCIDENT.model.version} and threshold ${CAPSTONE_INCIDENT.model.decisionThreshold.toFixed(2)} were frozen for rollout. At the new night facility, Scanner B produces darker images and a rising missing-barcode rate.`,
+          `A fixed package-damage model was trained mostly on bright images from Scanner A. The rollout fixture pins model version ${CAPSTONE_INCIDENT.model.version}, artifact ${CAPSTONE_ARTIFACT_DISPLAY_ID}, training trace ${CAPSTONE_TRAINING_DISPLAY_ID}, serving code ${CAPSTONE_INCIDENT.model.servingCodeVersion}, preprocessing ${CAPSTONE_INCIDENT.model.preprocessingVersion}, and threshold ${CAPSTONE_INCIDENT.model.decisionThreshold.toFixed(2)}. At the new night facility, Scanner B produces darker images and a rising missing-barcode rate.`,
           "No lesson, incident detail, or diagnosis branch is generated at runtime. The evidence below is the authored capstone case.",
         ],
         conceptIds: ["distribution-shift", "system-diagnosis"],
@@ -2280,11 +2290,10 @@ def update_table(table, state, action, reward, next_state,
         sourceIds: ["S94", "S95"],
         body: [
           `Input brightness mean moves from ${CAPSTONE_INCIDENT.metrics.referenceBrightnessMean.toFixed(2)} to ${CAPSTONE_INCIDENT.metrics.liveBrightnessMean.toFixed(2)} and missing barcodes rise from ${(CAPSTONE_INCIDENT.reference.missingBarcodeRate * 100).toFixed(0)}% to ${(CAPSTONE_INCIDENT.live.missingBarcodeRate * 100).toFixed(0)}%. Delayed labels later show accuracy falling from ${(CAPSTONE_INCIDENT.reference.accuracy * 100).toFixed(0)}% to ${(CAPSTONE_INCIDENT.metrics.liveAccuracy * 100).toFixed(0)}%. False-negative rate is ${(CAPSTONE_INCIDENT.metrics.dayFalseNegativeRate * 100).toFixed(0)}% for day parcels and ${(CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate * 100).toFixed(0)}% for night parcels.`,
-          "Training loss, artifact hash, threshold, and serving code are unchanged. This evidence first implicates deployment data and subgroup behavior, not a new optimizer failure.",
+          `The incident fixture keeps artifact ${CAPSTONE_ARTIFACT_DISPLAY_ID}, training trace ${CAPSTONE_TRAINING_DISPLAY_ID}, threshold ${CAPSTONE_INCIDENT.model.decisionThreshold.toFixed(2)}, serving code ${CAPSTONE_INCIDENT.model.servingCodeVersion}, and preprocessing ${CAPSTONE_INCIDENT.model.preprocessingVersion} pinned across the reference and live observations. This evidence first implicates deployment inputs, the measurement path, and operational-slice reliability, not a new optimizer failure.`,
         ],
         conceptIds: [
           "distribution-shift",
-          "fairness",
           "monitoring",
           "system-diagnosis",
         ],
@@ -2293,14 +2302,14 @@ def update_table(table, state, action, reward, next_state,
       {
         id: "shift-fairness",
         kind: "definition",
-        heading: "Overall quality and subgroup harm are different questions",
+        heading: "Operational reliability and fairness are different questions",
         sourceIds: ["S95"],
         body: [
-          "An overall metric averages across the deployment mixture. A small or newly exposed subgroup can suffer a large error increase while the aggregate moves only modestly.",
-          "Fairness analysis must name the affected groups, decision, error type, exposure, and consequence. Equalizing one metric can change another and does not replace domain review.",
+          "An overall metric averages across the deployment mixture. The day and night scanner slices can expose an operational reliability failure while the aggregate moves only modestly, but that gap alone does not establish a fairness harm.",
+          "Fairness analysis must name affected stakeholders or groups, their exposure to the decision, and its consequences. Selection-rate parity or demographic parity can be monitored from decisions and group membership before outcome labels arrive; outcome-dependent false-negative-rate parity or equality-of-opportunity measures require reliable labels. Equalizing one metric can change another and does not replace domain review.",
         ],
         conceptIds: ["fairness", "monitoring"],
-        tags: ["slice", "aggregate", "false negative", "tradeoff"],
+        tags: ["operational slice", "selection rate", "label delay", "tradeoff"],
       },
       {
         id: "shift-monitoring-layers",
@@ -2308,7 +2317,7 @@ def update_table(table, state, action, reward, next_state,
         heading: "Monitor before and after outcomes arrive",
         sourceIds: ["S94"],
         body: [
-          "Immediate monitors can track schema, missingness, feature distributions, model version, latency, score distributions, and decision rates. Performance and fairness metrics require reliable outcomes, which may arrive later.",
+          "Immediate monitors can track schema, missingness, feature distributions, model version, latency, score distributions, decision rates, and pre-label selection-rate parity when reliable group membership is available. Outcome-dependent performance and fairness measures such as false-negative-rate parity or equality of opportunity require reliable labels, which may arrive later.",
           "A drift alert is evidence that behavior or inputs changed, not proof of the root cause. Diagnosis combines monitors with controlled replay, slice evaluation, and incident context.",
         ],
         conceptIds: ["distribution-shift", "monitoring", "system-diagnosis"],
@@ -2323,7 +2332,7 @@ def update_table(table, state, action, reward, next_state,
           "The authored response is to pause unsupported night automation, preserve logs, validate Scanner B preprocessing, collect reviewed night labels, compare the frozen model on matched scanner slices, and release only after overall and night false-negative gates pass.",
           "Retraining is not the first automatic answer. Repair the measurement path and evaluation coverage before choosing whether model parameters must change.",
         ],
-        conceptIds: ["monitoring", "fairness", "system-diagnosis"],
+        conceptIds: ["monitoring", "system-diagnosis"],
         tags: ["mitigation", "rollback", "replay", "release gate"],
       },
     ],
@@ -2337,7 +2346,7 @@ def update_table(table, state, action, reward, next_state,
         checkpoint: {
           id: "shift-first-diagnosis-prediction",
           prompt:
-            "Artifact hash, threshold, serving code, and training trace are unchanged, while scanner brightness and missingness move sharply. Which layer should be investigated first?",
+            `Artifact ${CAPSTONE_ARTIFACT_DISPLAY_ID}, training trace ${CAPSTONE_TRAINING_DISPLAY_ID}, threshold ${CAPSTONE_INCIDENT.model.decisionThreshold.toFixed(2)}, serving code ${CAPSTONE_INCIDENT.model.servingCodeVersion}, and preprocessing ${CAPSTONE_INCIDENT.model.preprocessingVersion} remain pinned while scanner brightness and missingness move sharply. Which layer should be investigated first?`,
           options: [
             { id: "data", label: "Deployment data and preprocessing" },
             { id: "optimizer", label: "The old optimizer momentum" },
@@ -2348,20 +2357,21 @@ def update_table(table, state, action, reward, next_state,
           supportedExplanation:
             "Correct. The changed scanner measurements and fixed artifact point first to data and preprocessing shift.",
           revisitExplanation:
-            "Start with what changed. The model artifact and training procedure did not.",
+            "Start with what changed. The pinned artifact and training trace did not.",
         },
       },
       {
         id: "shift-monitor-lab",
         kind: "visual-lab",
         labId: "shift-monitor",
-        conceptIds: ["distribution-shift", "fairness", "monitoring"],
+        conceptIds: ["distribution-shift", "monitoring"],
+        evidenceConceptIds: ["distribution-shift", "monitoring"],
         evidenceKind: "manipulation",
         title: "Change positive-case mix under frozen slice rates",
         prompt:
           `Predict aggregate FNR, then change what fraction of a fixed ${CAPSTONE_INCIDENT.metrics.totalActualPositiveSupport} actual-positive evaluation cases comes from the Scanner B night slice.`,
         invariant:
-          "Total actual-positive support, model version, threshold, serving code, per-slice false-negative rates, and label definition remain fixed.",
+          `Total actual-positive support, model ${CAPSTONE_INCIDENT.model.version}, artifact ${CAPSTONE_ARTIFACT_DISPLAY_ID}, training trace ${CAPSTONE_TRAINING_DISPLAY_ID}, threshold ${CAPSTONE_INCIDENT.model.decisionThreshold.toFixed(2)}, serving code ${CAPSTONE_INCIDENT.model.servingCodeVersion}, preprocessing ${CAPSTONE_INCIDENT.model.preprocessingVersion}, per-slice false-negative rates, and label definition remain fixed.`,
         intervention:
           "Reallocate only the fixed actual-positive support between day and night slices; no overall parcel share is implied.",
         control: {
@@ -2378,9 +2388,9 @@ def update_table(table, state, action, reward, next_state,
       responseActivity(
         "shift-capstone-diagnosis",
         "explanation",
-        ["distribution-shift", "fairness", "monitoring", "system-diagnosis"],
-        "Diagnose the fixed Scanner B incident. Build the causal evidence chain, reject optimizer failure as the first explanation, identify the hidden subgroup harm, and state a controlled result that would challenge the data-shift diagnosis.",
-        "Use the frozen artifact, changed input measurements, delayed outcome slices, and a matched replay.",
+        ["distribution-shift", "monitoring", "system-diagnosis"],
+        "Diagnose the fixed Scanner B incident. Build the causal evidence chain, reject optimizer failure as the first explanation, identify the hidden night-slice reliability failure, and state a controlled result that would challenge the data-shift diagnosis.",
+        "Use the pinned deployment identity, changed input measurements, delayed outcome slices, and a matched replay.",
         [
           {
             id: "shift-input-evidence",
@@ -2401,8 +2411,8 @@ def update_table(table, state, action, reward, next_state,
             ],
           },
           {
-            id: "shift-subgroup-harm",
-            label: "identify the night false-negative gap",
+            id: "shift-slice-reliability",
+            label: "identify the night-slice false-negative reliability gap",
             keywordGroups: [
               ["night"],
               ["false negative", "missed damage"],
@@ -2419,13 +2429,13 @@ def update_table(table, state, action, reward, next_state,
             ],
           },
         ],
-        "You localized the incident from changed measurements to slice harm and proposed a test that could overturn the diagnosis.",
-        "Order the evidence by time: fixed artifact, immediate input drift, then delayed subgroup outcomes.",
+        "You localized the incident from changed measurements to an operational-slice reliability failure and proposed a test that could overturn the diagnosis.",
+        "Order the evidence by time: pinned deployment identity, immediate input drift, then delayed operational-slice outcomes.",
       ),
       responseActivity(
         "shift-water-transfer",
         "transfer",
-        ["distribution-shift", "fairness", "monitoring", "system-diagnosis"],
+        ["distribution-shift", "monitoring", "system-diagnosis"],
         "A water-quality alert model moves to a river with a replacement turbidity sensor. Labels arrive weekly, and false negatives rise mainly during storm flow. Design the immediate monitors, delayed slice checks, first mitigation, and a controlled test separating sensor shift from model failure.",
         "Name pre-label signals, the storm slice, a reversible safety action, and a matched-sample replay.",
         [
@@ -2471,10 +2481,18 @@ def update_table(table, state, action, reward, next_state,
       {
         ...pythonLab(
         "shift-monitor-python-lab",
-        ["distribution-shift", "fairness", "monitoring", "system-diagnosis"],
+        ["distribution-shift", "monitoring", "system-diagnosis"],
         "deployment_monitor.py",
-        "PRIMM: Predict the overall accuracy, overall false-negative rate, and subgroup gap before running. Run the working metric and release-gate functions, investigate which aggregate hides the night slice, then complete the fixed diagnostic rule. Modify an alert threshold and explain why release still requires both overall and night false-negative gates.",
-        `def mean(values):
+        "PRIMM: Predict the overall accuracy, overall false-negative rate, and night-slice gap before running. Run the working metric and release-gate functions, investigate which aggregate hides the night slice, then complete the fixed diagnostic rule. Modify an alert threshold and explain why release still requires both overall and night false-negative gates.",
+        `MODEL_VERSION = ${JSON.stringify(CAPSTONE_INCIDENT.model.version)}
+MODEL_ARTIFACT_DIGEST = ${JSON.stringify(CAPSTONE_INCIDENT.model.artifactDigest)}
+TRAINING_TRACE_DIGEST = ${JSON.stringify(CAPSTONE_INCIDENT.model.trainingTraceDigest)}
+SERVING_CODE_VERSION = ${JSON.stringify(CAPSTONE_INCIDENT.model.servingCodeVersion)}
+PREPROCESSING_VERSION = ${JSON.stringify(CAPSTONE_INCIDENT.model.preprocessingVersion)}
+DECISION_THRESHOLD = ${CAPSTONE_INCIDENT.model.decisionThreshold}
+
+
+def mean(values):
     return sum(values) / len(values)
 
 
@@ -2566,7 +2584,7 @@ LIVE_RECORDS = (
           },
           {
             id: "shift-fnr-gap",
-            label: "Night false-negative harm remains visible",
+            label: "Night-slice false-negative reliability gap remains visible",
             expression:
               "round(false_negative_rate(LIVE_RECORDS, 'night') - false_negative_rate(LIVE_RECORDS, 'day'), 3)",
             expected: CAPSTONE_INCIDENT.metrics.falseNegativeRateGap,
@@ -2590,11 +2608,12 @@ LIVE_RECORDS = (
           },
           {
             id: "shift-fixed-diagnosis",
-            label: "Diagnostic rule distinguishes both, one, no, and unsupported alerts",
+            label:
+              "Pinned deployment identity accompanies every diagnostic branch",
             expression:
-              "str([diagnose(REFERENCE_BRIGHTNESS, LIVE_BRIGHTNESS, LIVE_RECORDS), diagnose([0.0], [1.0], [('day', 1, 1), ('night', 1, 1)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 1, 0)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 1, 1)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 0, 0)], 0.5, 0.5)])",
+              "str(((MODEL_VERSION, MODEL_ARTIFACT_DIGEST, TRAINING_TRACE_DIGEST, SERVING_CODE_VERSION, PREPROCESSING_VERSION, DECISION_THRESHOLD), [diagnose(REFERENCE_BRIGHTNESS, LIVE_BRIGHTNESS, LIVE_RECORDS), diagnose([0.0], [1.0], [('day', 1, 1), ('night', 1, 1)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 1, 0)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 1, 1)], 0.5, 0.5), diagnose([0.0], [0.0], [('day', 1, 1), ('night', 0, 0)], 0.5, 0.5)]))",
             expected:
-              "['data-shift-and-subgroup-gap', 'data-shift-only', 'subgroup-gap-only', 'within-alert-thresholds', 'insufficient-positive-support']",
+              `(('${CAPSTONE_INCIDENT.model.version}', '${CAPSTONE_INCIDENT.model.artifactDigest}', '${CAPSTONE_INCIDENT.model.trainingTraceDigest}', '${CAPSTONE_INCIDENT.model.servingCodeVersion}', '${CAPSTONE_INCIDENT.model.preprocessingVersion}', ${CAPSTONE_INCIDENT.model.decisionThreshold}), ['data-shift-and-subgroup-gap', 'data-shift-only', 'subgroup-gap-only', 'within-alert-thresholds', 'insufficient-positive-support'])`,
             conceptIds: ["system-diagnosis"],
           },
         ],
@@ -2621,7 +2640,7 @@ LIVE_RECORDS = (
         "https://developers.google.com/machine-learning/crash-course/fairness/evaluating-for-bias",
         5,
         "shift-capstone-diagnosis",
-        "Read after the subgroup diagnosis and compare aggregate metrics with the authored slice-specific failure.",
+        "Read after the operational-slice diagnosis; contrast reliability slicing with fairness analysis that names affected stakeholders, exposure, and consequences.",
         "S95",
       ),
     ],

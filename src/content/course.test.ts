@@ -818,6 +818,37 @@ describe("fixed authored course integrity", () => {
     expect(observations?.body.join(" ")).toContain(
       `brightness mean moves from ${CAPSTONE_INCIDENT.metrics.referenceBrightnessMean.toFixed(2)} to ${CAPSTONE_INCIDENT.metrics.liveBrightnessMean.toFixed(2)}`,
     );
+    const fixedCapstone = lesson.blocks.find(
+      (block) => block.id === "shift-fixed-capstone",
+    );
+    const firstDiagnosis = lesson.activities.find(
+      (activity) => activity.id === "shift-first-diagnosis-prediction",
+    );
+    const monitorLab = lesson.activities.find(
+      (activity) => activity.id === "shift-monitor-lab",
+    );
+    const visibleIdentityCopy = [
+      ...(fixedCapstone?.body ?? []),
+      ...(observations?.body ?? []),
+      firstDiagnosis?.kind === "prediction"
+        ? firstDiagnosis.checkpoint.prompt
+        : "",
+      monitorLab?.kind === "visual-lab"
+        ? monitorLab.invariant ?? ""
+        : "",
+    ].join(" ");
+    const artifactDisplayId =
+      `${CAPSTONE_INCIDENT.model.artifactDigest.slice(0, 19)}...`;
+    const trainingDisplayId =
+      `${CAPSTONE_INCIDENT.model.trainingTraceDigest.slice(0, 19)}...`;
+    expect(visibleIdentityCopy).toContain(artifactDisplayId);
+    expect(visibleIdentityCopy).toContain(trainingDisplayId);
+    expect(visibleIdentityCopy).not.toContain(
+      CAPSTONE_INCIDENT.model.artifactDigest,
+    );
+    expect(visibleIdentityCopy).not.toContain(
+      CAPSTONE_INCIDENT.model.trainingTraceDigest,
+    );
     const codeLab = lesson.activities.find(
       (activity) =>
         activity.kind === "code-lab" &&
@@ -833,6 +864,12 @@ describe("fixed authored course integrity", () => {
     expect(source).toContain(
       `[("night", 1, 0)] * ${CAPSTONE_INCIDENT.live.slices.night.falseNegatives}`,
     );
+    expect(source).toContain(
+      `MODEL_ARTIFACT_DIGEST = ${JSON.stringify(CAPSTONE_INCIDENT.model.artifactDigest)}`,
+    );
+    expect(source).toContain(
+      `TRAINING_TRACE_DIGEST = ${JSON.stringify(CAPSTONE_INCIDENT.model.trainingTraceDigest)}`,
+    );
     const expectedByCheck = new Map(
       codeLab.spec.checks.map((check) => [check.id, check.expected]),
     );
@@ -847,6 +884,12 @@ describe("fixed authored course integrity", () => {
     );
     expect(expectedByCheck.get("shift-release-gates")).toBe(
       `(${CAPSTONE_INCIDENT.metrics.overallFalseNegativeRate}, ${CAPSTONE_INCIDENT.metrics.nightFalseNegativeRate}, False)`,
+    );
+    expect(expectedByCheck.get("shift-fixed-diagnosis")).toContain(
+      CAPSTONE_INCIDENT.model.artifactDigest,
+    );
+    expect(expectedByCheck.get("shift-fixed-diagnosis")).toContain(
+      CAPSTONE_INCIDENT.model.trainingTraceDigest,
     );
   });
 

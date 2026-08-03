@@ -1,6 +1,12 @@
 export const CAPSTONE_INCIDENT = {
   model: {
     version: "3.2",
+    artifactDigest:
+      "sha256:a65bfe6cceda707830acb47678e888d21dd677464e31f07872420b550e0a2cfe",
+    trainingTraceDigest:
+      "sha256:912fe7955410e96ff4f931c33686af5ed845de62458ceb0624dce990031bc117",
+    servingCodeVersion: "1.8.4",
+    preprocessingVersion: "2.3.1",
     decisionThreshold: 0.6,
   },
   reference: {
