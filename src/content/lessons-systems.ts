@@ -1,5 +1,5 @@
 import {
-  COURSE_REVISION,
+  lessonRevision,
   interactive,
   pythonLab,
   reading,
@@ -27,7 +27,7 @@ export const systemLessons: Lesson[] = [
     summary:
       "Run a branched scalar graph forward, add both gradient paths into one shared parameter, and verify the result numerically.",
     durationMinutes: 60,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("backprop-graph"),
     sourceIds: ["S85", "S57", "S100", "S10"],
     mechanism: {
       input: "A scalar graph, its forward values, and a loss sensitivity",
@@ -508,7 +508,7 @@ print("branch contributions:", branch_contributions(*CASES[0]))
     summary:
       "Diagnose exact plain-SGD learning-rate regimes, then trace mini-batch, momentum, and Adam state in executable code.",
     durationMinutes: 65,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("optimizer-traces"),
     sourceIds: ["S86", "S101", "S102", "S47", "S10"],
     mechanism: {
       input: "Initialized parameters and a sequence of mini-batch gradients",
@@ -583,6 +583,16 @@ print("branch contributions:", branch_contributions(*CASES[0]))
           term: "Adam moments",
           definition:
             "Carried first- and second-moment states that track gradients and squared gradients before bias correction.",
+        },
+        {
+          term: "Adam decay rates",
+          definition:
+            "Beta1 and beta2 are numbers between zero and one that control how much earlier first- and second-moment state is retained.",
+        },
+        {
+          term: "Epsilon",
+          definition:
+            "A small positive stabilizer added after the square root of Adam's corrected second moment, preventing division by zero.",
         },
       ],
       workedExample: {
@@ -687,11 +697,13 @@ print("branch contributions:", branch_contributions(*CASES[0]))
       },
       {
         id: "optimizer-state",
-        kind: "definition",
-        heading: "Momentum and Adam carry state",
+        kind: "worked-example",
+        heading: "Adam updates moments, corrects them, then moves the parameter",
         sourceIds: ["S101", "S102"],
         body: [
-          "Momentum accumulates a decaying history of gradients, so it can preserve motion through a shallow region and overshoot after direction changes. Adam tracks decaying first and second gradient moments, bias-corrects them, and scales the update coordinate by coordinate.",
+          "Momentum accumulates a decaying history of gradients, so it can preserve motion through a shallow region and overshoot after direction changes. For this lesson's standard Adam update, start with m_0 = 0 and v_0 = 0. At step t, g_t is the current gradient, beta1 and beta2 are decay rates, eta is the learning rate, and epsilon is a small positive stabilizer.",
+          "The complete update is m_t = beta1 * m_(t-1) + (1 - beta1) * g_t; v_t = beta2 * v_(t-1) + (1 - beta2) * g_t^2; m_hat_t = m_t / (1 - beta1^t); v_hat_t = v_t / (1 - beta2^t); theta_t = theta_(t-1) - eta * m_hat_t / (sqrt(v_hat_t) + epsilon). Epsilon is outside the square root: the denominator is sqrt(v_hat_t) + epsilon, not sqrt(v_hat_t + epsilon).",
+          "For one numerical update, let theta_0 = 4, g_1 = 2, m_0 = v_0 = 0, beta1 = 0.9, beta2 = 0.999, eta = 0.1, and epsilon = 1e-8. Then m_1 = 0.2 and v_1 = 0.004. Bias correction gives m_hat_1 = 0.2 / 0.1 = 2 and v_hat_1 = 0.004 / 0.001 = 4. Therefore theta_1 = 4 - 0.1 * 2 / (sqrt(4) + 1e-8), approximately 3.9.",
           "Neither optimizer chooses the objective, fixes bad data, or guarantees generalization.",
         ],
         conceptIds: ["momentum", "adam", "optimization-dynamics"],
@@ -1055,7 +1067,7 @@ REFERENCE_TRACE = reference_trace()
     summary:
       "Contrast k-means clustering, PCA projection, and embeddings learned for a predictive objective.",
     durationMinutes: 60,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("cluster-project"),
     sourceIds: ["S52", "S87", "S13"],
     mechanism: {
       input: "Vectors plus a clustering, reconstruction, or predictive objective",
@@ -1509,7 +1521,7 @@ START = [(0.0, 0.0), (10.0, 10.0)]
     summary:
       "Compute a tiny convolution, grow its receptive field, and trace the direct gradient path in a residual block.",
     durationMinutes: 60,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("convolution-field"),
     sourceIds: ["S88", "S89", "S12"],
     mechanism: {
       input: "A spatial grid, a shared local kernel, and an optional residual branch",
@@ -1947,7 +1959,7 @@ KERNEL = [
     summary:
       "Compute a tiny query-key-softmax-value pass while separating inference, training, and causal explanation.",
     durationMinutes: 60,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("attention-routing"),
     sourceIds: ["S90", "S91", "S97", "S103", "S12"],
     mechanism: {
       input:
@@ -2390,7 +2402,7 @@ LOG_THREE = log(3.0)
     summary:
       "Separate bandits from stateful decisions, compute a Bellman target, and execute a tabular Q-learning update.",
     durationMinutes: 60,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("q-learning"),
     sourceIds: ["S92", "S93", "S98", "S09"],
     mechanism: {
       input: "A state, action, observed reward, next state, and current Q table",
@@ -2838,10 +2850,10 @@ def update_table(table, state, action, reward, next_state,
     title: "Diagnose the deployed system",
     question: "Which part of the pipeline failed after deployment?",
     summary:
-      "Complete a fixed capstone diagnosis spanning distribution shift, operational-slice reliability, delayed outcomes, and monitoring.",
+      "Complete a fixed capstone diagnosis spanning distribution shift, operational-slice reliability, fairness metrics, delayed outcomes, and monitoring.",
     durationMinutes: 65,
-    revision: COURSE_REVISION,
-    sourceIds: ["S94", "S95", "S99", "S01"],
+    revision: lessonRevision("shift-monitor"),
+    sourceIds: ["S94", "S95", "S99", "S01", "S106", "S107"],
     mechanism: {
       input:
         "Versioned model, deployment inputs, decisions, delayed outcomes, and operational slices",
@@ -2852,7 +2864,7 @@ def update_table(table, state, action, reward, next_state,
     starterQuestions: [
       "Which signals can detect shift before labels arrive?",
       "Why can an overall metric hide an operational-slice failure?",
-      "What evidence separates data shift from optimization failure?",
+      "What do demographic parity and equality of opportunity compare?",
     ],
     prerequisiteConceptIds: [
       "pipeline",
@@ -2875,6 +2887,12 @@ def update_table(table, state, action, reward, next_state,
         requiredEvidenceKinds: ["transfer"],
       },
       {
+        id: "shift-fairness-outcome",
+        conceptId: "fairness",
+        text: "Compute group selection and true-positive rates, then explain why different fairness metrics can support different conclusions.",
+        requiredEvidenceKinds: ["explanation"],
+      },
+      {
         id: "shift-code-monitor",
         conceptId: "monitoring",
         text: "Pin deployment identity, compute input drift and operational-slice error rates, and enforce explicit reliability release gates.",
@@ -2886,6 +2904,7 @@ def update_table(table, state, action, reward, next_state,
       introduction: [
         "A deployed machine-learning system is more than model parameters. It includes an artifact, which is the exact packaged model; preprocessing code that converts raw inputs into model features; a decision threshold that turns a score into an action; and serving code that executes the pipeline. Deployment monitoring compares this live system with a reference period. Distribution shift means the statistical pattern of live inputs or outcomes differs from that reference.",
         "Different evidence arrives at different times. Immediate monitors can check schemas, missing values, feature distributions, score distributions, model identity, latency, and decision rates. Outcome metrics such as accuracy or false-negative rate require reliable labels and may arrive later. A false negative is an actually positive case predicted negative. A slice is a named subset, such as day parcels or night parcels, examined separately because one overall average can hide a serious local failure.",
+        "Fairness asks how a model's decisions and errors are distributed across stakeholder groups in a particular use context. Demographic parity compares how often groups receive the positive decision, while equality of opportunity compares how often actually positive cases receive that decision. These metrics answer different questions, and neither one alone decides whether the system's consequences are acceptable.",
         "Diagnosis begins by listing what changed and what remained fixed. An input alert establishes change but not root cause; the cause might be data collection, preprocessing, serving, model behavior, or delayed-label quality. Pinning versions narrows the search. A mitigation limits harm while evidence is gathered, and a release gate is a measurable condition that must pass before automation resumes. Retraining is only one possible response and should not precede checks of the measurement and evaluation boundaries.",
       ],
       vocabulary: [
@@ -2913,6 +2932,16 @@ def update_table(table, state, action, reward, next_state,
           term: "False-negative rate",
           definition:
             "False negatives divided by all actually positive cases in the evaluated group.",
+        },
+        {
+          term: "Demographic parity",
+          definition:
+            "A group comparison that asks whether each group receives the model's positive decision at the same rate.",
+        },
+        {
+          term: "Equality of opportunity",
+          definition:
+            "A group comparison that asks whether actually positive cases receive the model's positive decision at the same true-positive rate.",
         },
         {
           term: "Release gate",
@@ -2966,9 +2995,9 @@ def update_table(table, state, action, reward, next_state,
             "An alert proves a monitored distribution changed. Root cause still requires identity checks, pipeline replay, slice evaluation, and incident context.",
         },
         {
-          misconception: "Good overall accuracy means every deployment slice is reliable.",
+          misconception: "Good overall accuracy or one matched group metric means the deployment is fair and reliable.",
           correction:
-            "An aggregate weights slices by their frequency. A smaller slice can have a much worse error rate while the overall number appears acceptable.",
+            "An aggregate can hide a smaller slice, and equality on one fairness metric can coexist with a gap on another. Inspect relevant group confusion matrices, label quality, exposure, and consequences.",
         },
         {
           misconception: "Retraining should be the first response to production degradation.",
@@ -2979,9 +3008,10 @@ def update_table(table, state, action, reward, next_state,
       summary: [
         "Separate fixed system identity from changed observations before proposing a cause.",
         "Use immediate input monitors for early detection and delayed labeled slices for outcome and reliability evidence.",
+        "Compute selection rates and true-positive rates separately before making a demographic-parity or equality-of-opportunity claim.",
         "When scanner measurements move sharply while the artifact and pipeline versions remain pinned, investigate deployment data and preprocessing first.",
       ],
-      sourceIds: ["S94", "S95", "S99", "S01"],
+      sourceIds: ["S94", "S95", "S99", "S01", "S106", "S107"],
     },
     blocks: [
       {
@@ -3014,15 +3044,18 @@ def update_table(table, state, action, reward, next_state,
       },
       {
         id: "shift-fairness",
-        kind: "definition",
-        heading: "Operational reliability and fairness are different questions",
-        sourceIds: ["S95"],
+        kind: "worked-example",
+        heading: "Fairness metrics compare different parts of each group",
+        sourceIds: ["S95", "S106", "S107"],
         body: [
           "An overall metric averages across the deployment mixture. The day and night scanner slices can expose an operational reliability failure while the aggregate moves only modestly, but that gap alone does not establish a fairness harm.",
-          "Fairness analysis must name affected stakeholders or groups, their exposure to the decision, and its consequences. Selection-rate parity or demographic parity can be monitored from decisions and group membership before outcome labels arrive; outcome-dependent false-negative-rate parity or equality-of-opportunity measures require reliable labels. Equalizing one metric can change another and does not replace domain review.",
+          "Within each stakeholder group, a confusion matrix counts four outcomes. A true positive (TP) is an actually positive case predicted positive; a false negative (FN) is actually positive but predicted negative; a false positive (FP) is actually negative but predicted positive; and a true negative (TN) is actually negative and predicted negative. Selection rate is (TP + FP) divided by all four counts. True-positive rate is TP / (TP + FN).",
+          "Consider two groups of 100 cases. Group A has TP = 40, FN = 10, FP = 10, and TN = 40, so its selection rate is (40 + 10) / 100 = 50% and its true-positive rate is 40 / (40 + 10) = 80%. Group B has TP = 20, FN = 20, FP = 0, and TN = 60, so its selection rate is 20% and its true-positive rate is 50%. The 30-point selection-rate gap violates demographic parity, and the 30-point true-positive-rate gap violates equality of opportunity.",
+          "The metrics can trade off. To raise Group B's true-positive rate from 50% to 80% with 40 actually positive cases, 12 false negatives would need to become true positives, giving TP = 32 and FN = 8. Selection would then be at least 32%. Reaching Group A's 50% selection rate as well could, for example, add 18 false positives, giving FP = 18, TN = 42, and a 30% false-positive rate. Group A's false-positive rate is 10 / 50 = 20%, so matching the first two metrics would leave a 10-point false-positive-rate gap.",
+          "Metric choice therefore requires the decision's purpose, affected stakeholders, error costs, group definitions, and label quality. Demographic parity can be computed from decisions and group membership before outcomes arrive; equality of opportunity requires trustworthy outcome labels. Equalizing one metric does not by itself establish fairness.",
         ],
         conceptIds: ["fairness", "monitoring"],
-        tags: ["operational slice", "selection rate", "label delay", "tradeoff"],
+        tags: ["confusion matrix", "demographic parity", "equality of opportunity", "tradeoff"],
       },
       {
         id: "shift-monitoring-layers",
@@ -3144,6 +3177,63 @@ def update_table(table, state, action, reward, next_state,
         ],
         "You localized the incident from changed measurements to an operational-slice reliability failure and proposed a test that could overturn the diagnosis.",
         "Order the evidence by time: pinned deployment identity, immediate input drift, then delayed operational-slice outcomes.",
+      ),
+      responseActivity(
+        "shift-clinic-fairness-explanation",
+        "explanation",
+        ["fairness", "monitoring"],
+        "A fixed clinic referral model has these reviewed outcomes. Group East: TP = 27, FN = 3, FP = 15, TN = 55. Group West: TP = 36, FN = 24, FP = 4, TN = 36. Compute each group's selection rate and true-positive rate. State what demographic parity and equality of opportunity compare, report which observed gap is smaller and which is larger without assuming a fairness tolerance, then explain one threshold tradeoff and one reason these two metrics alone cannot settle whether the system is fair.",
+        "Use all four confusion-matrix counts for selection rate, only actually positive cases for true-positive rate, and keep the metric calculation separate from the stakeholder judgment.",
+        [
+          {
+            id: "clinic-selection-rates",
+            label: "compute East and West selection rates as 42% and 40%",
+            keywordGroups: [
+              ["42%", "0.42", "42 percent"],
+              ["40%", "0.40", "40 percent"],
+              ["selection", "positive decision", "referred"],
+            ],
+          },
+          {
+            id: "clinic-true-positive-rates",
+            label: "compute East and West true-positive rates as 90% and 60%",
+            keywordGroups: [
+              ["90%", "0.9", "90 percent"],
+              ["60%", "0.6", "60 percent"],
+              ["true positive", "TPR", "actually positive"],
+            ],
+          },
+          {
+            id: "clinic-demographic-parity",
+            label: "report the two-point selection-rate gap as smaller than the 30-point true-positive-rate gap",
+            keywordGroups: [
+              ["demographic parity"],
+              ["selection", "positive decision"],
+              ["2", "two"],
+              ["smaller", "less", "30", "thirty"],
+            ],
+          },
+          {
+            id: "clinic-equality-opportunity",
+            label: "identify the 30-point true-positive-rate gap as unequal opportunity",
+            keywordGroups: [
+              ["equality of opportunity"],
+              ["true positive", "TPR", "actually positive"],
+              ["30", "thirty", "gap", "not equal"],
+            ],
+          },
+          {
+            id: "clinic-tradeoff-boundary",
+            label: "connect a threshold change to another error and preserve the stakeholder-context boundary",
+            keywordGroups: [
+              ["threshold", "lower", "raise", "change"],
+              ["false positive", "false negative", "FP", "FN", "error"],
+              ["stakeholder", "consequence", "context", "label", "group definition"],
+            ],
+          },
+        ],
+        "You computed both group comparisons, compared their observed gaps without inventing a fairness tolerance, and kept the metric tradeoff separate from the final fairness judgment.",
+        "Recompute selection from every case and true-positive rate from actually positive cases, then name what a threshold changes and what stakeholder evidence is still missing.",
       ),
       responseActivity(
         "shift-water-transfer",
@@ -3352,8 +3442,8 @@ LIVE_RECORDS = (
         "Google for Developers",
         "https://developers.google.com/machine-learning/crash-course/fairness/evaluating-for-bias",
         5,
-        "shift-capstone-diagnosis",
-        "Read after the operational-slice diagnosis; contrast reliability slicing with fairness analysis that names affected stakeholders, exposure, and consequences.",
+        "shift-clinic-fairness-explanation",
+        "Read after computing the fixed clinic rates; compare the authored demographic-parity and equality-of-opportunity conclusions with the source's group-evaluation workflow.",
         "S95",
       ),
     ],

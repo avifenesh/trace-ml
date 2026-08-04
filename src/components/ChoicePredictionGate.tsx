@@ -110,7 +110,9 @@ export function ChoicePredictionGate({
             {answer
               ? currentSupported
                 ? activity.checkpoint.supportedExplanation
-                : activity.checkpoint.revisitExplanation
+                : previouslyDemonstrated
+                  ? `This retry is not supported. A supported earlier attempt remains in your objective record. ${activity.checkpoint.revisitExplanation}`
+                  : activity.checkpoint.revisitExplanation
               : "A supported prediction was recorded earlier for this activity."}
           </p>
           {answer && (

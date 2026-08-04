@@ -13,7 +13,7 @@ export type DerivedLessonState =
 
 export type ObjectiveCheckpointActivity = Extract<
   LessonActivity,
-  { kind: "prediction" | "visual-lab" | "code-lab" }
+  { kind: "prediction" | "code-lab" }
 >;
 
 export function activityEvidenceConceptIds(activity: LessonActivity) {
@@ -26,7 +26,6 @@ export function objectiveCheckpointActivities(
   return lesson.activities.filter(
     (activity): activity is ObjectiveCheckpointActivity =>
       activity.kind === "prediction" ||
-      activity.kind === "visual-lab" ||
       activity.kind === "code-lab",
   );
 }

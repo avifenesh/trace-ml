@@ -1,22 +1,22 @@
 [
   {
     "lessonId": "prerequisite-trace",
-    "lessonRevision": "2026-08-04-r1",
+    "lessonRevision": "2026-08-04-r2",
     "lessonNumber": "00",
     "lessonTitle": "Trace the tools before the model",
-    "lessonQuestion": "Can you trace Python state, array shape, plot axes, slope, and probability without guessing?",
-    "lessonSummary": "Use a compact diagnostic and repair lab for Python, NumPy, plot coordinates, the chain rule, and a probability baseline.",
+    "lessonQuestion": "How do Python values, array shapes, coordinates, slopes, and class counts describe one calculation?",
+    "lessonSummary": "Start from the notation itself, then trace a small Python and NumPy program, a composed slope, and a probability baseline.",
     "mechanism": {
-      "input": "A short Python function, a NumPy array, plot coordinates, a composed scalar function, and a class frequency.",
-      "process": "Trace program state and dimensions, map columns to axes, multiply local derivatives, and convert counts into a base rate.",
+      "input": "Named values, a short Python function, a table of numbers, plot coordinates, a composed arithmetic rule, and two class counts.",
+      "process": "Read each symbol, follow stored values and dimensions, map columns to axes, multiply adjacent slopes, and turn counts into a fraction.",
       "output": "Verified array and plot shapes, a derivative, and a probability baseline with visible arithmetic."
     },
     "chunks": [
       {
         "id": "prerequisite-trace-teaching:introduction-1",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace the quantities that machine learning reuses",
-        "text": "Machine learning starts with recorded examples. An example is one case, such as one delivery or one sensor reading. A feature is a measured input about that case, and a target is the value or category to be predicted. Tracing matters because a plausible final number can hide a wrong array dimension, a swapped plot axis, or an arithmetic mistake.",
+        "heading": "Start with the notation; no Python or calculus is assumed",
+        "text": "This course begins before machine-learning notation. An example is one recorded case, such as one delivery. A feature is a measured input about that case, and a target is the value or category to predict. A class is one possible category, such as positive or negative. Nothing on this page assumes that you already know Python, NumPy, matrix notation, derivatives, or probability.",
         "tags": [
           "teaching",
           "mental model",
@@ -26,8 +26,8 @@
       {
         "id": "prerequisite-trace-teaching:introduction-2",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace the quantities that machine learning reuses",
-        "text": "An array is an ordered collection of values. Its shape lists the length of each axis: a 4 by 3 array has four rows and three columns. In a typical data table, rows hold examples and columns hold features. A batch is a group of examples processed together. An array operation may combine one axis while preserving another. If x and prediction are separate one-dimensional arrays, NumPy's column_stack((x, prediction)) turns them into a two-dimensional table: x becomes column zero and prediction becomes column one.",
+        "heading": "Start with the notation; no Python or calculus is assumed",
+        "text": "Python reads instructions in order. In `count = 3`, the equals sign stores the value 3 under the variable name count; it does not claim that two algebraic expressions are forever equal. Square brackets make a list, so `[1, 2, 3]` is one ordered collection. `def center(values):` begins a reusable function whose indented lines belong to it. Calling `center([1, 2, 3])` supplies a list, and `return` sends the function's result back to the caller. A `for` loop repeats an indented step for each item.",
         "tags": [
           "teaching",
           "mental model",
@@ -37,8 +37,30 @@
       {
         "id": "prerequisite-trace-teaching:introduction-3",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace the quantities that machine learning reuses",
-        "text": "A slope measures how much one quantity changes when another changes. A derivative is the slope at a particular input. The notation dy/dx means the derivative of output y with respect to input x. This lesson uses two derivative rules: if y = u squared, then dy/du = 2u; if u = 2x + 1, then du/dx = 2. When one calculation feeds another, the chain rule multiplies those adjacent local derivatives. Probability supplies a different trace: a base rate is an observed fraction, and a majority-class baseline is the accuracy obtained by always predicting the most frequent target category.",
+        "heading": "Start with the notation; no Python or calculus is assumed",
+        "text": "NumPy is a Python tool for arrays, which are ordered tables of numbers. `import numpy as np` gives that tool the short name `np`, and `np.array([1, 2, 3])` constructs an array. A shape reports axis lengths in order: 4 by 3 means four rows and three columns. Here each row is one example and each column is one feature. If x and prediction are one-dimensional arrays, `np.column_stack((x, prediction))` makes x column zero and prediction column one, so every row is one plotted `(x, y)` coordinate pair.",
+        "tags": [
+          "teaching",
+          "mental model",
+          "introduction"
+        ]
+      },
+      {
+        "id": "prerequisite-trace-teaching:introduction-4",
+        "blockId": "prerequisite-trace-teaching",
+        "heading": "Start with the notation; no Python or calculus is assumed",
+        "text": "Arithmetic notation can be read as instructions too. In `u = 2x + 1`, `2x` means 2 times x; calculate that product and then add 1. In `y = u^2`, the superscript 2 means multiply u by itself. A slope says how much an output changes when an input rises by one. A derivative is the slope at one particular input. For this page, accept two supplied rules: the slope of `u^2` with respect to u is `2u`, and the slope of `2x + 1` with respect to x is 2. The chain rule multiplies those adjacent slopes.",
+        "tags": [
+          "teaching",
+          "mental model",
+          "introduction"
+        ]
+      },
+      {
+        "id": "prerequisite-trace-teaching:introduction-5",
+        "blockId": "prerequisite-trace-teaching",
+        "heading": "Start with the notation; no Python or calculus is assumed",
+        "text": "A probability can begin as a count divided by a total count. If 80 of 100 target labels are negative, the observed negative fraction is 80/100 = 0.80 = 80 percent. A majority-class baseline always predicts the most frequent class, so it is correct on those 80 negative cases and wrong on the 20 positive cases. It uses no features and gives a simple comparison floor for any model evaluated on comparable cases.",
         "tags": [
           "teaching",
           "mental model",
@@ -59,60 +81,71 @@
       {
         "id": "prerequisite-trace-teaching:term-2",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Terms you need · NumPy array",
-        "text": "An ordered, multidimensional collection of values whose axis lengths are reported by its shape.",
+        "heading": "Terms you need · Variable and assignment",
+        "text": "A variable is a name for a stored value; Python's equals sign assigns the value on its right to the name on its left.",
         "tags": [
           "teaching",
           "definition",
-          "NumPy array"
+          "Variable and assignment"
         ]
       },
       {
         "id": "prerequisite-trace-teaching:term-3",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Terms you need · Shape",
-        "text": "The ordered list of axis lengths, such as 4 by 3 for four rows and three columns.",
+        "heading": "Terms you need · Function call and return",
+        "text": "A function call supplies inputs to reusable instructions, and return sends the computed result back to the caller.",
         "tags": [
           "teaching",
           "definition",
-          "Shape"
+          "Function call and return"
         ]
       },
       {
         "id": "prerequisite-trace-teaching:term-4",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Terms you need · Derivative",
-        "text": "The local rate at which one quantity changes with respect to another quantity.",
+        "heading": "Terms you need · Python list",
+        "text": "An ordered collection written between square brackets, such as three numeric values written as [1, 2, 3].",
         "tags": [
           "teaching",
           "definition",
-          "Derivative"
+          "Python list"
         ]
       },
       {
         "id": "prerequisite-trace-teaching:term-5",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Terms you need · Derivative notation",
-        "text": "In dy/dx, the numerator names the changing output y and the denominator names the input x whose change is being considered.",
+        "heading": "Terms you need · NumPy array and shape",
+        "text": "An ordered table of values whose shape lists each axis length, such as four rows by three columns.",
         "tags": [
           "teaching",
           "definition",
-          "Derivative notation"
+          "NumPy array and shape"
         ]
       },
       {
         "id": "prerequisite-trace-teaching:term-6",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Terms you need · Chain rule",
-        "text": "The rule that multiplies adjacent local derivatives when one function is composed with another.",
+        "heading": "Terms you need · Coordinate pair",
+        "text": "Two ordered values written as (x, y), where x gives horizontal position and y gives vertical position.",
         "tags": [
           "teaching",
           "definition",
-          "Chain rule"
+          "Coordinate pair"
         ]
       },
       {
         "id": "prerequisite-trace-teaching:term-7",
+        "blockId": "prerequisite-trace-teaching",
+        "heading": "Terms you need · Derivative and chain rule",
+        "text": "A derivative is a local slope; the chain rule multiplies adjacent local slopes when one calculation feeds another.",
+        "tags": [
+          "teaching",
+          "definition",
+          "Derivative and chain rule"
+        ]
+      },
+      {
+        "id": "prerequisite-trace-teaching:term-8",
         "blockId": "prerequisite-trace-teaching",
         "heading": "Terms you need · Majority-class baseline",
         "text": "The accuracy of a rule that always predicts the most frequent target category and uses no features.",
@@ -125,7 +158,7 @@
       {
         "id": "prerequisite-trace-teaching:example-setup",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace shape, slope, and probability without skipping steps",
+        "heading": "Read one complete trace from symbols to results",
         "text": "A batch contains four examples with three features each. A separate plotting table contains three x-y points. The function uses u = 2x + 1 and y = u squared at x = 1. A dataset with two target categories has 80 negative and 20 positive targets.",
         "tags": [
           "teaching",
@@ -136,8 +169,8 @@
       {
         "id": "prerequisite-trace-teaching:example-step-1",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace shape, slope, and probability without skipping steps · Write the batch shape",
-        "text": "Four examples form the row axis and three features form the column axis, so the batch shape is 4 by 3.",
+        "heading": "Read one complete trace from symbols to results · Read the Python symbols",
+        "text": "`values = [1, 2, 3]` stores one list under the name values. A function call such as `sum(values)` produces 6, `len(values)` produces 3, and division gives the average 2. A function can return a new list after subtracting that average from each item.",
         "tags": [
           "teaching",
           "worked example",
@@ -147,8 +180,8 @@
       {
         "id": "prerequisite-trace-teaching:example-step-2",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace shape, slope, and probability without skipping steps · Trace the matrix result",
-        "text": "Multiplying the batch by three weights combines each row's three feature values with the three weights. The feature axis is consumed, while the four-example axis remains, producing four scores.",
+        "heading": "Read one complete trace from symbols to results · Write the batch shape",
+        "text": "Four examples form the row axis and three features form the column axis, so the batch shape is 4 by 3.",
         "tags": [
           "teaching",
           "worked example",
@@ -158,8 +191,8 @@
       {
         "id": "prerequisite-trace-teaching:example-step-3",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace shape, slope, and probability without skipping steps · Map the plot columns",
-        "text": "A 3 by 2 plotting table contains three rows and two values per row. NumPy's column_stack((x, prediction)) constructs that layout from two one-dimensional arrays: column zero supplies three x coordinates and column one supplies the matching three y coordinates.",
+        "heading": "Read one complete trace from symbols to results · Trace scores and plot columns",
+        "text": "Multiplying each four-row example by three weights combines its three feature values and leaves four scores. Separately, `column_stack((x, prediction))` makes a 3 by 2 plotting table: three coordinate-pair rows, with x in column zero and the matching prediction in column one.",
         "tags": [
           "teaching",
           "worked example",
@@ -169,7 +202,7 @@
       {
         "id": "prerequisite-trace-teaching:example-step-4",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace shape, slope, and probability without skipping steps · Evaluate the composed function",
+        "heading": "Read one complete trace from symbols to results · Evaluate the composed function",
         "text": "At x = 1, the inner value is u = 2(1) + 1 = 3. The outer derivative is 2u = 6, and the inner derivative is 2.",
         "tags": [
           "teaching",
@@ -180,7 +213,7 @@
       {
         "id": "prerequisite-trace-teaching:example-step-5",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace shape, slope, and probability without skipping steps · Multiply the local derivatives",
+        "heading": "Read one complete trace from symbols to results · Multiply the local derivatives",
         "text": "The chain rule gives dy/dx = (dy/du)(du/dx) = 6 times 2 = 12. Each factor belongs to one adjacent calculation.",
         "tags": [
           "teaching",
@@ -191,7 +224,7 @@
       {
         "id": "prerequisite-trace-teaching:example-step-6",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace shape, slope, and probability without skipping steps · Compute the baseline",
+        "heading": "Read one complete trace from symbols to results · Compute the baseline",
         "text": "There are 100 targets in total. Always predicting the negative class is correct for 80 of them, so the majority-class baseline is 80/100 = 0.80, or 80 percent.",
         "tags": [
           "teaching",
@@ -202,7 +235,7 @@
       {
         "id": "prerequisite-trace-teaching:example-takeaway",
         "blockId": "prerequisite-trace-teaching",
-        "heading": "Trace shape, slope, and probability without skipping steps",
+        "heading": "Read one complete trace from symbols to results",
         "text": "A trustworthy result exposes which axis remains, which local slopes multiply, and which count produced a probability.",
         "tags": [
           "teaching",
@@ -247,7 +280,7 @@
         "id": "prerequisite-trace-teaching:summary-1",
         "blockId": "prerequisite-trace-teaching",
         "heading": "Before you predict",
-        "text": "Track array axes in order and state which axis an operation combines or preserves.",
+        "text": "Read Python assignment, lists, function calls, loops, and return as explicit state-changing instructions.",
         "tags": [
           "teaching",
           "summary",
@@ -258,7 +291,7 @@
         "id": "prerequisite-trace-teaching:summary-2",
         "blockId": "prerequisite-trace-teaching",
         "heading": "Before you predict",
-        "text": "For a composition, evaluate the intermediate value and multiply the adjacent local derivatives.",
+        "text": "Track array axes in order and state which axis an operation combines or preserves.",
         "tags": [
           "teaching",
           "summary",
@@ -267,6 +300,17 @@
       },
       {
         "id": "prerequisite-trace-teaching:summary-3",
+        "blockId": "prerequisite-trace-teaching",
+        "heading": "Before you predict",
+        "text": "For a composition, evaluate the intermediate value and multiply the adjacent local derivatives.",
+        "tags": [
+          "teaching",
+          "summary",
+          "prediction preparation"
+        ]
+      },
+      {
+        "id": "prerequisite-trace-teaching:summary-4",
         "blockId": "prerequisite-trace-teaching",
         "heading": "Before you predict",
         "text": "Derive a majority baseline from class counts before judging a model's accuracy.",
@@ -279,10 +323,11 @@
       {
         "id": "00-diagnostic-contract:p1",
         "blockId": "00-diagnostic-contract",
-        "heading": "This is a trace, not a placement exam",
-        "text": "Machine-learning mechanisms repeatedly reuse three tools: array dimensions, rates of change, and probabilities. The diagnostic asks you to expose the intermediate quantities instead of recognizing a final answer.",
+        "heading": "Start here: this lesson supplies the prerequisites",
+        "text": "Many introductory machine-learning courses require Python, arrays, algebra, statistics, and sometimes calculus before the first lesson. Trace does not send you elsewhere for that prerequisite: the notation guide above and the worked specimen on this page teach the exact subset used here.",
         "tags": [
-          "diagnostic",
+          "from zero",
+          "Python",
           "trace",
           "dimensions",
           "derivative",
@@ -292,10 +337,25 @@
       {
         "id": "00-diagnostic-contract:p2",
         "blockId": "00-diagnostic-contract",
-        "heading": "This is a trace, not a placement exam",
-        "text": "A correct result with no trace is fragile evidence. Keep dimensions beside arrays, name each local derivative, and write the count behind every probability.",
+        "heading": "Start here: this lesson supplies the prerequisites",
+        "text": "In the code lab, you are not expected to invent a program. Read the supplied comments and working example, predict the named values, run it, and repair one demonstrated array operation. Later lessons repeat this inspect-before-modify pattern.",
         "tags": [
-          "diagnostic",
+          "from zero",
+          "Python",
+          "trace",
+          "dimensions",
+          "derivative",
+          "base rate"
+        ]
+      },
+      {
+        "id": "00-diagnostic-contract:p3",
+        "blockId": "00-diagnostic-contract",
+        "heading": "Start here: this lesson supplies the prerequisites",
+        "text": "A final number is easier to trust when its intermediate state remains visible. Keep dimensions beside arrays, name each adjacent slope, and write the count behind every probability.",
+        "tags": [
+          "from zero",
+          "Python",
           "trace",
           "dimensions",
           "derivative",
@@ -409,8 +469,8 @@
       "Explanation guidance: Name the preserved axis, both local derivative factors, and the majority count.",
       "Explanation prompt: A sensor system receives 12 windows with 5 measurements each, averages the five measurements in each window into one scalar t, computes z = 3t - 2 and score = z^2, and has 90 normal versus 10 fault records. State the score-vector shape, dscore/dt at t = 2, and the accuracy of an always-normal baseline.",
       "Explanation guidance: Reduce each window to one t, map windows to the preserved axis, trace both derivative factors, and use the observed class counts.",
-      "Code lab instructions: Predict the centered list, the NumPy input shape, and the three plotted points before running. First inspect the working COLUMN_STACK_EXAMPLE: each one-dimensional input becomes one column. Then inspect the malformed 2 by 3 plotting table, identify which axis holds observations, and modify only line_points to apply the demonstrated operation. Check the repaired 3 by 2 table.",
-      "Authored starter file array_plot_trace.py:\nimport numpy as np\n\n\ndef center(values):\n    average = sum(values) / len(values)\n    return [value - average for value in values]\n\n\n# Two one-dimensional arrays become two columns and one row per position.\nCOLUMN_STACK_EXAMPLE = np.column_stack((\n    np.array([0.0, 1.0]),\n    np.array([10.0, 11.0]),\n))\n\n\ndef line_points(inputs, weight, bias):\n    x = np.asarray(inputs, dtype=float)\n    prediction = weight * x + bias\n    # REPAIR: each row must be one (x, prediction) point.\n    return np.vstack((x, prediction))\n\n\nINPUTS = np.array([0.0, 1.0, 2.0])\nPLOT_POINTS = line_points(INPUTS, weight=2.0, bias=1.0)\n\nprint(\"centered:\", center([1.0, 2.0, 3.0]))\nprint(\"column-stack example:\", COLUMN_STACK_EXAMPLE.tolist())\nprint(\"input shape:\", INPUTS.shape)\nprint(\"plot table shape:\", PLOT_POINTS.shape)\nprint(\"rows interpreted as (x, y):\", PLOT_POINTS.tolist())\n"
+      "Code lab instructions: Read the supplied program from top to bottom. `def` starts a function, the indented lines belong to it, `for` repeats once per list item, and `return` sends back the result. Predict the centered list, NumPy input shape, and three plotted points before running. Inspect the working COLUMN_STACK_EXAMPLE, then modify only the marked return inside line_points to use the demonstrated column_stack operation. Check the repaired 3 by 2 table.",
+      "Authored starter file array_plot_trace.py:\nimport numpy as np\n\n\ndef center(values):\n    average = sum(values) / len(values)\n    centered = []\n    for value in values:\n        centered.append(value - average)\n    return centered\n\n\n# Two one-dimensional arrays become two columns and one row per position.\nCOLUMN_STACK_EXAMPLE = np.column_stack((\n    np.array([0.0, 1.0]),\n    np.array([10.0, 11.0]),\n))\n\n\ndef line_points(inputs, weight, bias):\n    x = np.asarray(inputs, dtype=float)\n    prediction = weight * x + bias\n    # REPAIR: each row must be one (x, prediction) point.\n    return np.vstack((x, prediction))\n\n\nINPUTS = np.array([0.0, 1.0, 2.0])\nPLOT_POINTS = line_points(INPUTS, weight=2.0, bias=1.0)\n\nprint(\"centered:\", center([1.0, 2.0, 3.0]))\nprint(\"column-stack example:\", COLUMN_STACK_EXAMPLE.tolist())\nprint(\"input shape:\", INPUTS.shape)\nprint(\"plot table shape:\", PLOT_POINTS.shape)\nprint(\"rows interpreted as (x, y):\", PLOT_POINTS.tolist())\n"
     ]
   },
   {
@@ -2276,7 +2336,7 @@
   },
   {
     "lessonId": "capacity-curves",
-    "lessonRevision": "2026-08-04-r1",
+    "lessonRevision": "2026-08-04-r2",
     "lessonNumber": "06",
     "lessonTitle": "Capacity changes what a model can fit",
     "lessonQuestion": "How do fixed train-held-out comparisons separate underfit from overfit?",
@@ -2556,7 +2616,7 @@
         "id": "06-capacity:p2",
         "blockId": "06-capacity",
         "heading": "Capacity is a set of possible rules",
-        "text": "More capacity is not automatically better. It can represent the underlying pattern, but it can also follow sample-specific noise.",
+        "text": "More capacity is not automatically better. It can represent the underlying pattern, but it can also follow sample-specific noise. In the visual lab, a fixed coefficient-size penalty of 0.000001 adds that coefficient times the sum of squared coefficient values to the fitting objective. The tiny term slightly changes every fitted solution and selects one reproducible coefficient vector when the rows do not uniquely determine all coefficients; it is not merely a divide-by-zero guard.",
         "tags": [
           "capacity",
           "polynomial",
@@ -2639,8 +2699,8 @@
     ],
     "activityContext": [
       "Visual lab: Compare polynomial capacity at two authored data states",
-      "Change degree, then compare training and held-out MSE from the same deterministic ridge-stabilized least-squares procedure on the authored five-row and eight-row states. Treat the bars as separate capacity comparisons, not a learning curve.",
-      "Fixed quantities: Rows, probe points, raw monomial basis, squared-error loss, lambda = 1e-6 stabilizer, and partial-pivot solver remain fixed.",
+      "Change degree, then compare training and held-out MSE from the same deterministic squared-error polynomial fit on the authored five-row and eight-row states. Treat the bars as separate capacity comparisons, not a learning curve.",
+      "Fixed quantities: Rows, probe points, squared-error loss, and polynomial inputs [1, x, x squared, and so on] remain fixed; each power is used exactly as calculated from x. Every fit also uses the same objective: squared error plus 0.000001 times the sum of squared coefficients. This tiny fixed coefficient-size penalty slightly changes the objective and selects one reproducible coefficient vector when the rows do not uniquely determine all coefficients.",
       "Learner-controlled change: Change only polynomial degree; each degree is refit separately on the five-row and eight-row training sets.",
       "Control: Polynomial degree, from 0 to 9",
       "Explanation prompt: Explain how train and held-out loss pairs distinguish a capacity bottleneck from sample-specific overfit. Then explain why the two authored data states do not form a learning curve and why slider movement or low training loss alone proves neither diagnosis.",
@@ -2653,7 +2713,7 @@
   },
   {
     "lessonId": "logistic-link",
-    "lessonRevision": "2026-08-04-r1",
+    "lessonRevision": "2026-08-04-r2",
     "lessonNumber": "07",
     "lessonTitle": "A linear score becomes a probability",
     "lessonQuestion": "How can a linear model express a binary probability?",
@@ -2679,7 +2739,7 @@
         "id": "logistic-link-teaching:introduction-2",
         "blockId": "logistic-link-teaching",
         "heading": "From a weighted score to a modeled probability",
-        "text": "That result is called the logit. A logit can be any real number, so it is not itself a probability. The sigmoid function converts the logit to a number between zero and one using exp, where exp(a) means the constant e raised to power a. A zero logit maps to 0.5, positive logits map above 0.5, and negative logits map below 0.5. Because sigmoid preserves order, it changes the scale without changing which example has the larger score.",
+        "text": "That result is called the logit. In logistic regression, the logit is also the log-odds of the target class. If its probability is p, the other class has probability 1 - p, the odds are p / (1 - p), and the log-odds are z = ln(p / (1 - p)). Odds compare the target class with the other class: p = 0.75 gives odds 0.75 / 0.25 = 3, read as three to one.",
         "tags": [
           "teaching",
           "mental model",
@@ -2688,6 +2748,17 @@
       },
       {
         "id": "logistic-link-teaching:introduction-3",
+        "blockId": "logistic-link-teaching",
+        "heading": "From a weighted score to a modeled probability",
+        "text": "A logit can be any real number, so it is not itself a probability. The sigmoid p = 1 / (1 + exp(-z)) converts log-odds z to a probability, while z = ln(p / (1 - p)) converts that probability back to log-odds. The two transformations are inverses. A zero logit maps to 0.5, positive logits map above 0.5, and negative logits map below 0.5. Because sigmoid preserves order, it changes the scale without changing which example has the larger score.",
+        "tags": [
+          "teaching",
+          "mental model",
+          "introduction"
+        ]
+      },
+      {
+        "id": "logistic-link-teaching:introduction-4",
         "blockId": "logistic-link-teaching",
         "heading": "From a weighted score to a modeled probability",
         "text": "Training needs a loss that judges the probability against what actually happened. The natural logarithm ln reverses exp: exp(ln(a)) = a for positive a. Binary log loss reads the probability assigned to the observed target and takes its negative natural logarithm. Assigning a large probability to the observed class gives a small loss; assigning it a tiny probability gives a large loss. Training adjusts weights and bias to reduce average training loss, while held-out data is still needed to check whether the rule generalizes.",
@@ -2733,19 +2804,19 @@
       {
         "id": "logistic-link-teaching:term-4",
         "blockId": "logistic-link-teaching",
-        "heading": "Terms you need · Logit",
-        "text": "The unbounded weighted sum z = w dot x + b produced before conversion to a probability.",
+        "heading": "Terms you need · Odds and logit",
+        "text": "Odds are p / (1 - p), comparing the target-class probability p with the other-class probability. The logit is the log-odds z = ln(p / (1 - p)); logistic regression models it as the unbounded weighted sum z = w dot x + b.",
         "tags": [
           "teaching",
           "definition",
-          "Logit"
+          "Odds and logit"
         ]
       },
       {
         "id": "logistic-link-teaching:term-5",
         "blockId": "logistic-link-teaching",
         "heading": "Terms you need · Sigmoid",
-        "text": "The function p = 1 / (1 + exp(-z)) that maps a finite logit to a mathematical probability strictly between zero and one.",
+        "text": "The inverse of the log-odds transformation: p = 1 / (1 + exp(-z)) maps a finite logit z back to a mathematical probability strictly between zero and one.",
         "tags": [
           "teaching",
           "definition",
@@ -2810,8 +2881,8 @@
       {
         "id": "logistic-link-teaching:example-step-2",
         "blockId": "logistic-link-teaching",
-        "heading": "Score one machine outcome from beginning to end · Apply sigmoid",
-        "text": "Substitute z into p = 1 / (1 + exp(-z)). Because -ln(3) = ln(1/3), exp(-ln(3)) = 1/3. Therefore p(failure) = 1 / (1 + 1/3) = 1 / (4/3) = 0.75.",
+        "heading": "Score one machine outcome from beginning to end · Read the score as log-odds",
+        "text": "Because z = ln(p / (1 - p)), exponentiating both sides gives p / (1 - p) = exp(z) = 3. The target-class odds are therefore three to one. Solving p = 3(1 - p) gives 4p = 3, so p = 0.75.",
         "tags": [
           "teaching",
           "worked example",
@@ -2820,6 +2891,17 @@
       },
       {
         "id": "logistic-link-teaching:example-step-3",
+        "blockId": "logistic-link-teaching",
+        "heading": "Score one machine outcome from beginning to end · Apply sigmoid",
+        "text": "Substitute the same z into p = 1 / (1 + exp(-z)). Because -ln(3) = ln(1/3), exp(-ln(3)) = 1/3. Therefore p(failure) = 1 / (1 + 1/3) = 1 / (4/3) = 0.75. Sigmoid recovers the same probability because it is the inverse of log-odds.",
+        "tags": [
+          "teaching",
+          "worked example",
+          "step"
+        ]
+      },
+      {
+        "id": "logistic-link-teaching:example-step-4",
         "blockId": "logistic-link-teaching",
         "heading": "Score one machine outcome from beginning to end · Find the other class probability",
         "text": "The two binary probabilities must add to one, so p(no failure) = 1 - 0.75 = 0.25.",
@@ -2830,7 +2912,7 @@
         ]
       },
       {
-        "id": "logistic-link-teaching:example-step-4",
+        "id": "logistic-link-teaching:example-step-5",
         "blockId": "logistic-link-teaching",
         "heading": "Score one machine outcome from beginning to end · Score an observed failure",
         "text": "If the target is 1, log loss reads p(failure): -ln(0.75), which is about 0.288.",
@@ -2841,7 +2923,7 @@
         ]
       },
       {
-        "id": "logistic-link-teaching:example-step-5",
+        "id": "logistic-link-teaching:example-step-6",
         "blockId": "logistic-link-teaching",
         "heading": "Score one machine outcome from beginning to end · Score an observed non-failure",
         "text": "If the target is 0, log loss reads p(no failure): -ln(0.25), which is about 1.386. The same prediction is penalized more because it assigned less probability to what happened.",
@@ -2968,7 +3050,7 @@
         "id": "logistic-sigmoid-map:p2",
         "blockId": "logistic-sigmoid-map",
         "heading": "Sigmoid bends the number line",
-        "text": "For z = ln(3), exp(-z) = 1/3, so p = 1 / (1 + 1/3) = 0.75. The transformation changes the scale, not the ordering: a larger logit always produces a larger probability.",
+        "text": "For z = ln(3), exp(-z) = 1/3, so p = 1 / (1 + 1/3) = 0.75. Reading backward, the odds are p / (1 - p) = 0.75 / 0.25 = 3 and ln(3) returns z. Sigmoid converts log-odds to probability; z = ln(p / (1 - p)) converts probability back to log-odds. The inverse transformations change the scale, not the ordering.",
         "tags": [
           "sigmoid",
           "probability",
@@ -4247,7 +4329,7 @@
   },
   {
     "lessonId": "regularization-path",
-    "lessonRevision": "2026-08-04-r1",
+    "lessonRevision": "2026-08-04-r2",
     "lessonNumber": "11",
     "lessonTitle": "Control flexibility without touching the test set",
     "lessonQuestion": "How do regularization and cross-validation constrain model selection?",
@@ -4525,6 +4607,30 @@
       },
       {
         "id": "regularization-objective:p2",
+        "blockId": "regularization-objective",
+        "heading": "Penalize complexity inside the training objective",
+        "text": "This lesson's manual ridge calculation uses one feature through the origin and exactly minimizes J_SSE(w) = sum_i (y_i - w * x_i)^2 + lambda_SSE * w^2. There is no fitted intercept in this specimen. Under this summed-squared-error convention, the solution is w = sum_i (x_i * y_i) / (sum_i x_i^2 + lambda_SSE).",
+        "tags": [
+          "penalty",
+          "lambda",
+          "coefficient",
+          "hyperparameter"
+        ]
+      },
+      {
+        "id": "regularization-objective:p3",
+        "blockId": "regularization-objective",
+        "heading": "Penalize complexity inside the training objective",
+        "text": "If the data term is instead mean squared error, the objective is J_MSE(w) = (1/n) * sum_i (y_i - w * x_i)^2 + lambda_MSE * w^2, and the denominator becomes sum_i x_i^2 + n * lambda_MSE. The two objectives produce the same fit only when lambda_SSE = n * lambda_MSE, so the same printed lambda value does not mean the same penalty under both conventions.",
+        "tags": [
+          "penalty",
+          "lambda",
+          "coefficient",
+          "hyperparameter"
+        ]
+      },
+      {
+        "id": "regularization-objective:p4",
         "blockId": "regularization-objective",
         "heading": "Penalize complexity inside the training objective",
         "text": "The regularization strength lambda is a hyperparameter: training optimizes coefficients for a fixed lambda, while validation evidence helps choose lambda.",
@@ -5831,7 +5937,7 @@
   },
   {
     "lessonId": "optimizer-traces",
-    "lessonRevision": "2026-08-04-r1",
+    "lessonRevision": "2026-08-04-r2",
     "lessonNumber": "15",
     "lessonTitle": "Read the optimizer's trace",
     "lessonQuestion": "Which mechanism produced this training curve?",
@@ -5939,6 +6045,28 @@
           "teaching",
           "definition",
           "Adam moments"
+        ]
+      },
+      {
+        "id": "optimizer-traces-teaching:term-7",
+        "blockId": "optimizer-traces-teaching",
+        "heading": "Terms you need · Adam decay rates",
+        "text": "Beta1 and beta2 are numbers between zero and one that control how much earlier first- and second-moment state is retained.",
+        "tags": [
+          "teaching",
+          "definition",
+          "Adam decay rates"
+        ]
+      },
+      {
+        "id": "optimizer-traces-teaching:term-8",
+        "blockId": "optimizer-traces-teaching",
+        "heading": "Terms you need · Epsilon",
+        "text": "A small positive stabilizer added after the square root of Adam's corrected second moment, preventing division by zero.",
+        "tags": [
+          "teaching",
+          "definition",
+          "Epsilon"
         ]
       },
       {
@@ -6170,8 +6298,8 @@
       {
         "id": "optimizer-state:p1",
         "blockId": "optimizer-state",
-        "heading": "Momentum and Adam carry state",
-        "text": "Momentum accumulates a decaying history of gradients, so it can preserve motion through a shallow region and overshoot after direction changes. Adam tracks decaying first and second gradient moments, bias-corrects them, and scales the update coordinate by coordinate.",
+        "heading": "Adam updates moments, corrects them, then moves the parameter",
+        "text": "Momentum accumulates a decaying history of gradients, so it can preserve motion through a shallow region and overshoot after direction changes. For this lesson's standard Adam update, start with m_0 = 0 and v_0 = 0. At step t, g_t is the current gradient, beta1 and beta2 are decay rates, eta is the learning rate, and epsilon is a small positive stabilizer.",
         "tags": [
           "velocity",
           "first moment",
@@ -6182,7 +6310,31 @@
       {
         "id": "optimizer-state:p2",
         "blockId": "optimizer-state",
-        "heading": "Momentum and Adam carry state",
+        "heading": "Adam updates moments, corrects them, then moves the parameter",
+        "text": "The complete update is m_t = beta1 * m_(t-1) + (1 - beta1) * g_t; v_t = beta2 * v_(t-1) + (1 - beta2) * g_t^2; m_hat_t = m_t / (1 - beta1^t); v_hat_t = v_t / (1 - beta2^t); theta_t = theta_(t-1) - eta * m_hat_t / (sqrt(v_hat_t) + epsilon). Epsilon is outside the square root: the denominator is sqrt(v_hat_t) + epsilon, not sqrt(v_hat_t + epsilon).",
+        "tags": [
+          "velocity",
+          "first moment",
+          "second moment",
+          "bias correction"
+        ]
+      },
+      {
+        "id": "optimizer-state:p3",
+        "blockId": "optimizer-state",
+        "heading": "Adam updates moments, corrects them, then moves the parameter",
+        "text": "For one numerical update, let theta_0 = 4, g_1 = 2, m_0 = v_0 = 0, beta1 = 0.9, beta2 = 0.999, eta = 0.1, and epsilon = 1e-8. Then m_1 = 0.2 and v_1 = 0.004. Bias correction gives m_hat_1 = 0.2 / 0.1 = 2 and v_hat_1 = 0.004 / 0.001 = 4. Therefore theta_1 = 4 - 0.1 * 2 / (sqrt(4) + 1e-8), approximately 3.9.",
+        "tags": [
+          "velocity",
+          "first moment",
+          "second moment",
+          "bias correction"
+        ]
+      },
+      {
+        "id": "optimizer-state:p4",
+        "blockId": "optimizer-state",
+        "heading": "Adam updates moments, corrects them, then moves the parameter",
         "text": "Neither optimizer chooses the objective, fixes bad data, or guarantees generalization.",
         "tags": [
           "velocity",
@@ -7797,11 +7949,11 @@
   },
   {
     "lessonId": "shift-monitor",
-    "lessonRevision": "2026-08-04-r1",
+    "lessonRevision": "2026-08-04-r2",
     "lessonNumber": "20",
     "lessonTitle": "Diagnose the deployed system",
     "lessonQuestion": "Which part of the pipeline failed after deployment?",
-    "lessonSummary": "Complete a fixed capstone diagnosis spanning distribution shift, operational-slice reliability, delayed outcomes, and monitoring.",
+    "lessonSummary": "Complete a fixed capstone diagnosis spanning distribution shift, operational-slice reliability, fairness metrics, delayed outcomes, and monitoring.",
     "mechanism": {
       "input": "Versioned model, deployment inputs, decisions, delayed outcomes, and operational slices",
       "process": "Compare live distributions and error slices with a reference, then localize evidence across data, objective, optimization, evaluation, and operations",
@@ -7832,6 +7984,17 @@
       },
       {
         "id": "shift-monitor-teaching:introduction-3",
+        "blockId": "shift-monitor-teaching",
+        "heading": "Localize a deployment failure before changing the model",
+        "text": "Fairness asks how a model's decisions and errors are distributed across stakeholder groups in a particular use context. Demographic parity compares how often groups receive the positive decision, while equality of opportunity compares how often actually positive cases receive that decision. These metrics answer different questions, and neither one alone decides whether the system's consequences are acceptable.",
+        "tags": [
+          "teaching",
+          "mental model",
+          "introduction"
+        ]
+      },
+      {
+        "id": "shift-monitor-teaching:introduction-4",
         "blockId": "shift-monitor-teaching",
         "heading": "Localize a deployment failure before changing the model",
         "text": "Diagnosis begins by listing what changed and what remained fixed. An input alert establishes change but not root cause; the cause might be data collection, preprocessing, serving, model behavior, or delayed-label quality. Pinning versions narrows the search. A mitigation limits harm while evidence is gathered, and a release gate is a measurable condition that must pass before automation resumes. Retraining is only one possible response and should not precede checks of the measurement and evaluation boundaries.",
@@ -7898,6 +8061,28 @@
       },
       {
         "id": "shift-monitor-teaching:term-6",
+        "blockId": "shift-monitor-teaching",
+        "heading": "Terms you need · Demographic parity",
+        "text": "A group comparison that asks whether each group receives the model's positive decision at the same rate.",
+        "tags": [
+          "teaching",
+          "definition",
+          "Demographic parity"
+        ]
+      },
+      {
+        "id": "shift-monitor-teaching:term-7",
+        "blockId": "shift-monitor-teaching",
+        "heading": "Terms you need · Equality of opportunity",
+        "text": "A group comparison that asks whether actually positive cases receive the model's positive decision at the same true-positive rate.",
+        "tags": [
+          "teaching",
+          "definition",
+          "Equality of opportunity"
+        ]
+      },
+      {
+        "id": "shift-monitor-teaching:term-8",
         "blockId": "shift-monitor-teaching",
         "heading": "Terms you need · Release gate",
         "text": "A predeclared measurable condition that must pass before a system change or automation is released.",
@@ -8010,7 +8195,7 @@
         "id": "shift-monitor-teaching:misconception-2",
         "blockId": "shift-monitor-teaching",
         "heading": "Common confusions",
-        "text": "An aggregate weights slices by their frequency. A smaller slice can have a much worse error rate while the overall number appears acceptable.",
+        "text": "An aggregate can hide a smaller slice, and equality on one fairness metric can coexist with a gap on another. Inspect relevant group confusion matrices, label quality, exposure, and consequences.",
         "tags": [
           "teaching",
           "misconception",
@@ -8052,6 +8237,17 @@
       },
       {
         "id": "shift-monitor-teaching:summary-3",
+        "blockId": "shift-monitor-teaching",
+        "heading": "Before you predict",
+        "text": "Compute selection rates and true-positive rates separately before making a demographic-parity or equality-of-opportunity claim.",
+        "tags": [
+          "teaching",
+          "summary",
+          "prediction preparation"
+        ]
+      },
+      {
+        "id": "shift-monitor-teaching:summary-4",
         "blockId": "shift-monitor-teaching",
         "heading": "Before you predict",
         "text": "When scanner measurements move sharply while the artifact and pipeline versions remain pinned, investigate deployment data and preprocessing first.",
@@ -8112,24 +8308,60 @@
       {
         "id": "shift-fairness:p1",
         "blockId": "shift-fairness",
-        "heading": "Operational reliability and fairness are different questions",
+        "heading": "Fairness metrics compare different parts of each group",
         "text": "An overall metric averages across the deployment mixture. The day and night scanner slices can expose an operational reliability failure while the aggregate moves only modestly, but that gap alone does not establish a fairness harm.",
         "tags": [
-          "operational slice",
-          "selection rate",
-          "label delay",
+          "confusion matrix",
+          "demographic parity",
+          "equality of opportunity",
           "tradeoff"
         ]
       },
       {
         "id": "shift-fairness:p2",
         "blockId": "shift-fairness",
-        "heading": "Operational reliability and fairness are different questions",
-        "text": "Fairness analysis must name affected stakeholders or groups, their exposure to the decision, and its consequences. Selection-rate parity or demographic parity can be monitored from decisions and group membership before outcome labels arrive; outcome-dependent false-negative-rate parity or equality-of-opportunity measures require reliable labels. Equalizing one metric can change another and does not replace domain review.",
+        "heading": "Fairness metrics compare different parts of each group",
+        "text": "Within each stakeholder group, a confusion matrix counts four outcomes. A true positive (TP) is an actually positive case predicted positive; a false negative (FN) is actually positive but predicted negative; a false positive (FP) is actually negative but predicted positive; and a true negative (TN) is actually negative and predicted negative. Selection rate is (TP + FP) divided by all four counts. True-positive rate is TP / (TP + FN).",
         "tags": [
-          "operational slice",
-          "selection rate",
-          "label delay",
+          "confusion matrix",
+          "demographic parity",
+          "equality of opportunity",
+          "tradeoff"
+        ]
+      },
+      {
+        "id": "shift-fairness:p3",
+        "blockId": "shift-fairness",
+        "heading": "Fairness metrics compare different parts of each group",
+        "text": "Consider two groups of 100 cases. Group A has TP = 40, FN = 10, FP = 10, and TN = 40, so its selection rate is (40 + 10) / 100 = 50% and its true-positive rate is 40 / (40 + 10) = 80%. Group B has TP = 20, FN = 20, FP = 0, and TN = 60, so its selection rate is 20% and its true-positive rate is 50%. The 30-point selection-rate gap violates demographic parity, and the 30-point true-positive-rate gap violates equality of opportunity.",
+        "tags": [
+          "confusion matrix",
+          "demographic parity",
+          "equality of opportunity",
+          "tradeoff"
+        ]
+      },
+      {
+        "id": "shift-fairness:p4",
+        "blockId": "shift-fairness",
+        "heading": "Fairness metrics compare different parts of each group",
+        "text": "The metrics can trade off. To raise Group B's true-positive rate from 50% to 80% with 40 actually positive cases, 12 false negatives would need to become true positives, giving TP = 32 and FN = 8. Selection would then be at least 32%. Reaching Group A's 50% selection rate as well could, for example, add 18 false positives, giving FP = 18, TN = 42, and a 30% false-positive rate. Group A's false-positive rate is 10 / 50 = 20%, so matching the first two metrics would leave a 10-point false-positive-rate gap.",
+        "tags": [
+          "confusion matrix",
+          "demographic parity",
+          "equality of opportunity",
+          "tradeoff"
+        ]
+      },
+      {
+        "id": "shift-fairness:p5",
+        "blockId": "shift-fairness",
+        "heading": "Fairness metrics compare different parts of each group",
+        "text": "Metric choice therefore requires the decision's purpose, affected stakeholders, error costs, group definitions, and label quality. Demographic parity can be computed from decisions and group membership before outcomes arrive; equality of opportunity requires trustworthy outcome labels. Equalizing one metric does not by itself establish fairness.",
+        "tags": [
+          "confusion matrix",
+          "demographic parity",
+          "equality of opportunity",
           "tradeoff"
         ]
       },
@@ -8190,6 +8422,8 @@
       "Control: Night share among actual positives, from all day positives to all night positives",
       "Explanation prompt: Diagnose the fixed Scanner B incident. Build the causal evidence chain, reject optimizer failure as the first explanation, identify the hidden night-slice reliability failure, and state a controlled result that would challenge the data-shift diagnosis.",
       "Explanation guidance: Use the pinned deployment identity, changed input measurements, delayed outcome slices, and a matched replay.",
+      "Explanation prompt: A fixed clinic referral model has these reviewed outcomes. Group East: TP = 27, FN = 3, FP = 15, TN = 55. Group West: TP = 36, FN = 24, FP = 4, TN = 36. Compute each group's selection rate and true-positive rate. State what demographic parity and equality of opportunity compare, report which observed gap is smaller and which is larger without assuming a fairness tolerance, then explain one threshold tradeoff and one reason these two metrics alone cannot settle whether the system is fair.",
+      "Explanation guidance: Use all four confusion-matrix counts for selection rate, only actually positive cases for true-positive rate, and keep the metric calculation separate from the stakeholder judgment.",
       "Explanation prompt: A water-quality alert model moves to a river with a replacement turbidity sensor. Labels arrive weekly, and false negatives rise mainly during storm flow. Design the immediate monitors, delayed slice checks, first mitigation, and a controlled test separating sensor shift from model failure.",
       "Explanation guidance: Name pre-label signals, the storm slice, a reversible safety action, and a matched-sample replay.",
       "Code lab instructions: PRIMM: Predict the overall accuracy, overall false-negative rate, and night-slice gap before running. Run the working metric and release-gate functions, investigate which aggregate hides the night slice, then complete the fixed diagnostic rule. Modify an alert threshold and explain why release still requires both overall and night false-negative gates.",

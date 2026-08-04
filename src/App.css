@@ -223,10 +223,12 @@
   gap: 4px;
 }
 
-.module > header strong {
+.module > header h3 {
+  margin: 0;
   color: #cfd2d8;
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0;
 }
 
 .module > header small {
@@ -315,7 +317,7 @@
   line-height: 1.25;
   white-space: normal;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 
 .nav-footer {
@@ -1196,11 +1198,30 @@
   gap: 18px;
 }
 
-.explanation-actions small {
+.explanation-privacy {
   max-width: 330px;
   color: #59615f;
   font-size: 11px;
   line-height: 1.45;
+}
+
+.explanation-privacy p {
+  margin: 0;
+}
+
+.explanation-privacy details {
+  margin-top: 4px;
+}
+
+.explanation-privacy summary {
+  width: fit-content;
+  color: #315c50;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.explanation-privacy details p {
+  margin-top: 4px;
 }
 
 .explanation-action-buttons {
@@ -1927,7 +1948,7 @@
   border-radius: 50%;
 }
 
-.visual-mechanism-lab.demonstrated > footer {
+.visual-mechanism-lab.recorded > footer {
   color: #75d0b2;
 }
 
@@ -2804,12 +2825,31 @@
   cursor: default;
 }
 
-.tutor-composer > small {
+.tutor-composer-note {
   display: block;
   margin-top: 7px;
   color: #69707a;
-  font-size: 10px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.tutor-composer-note p {
+  margin: 0;
+}
+
+.tutor-composer-note details {
+  margin-top: 4px;
+}
+
+.tutor-composer-note summary {
+  width: fit-content;
+  color: #485873;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.tutor-composer-note details p {
+  margin-top: 4px;
 }
 
 .thread-history {
@@ -2867,7 +2907,14 @@
   margin-top: 4px;
 }
 
-.thread-history li > button {
+.thread-history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  gap: 4px;
+  align-items: center;
+}
+
+.thread-history-select {
   display: grid;
   width: 100%;
   grid-template-columns: 18px minmax(0, 1fr);
@@ -2882,17 +2929,42 @@
   cursor: pointer;
 }
 
-.thread-history li > button:hover,
-.thread-history li > button.active {
+.thread-history-select:hover,
+.thread-history-select.active {
   border-color: #dce2ef;
   color: #37538e;
   background: #f2f5fc;
 }
 
-.thread-history li > button > span {
+.thread-history-select > span {
   display: grid;
   min-width: 0;
   gap: 4px;
+}
+
+.thread-history-delete {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #777d87;
+  background: transparent;
+  cursor: pointer;
+}
+
+.thread-history-delete:hover:not(:disabled) {
+  border-color: #e5c8c5;
+  color: #9d3e35;
+  background: #fff4f2;
+}
+
+.thread-history-select:disabled,
+.thread-history-delete:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .thread-history li strong {
@@ -3015,6 +3087,43 @@
     display: inline-grid;
   }
 
+  .course-nav .icon-button,
+  .tutor-panel .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mobile-tutor-button,
+  .tutor-panel .starter-questions button,
+  .tutor-panel .thread-history-heading button,
+  .tutor-panel .thread-history-select,
+  .tutor-panel .thread-history-delete,
+  .tutor-panel .message-sources a,
+  .tutor-panel .message-claims a,
+  .tutor-panel .cancel-helper {
+    min-height: 44px;
+  }
+
+  .tutor-panel .thread-history-item {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .tutor-panel .thread-history-delete,
+  .tutor-panel .cancel-helper {
+    width: 44px;
+    height: 44px;
+  }
+
+  .tutor-panel .send-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .tutor-panel .tutor-composer textarea {
+    min-height: 76px;
+    padding-right: 58px;
+  }
+
   .mobile-scrim {
     position: fixed;
     inset: 0;
@@ -3095,10 +3204,29 @@
   .explanation-actions button,
   .lesson-close button,
   .lesson-footer-actions > button,
+  .visual-lab-actions button,
+  .diagram-pan-controls button,
   .starter-questions button,
   .thread-history-heading button,
-  .thread-history li > button {
+  .thread-history-select,
+  .thread-history-delete,
+  .cancel-helper {
     min-height: 44px;
+  }
+
+  .thread-history-item {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .thread-history-delete {
+    width: 44px;
+    height: 44px;
+  }
+
+  .diagram-pan-controls button,
+  .cancel-helper {
+    width: 44px;
+    height: 44px;
   }
 
   .message-sources a,
@@ -3157,6 +3285,12 @@
 
   .lesson-sequence li {
     gap: 6px;
+  }
+
+  .lesson-sequence a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
   }
 
   .lesson-sequence i {

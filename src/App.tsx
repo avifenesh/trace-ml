@@ -281,10 +281,22 @@ function App() {
   });
   useModalDrawer({
     active: isDrawerMode && tutorOpen,
-    initialFocusSelector: "#tutor-question",
+    initialFocusSelector: "#lesson-helper-title",
     panelRef: tutorPanelRef,
     onDismiss: dismissDrawers,
   });
+
+  useLayoutEffect(() => {
+    if (!tutorOpen || isDrawerMode) return;
+    const focusHelper = () => {
+      tutorPanelRef.current
+        ?.querySelector<HTMLElement>("#lesson-helper-title")
+        ?.focus({ preventScroll: true });
+    };
+    focusHelper();
+    const frame = requestAnimationFrame(focusHelper);
+    return () => cancelAnimationFrame(frame);
+  }, [isDrawerMode, tutorOpen]);
 
   useEffect(() => {
     if (!isDrawerMode && navOpen) {
@@ -358,7 +370,7 @@ function App() {
   };
 
   const activityDemonstrated = (activity: LessonActivity) =>
-    activity.kind !== "text-response" &&
+    (activity.kind === "prediction" || activity.kind === "code-lab") &&
     objectiveCheckpointComplete(
       lesson,
       activity,
@@ -440,11 +452,11 @@ function App() {
             <div
               className="compact-progress"
               role="progressbar"
-              aria-label="Objective lesson checks"
+              aria-label="Required lesson checks"
               aria-valuemin={0}
               aria-valuemax={checkpointActivities.length}
               aria-valuenow={evidenceCount}
-              aria-valuetext={`${evidenceCount} of ${checkpointActivities.length} objective checks passed`}
+              aria-valuetext={`${evidenceCount} of ${checkpointActivities.length} required checks recorded`}
             >
               {gateRequirements.map((supported, index) => (
                 <i
@@ -485,11 +497,11 @@ function App() {
             <div
               className="workspace-evidence-markers"
               role="progressbar"
-              aria-label="Objective lesson checks"
+              aria-label="Required lesson checks"
               aria-valuemin={0}
               aria-valuemax={checkpointActivities.length}
               aria-valuenow={evidenceCount}
-              aria-valuetext={`${evidenceCount} of ${checkpointActivities.length} objective checks passed`}
+              aria-valuetext={`${evidenceCount} of ${checkpointActivities.length} required checks recorded`}
             >
               {gateRequirements.map((supported, index) => (
                 <i
@@ -501,8 +513,8 @@ function App() {
             </div>
             <small>
               {gateComplete
-                ? `All ${checkpointActivities.length} objective checks passed`
-                : `${evidenceCount} of ${checkpointActivities.length} objective checks passed`}
+                ? `All ${checkpointActivities.length} required checks recorded`
+                : `${evidenceCount} of ${checkpointActivities.length} required checks recorded`}
             </small>
           </div>
           <button
@@ -525,8 +537,8 @@ function App() {
         </header>
         <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
           {gateComplete
-            ? `Lesson ${lesson.number}: all ${checkpointActivities.length} objective checks passed`
-            : `Lesson ${lesson.number}: ${evidenceCount} of ${checkpointActivities.length} objective checks passed`}
+            ? `Lesson ${lesson.number}: all ${checkpointActivities.length} required checks recorded`
+            : `Lesson ${lesson.number}: ${evidenceCount} of ${checkpointActivities.length} required checks recorded`}
         </p>
 
         <div className="lesson-scroll" ref={lessonScrollRef}>

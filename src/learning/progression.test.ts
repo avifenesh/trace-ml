@@ -74,6 +74,44 @@ describe("lesson progression", () => {
     expect(lessonState(lesson, "another-lesson", record)).toBe("evidenced");
   });
 
+  it("keeps recorded visual comparisons out of objective completion", () => {
+    const lesson = authoredLesson("prerequisite-trace");
+    const visualActivity = lesson.activities.find(
+      (activity) => activity.kind === "visual-lab",
+    );
+    if (!visualActivity) throw new Error("Expected an authored visual lab.");
+    const checkpoints = objectiveCheckpointActivities(lesson);
+
+    expect(checkpoints.some((activity) => activity.kind === "prediction")).toBe(
+      true,
+    );
+    expect(checkpoints.some((activity) => activity.kind === "code-lab")).toBe(
+      true,
+    );
+    expect(checkpoints.map((activity) => activity.id)).not.toContain(
+      visualActivity.id,
+    );
+
+    let record = recordActivityAttempt(createLearnerRecord(), {
+      lessonId: lesson.id,
+      lessonRevision: lesson.revision ?? "unversioned",
+      activityId: visualActivity.id,
+      conceptIds: activityEvidenceConceptIds(visualActivity),
+      evidenceKind: visualActivity.evidenceKind,
+      response: "Captured a baseline and a changed slider state.",
+      rubricSignals: ["compared-distinct-states"],
+      level: "demonstrated",
+      summary: "Legacy visual comparison evidence.",
+    });
+
+    expect(lessonState(lesson, "another-lesson", record)).toBe("available");
+
+    checkpoints.forEach((activity) => {
+      record = addCheckpointEvidence(record, lesson, activity);
+    });
+    expect(lessonState(lesson, "another-lesson", record)).toBe("evidenced");
+  });
+
   it("does not satisfy objective checkpoints with matching evidence from another lesson", () => {
     const lesson = authoredLesson("split-and-leakage");
     let record = createLearnerRecord();

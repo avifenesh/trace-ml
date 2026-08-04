@@ -102,23 +102,23 @@ export function LessonArticle({
   const teachingBlockId = teachingBlockIdForLesson(lesson);
   const sequence = [
     {
-      label: "LEARN",
+      label: "TEACHING",
       targetId: teachingBlockId,
     },
     predictionActivity && {
-      label: "PREDICT",
+      label: "PREDICTION",
       targetId: predictionActivity.id,
     },
     lesson.blocks[0] && {
-      label: "READ",
+      label: "READING",
       targetId: lesson.blocks[0].id,
     },
     visualActivity && {
-      label: "MANIPULATE",
+      label: "EXPERIMENT",
       targetId: visualActivity.id,
     },
     explanationActivity && {
-      label: "EXPLAIN",
+      label: "EXPLANATION",
       targetId: explanationActivity.id,
     },
     transferActivity && {
@@ -126,7 +126,7 @@ export function LessonArticle({
       targetId: transferActivity.id,
     },
     codeActivity && {
-      label: "CODE",
+      label: "PYTHON",
       targetId: codeActivity.id,
     },
   ].filter((stage): stage is { label: string; targetId: string } =>
@@ -264,20 +264,8 @@ export function LessonArticle({
             savedState?.kind === "visual-lab" ? savedState : undefined
           }
           persistenceStatus={persistenceStatus}
-          previouslyDemonstrated={demonstrated}
           onStateChange={(state) =>
             onActivityStateChange(activity, state)
-          }
-          onEvidence={(response) =>
-            onActivityEvidence({
-              activityId: activity.id,
-              conceptIds: activityEvidenceConceptIds(activity),
-              evidenceKind: activity.evidenceKind,
-              response,
-              rubricSignals: ["compared-distinct-states"],
-              level: "demonstrated",
-              summary: "Compared how the mechanism behaves in distinct states.",
-            })
           }
         />
       );
@@ -567,12 +555,14 @@ export function LessonArticle({
 
       <footer className="lesson-footer">
         <div>
-          <span>{gateComplete ? "OBJECTIVE CHECKS COMPLETE" : "LESSON CHECKS"}</span>
+          <span>
+            {gateComplete ? "REQUIRED CHECKS RECORDED" : "REQUIRED CHECKS"}
+          </span>
           <strong>{nextLessonTitle ?? "Course synthesis"}</strong>
           <p>
             {gateComplete
-              ? "The supported prediction, controlled comparison, and available code checks passed. Prose drafts remain formative."
-              : "Complete the objective prediction, comparison, and available code checks when you are ready."}
+              ? "The required prediction and available code checks are recorded. Prose drafts, transfer responses, and controlled comparisons remain formative."
+              : "Complete the required prediction and available code checks when you are ready. Prose, transfer, and comparisons do not certify completion."}
           </p>
         </div>
         <div className="lesson-footer-actions">
@@ -585,11 +575,15 @@ export function LessonArticle({
               <span aria-hidden="true" />
             )}
             {gateComplete
-              ? "Objective checks complete"
-              : `${gateEvidenceCount} of ${objectiveCheckpointCount} objective checks passed`}
+              ? "Required checks recorded"
+              : `${gateEvidenceCount} of ${objectiveCheckpointCount} required checks recorded`}
           </div>
           {onNextLesson && (
-            <button type="button" onClick={onNextLesson}>
+            <button
+              type="button"
+              aria-label={`Next lesson: ${nextLessonTitle}`}
+              onClick={onNextLesson}
+            >
               Next lesson
               <ArrowRight size={15} />
             </button>

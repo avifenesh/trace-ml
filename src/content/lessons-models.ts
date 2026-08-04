@@ -1,5 +1,5 @@
 import {
-  COURSE_REVISION,
+  lessonRevision,
   interactive,
   pythonLab,
   reading,
@@ -21,13 +21,14 @@ export const modelLessons: Lesson[] = [
     summary:
       "Trace a feature through a logit and sigmoid, then use log loss to measure a probabilistic prediction.",
     durationMinutes: 50,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("logistic-link"),
     sourceIds: ["S73", "S74", "S13"],
     teaching: {
       title: "From a weighted score to a modeled probability",
       introduction: [
         "Binary classification means choosing between two possible target classes, such as failure and no failure. A feature is an input measurement, a weight says how strongly that feature contributes, and a bias is an adjustable starting value. Logistic regression first combines them exactly as a linear model does: multiply each feature by its weight, add those products, and add the bias.",
-        "That result is called the logit. A logit can be any real number, so it is not itself a probability. The sigmoid function converts the logit to a number between zero and one using exp, where exp(a) means the constant e raised to power a. A zero logit maps to 0.5, positive logits map above 0.5, and negative logits map below 0.5. Because sigmoid preserves order, it changes the scale without changing which example has the larger score.",
+        "That result is called the logit. In logistic regression, the logit is also the log-odds of the target class. If its probability is p, the other class has probability 1 - p, the odds are p / (1 - p), and the log-odds are z = ln(p / (1 - p)). Odds compare the target class with the other class: p = 0.75 gives odds 0.75 / 0.25 = 3, read as three to one.",
+        "A logit can be any real number, so it is not itself a probability. The sigmoid p = 1 / (1 + exp(-z)) converts log-odds z to a probability, while z = ln(p / (1 - p)) converts that probability back to log-odds. The two transformations are inverses. A zero logit maps to 0.5, positive logits map above 0.5, and negative logits map below 0.5. Because sigmoid preserves order, it changes the scale without changing which example has the larger score.",
         "Training needs a loss that judges the probability against what actually happened. The natural logarithm ln reverses exp: exp(ln(a)) = a for positive a. Binary log loss reads the probability assigned to the observed target and takes its negative natural logarithm. Assigning a large probability to the observed class gives a small loss; assigning it a tiny probability gives a large loss. Training adjusts weights and bias to reduce average training loss, while held-out data is still needed to check whether the rule generalizes.",
       ],
       vocabulary: [
@@ -47,14 +48,14 @@ export const modelLessons: Lesson[] = [
             "Learned numbers that scale feature contributions and shift the overall score.",
         },
         {
-          term: "Logit",
+          term: "Odds and logit",
           definition:
-            "The unbounded weighted sum z = w dot x + b produced before conversion to a probability.",
+            "Odds are p / (1 - p), comparing the target-class probability p with the other-class probability. The logit is the log-odds z = ln(p / (1 - p)); logistic regression models it as the unbounded weighted sum z = w dot x + b.",
         },
         {
           term: "Sigmoid",
           definition:
-            "The function p = 1 / (1 + exp(-z)) that maps a finite logit to a mathematical probability strictly between zero and one.",
+            "The inverse of the log-odds transformation: p = 1 / (1 + exp(-z)) maps a finite logit z back to a mathematical probability strictly between zero and one.",
         },
         {
           term: "Log loss",
@@ -83,9 +84,14 @@ export const modelLessons: Lesson[] = [
               "The model's weighted feature calculation has produced z = ln(3), about 1.099. This is a positive logit, but it is not yet a probability or a final class.",
           },
           {
+            label: "Read the score as log-odds",
+            explanation:
+              "Because z = ln(p / (1 - p)), exponentiating both sides gives p / (1 - p) = exp(z) = 3. The target-class odds are therefore three to one. Solving p = 3(1 - p) gives 4p = 3, so p = 0.75.",
+          },
+          {
             label: "Apply sigmoid",
             explanation:
-              "Substitute z into p = 1 / (1 + exp(-z)). Because -ln(3) = ln(1/3), exp(-ln(3)) = 1/3. Therefore p(failure) = 1 / (1 + 1/3) = 1 / (4/3) = 0.75.",
+              "Substitute the same z into p = 1 / (1 + exp(-z)). Because -ln(3) = ln(1/3), exp(-ln(3)) = 1/3. Therefore p(failure) = 1 / (1 + 1/3) = 1 / (4/3) = 0.75. Sigmoid recovers the same probability because it is the inverse of log-odds.",
           },
           {
             label: "Find the other class probability",
@@ -187,7 +193,7 @@ export const modelLessons: Lesson[] = [
         sourceIds: ["S73"],
         body: [
           "The sigmoid is p = 1 / (1 + exp(-z)). At z = 0, p = 0.5. Mathematically, every finite logit maps strictly between zero and one. In finite-precision arithmetic, an extreme finite logit may round to 0.0 or 1.0; that endpoint is numerical saturation, not the exact mathematical value.",
-          "For z = ln(3), exp(-z) = 1/3, so p = 1 / (1 + 1/3) = 0.75. The transformation changes the scale, not the ordering: a larger logit always produces a larger probability.",
+          "For z = ln(3), exp(-z) = 1/3, so p = 1 / (1 + 1/3) = 0.75. Reading backward, the odds are p / (1 - p) = 0.75 / 0.25 = 3 and ln(3) returns z. Sigmoid converts log-odds to probability; z = ln(p / (1 - p)) converts probability back to log-odds. The inverse transformations change the scale, not the ordering.",
         ],
         conceptIds: ["logit", "sigmoid"],
         tags: ["sigmoid", "probability", "monotonic", "ln 3"],
@@ -472,7 +478,7 @@ print("loss(p=.8, y=0):", log_loss(0.8, 0))
     summary:
       "Hold scores fixed while a threshold changes the confusion matrix, precision, recall, and empirical total validation cost.",
     durationMinutes: 55,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("decision-costs"),
     sourceIds: ["S75", "S76", "S96", "S13"],
     teaching: {
       title: "Turn fixed probabilities into accountable decisions",
@@ -955,7 +961,7 @@ print("alternate chosen:", choose_threshold(ALTERNATE_SCORES, ALTERNATE_TARGETS,
     summary:
       "Fit numeric, categorical, and missing-value transformations on training data, then replay them unchanged.",
     durationMinutes: 55,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("feature-pipeline"),
     sourceIds: ["S77", "S78", "S07"],
     teaching: {
       title: "Build one feature definition and replay it everywhere",
@@ -1428,7 +1434,7 @@ print("feature names:", PREPROCESSOR.get_feature_names_out().tolist())
     summary:
       "Compare a distance-based vote with recursive axis-aligned splits and expose the inductive bias of each.",
     durationMinutes: 50,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("knn-versus-tree"),
     sourceIds: ["S79", "S51", "S07", "S14"],
     teaching: {
       title: "Compare a neighborhood vote with a learned rule path",
@@ -1862,7 +1868,7 @@ print("stump error:", stump_error(POINTS, 3.0, 0, 1))
     summary:
       "Predict coefficient shrinkage, compare L1 with L2, and select a penalty from validation folds while preserving a final test.",
     durationMinutes: 55,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("regularization-path"),
     sourceIds: ["S81", "S82", "S07"],
     teaching: {
       title: "Constrain fitting, compare settings, and protect the final test",
@@ -2011,6 +2017,8 @@ print("stump error:", stump_error(POINTS, 3.0, 0, 1))
         sourceIds: ["S82"],
         body: [
           "Regularized fitting minimizes data loss plus a coefficient penalty. The penalty changes which parameter values count as cheap even when two models fit training data similarly.",
+          "This lesson's manual ridge calculation uses one feature through the origin and exactly minimizes J_SSE(w) = sum_i (y_i - w * x_i)^2 + lambda_SSE * w^2. There is no fitted intercept in this specimen. Under this summed-squared-error convention, the solution is w = sum_i (x_i * y_i) / (sum_i x_i^2 + lambda_SSE).",
+          "If the data term is instead mean squared error, the objective is J_MSE(w) = (1/n) * sum_i (y_i - w * x_i)^2 + lambda_MSE * w^2, and the denominator becomes sum_i x_i^2 + n * lambda_MSE. The two objectives produce the same fit only when lambda_SSE = n * lambda_MSE, so the same printed lambda value does not mean the same penalty under both conventions.",
           "The regularization strength lambda is a hyperparameter: training optimizes coefficients for a fixed lambda, while validation evidence helps choose lambda.",
         ],
         conceptIds: ["regularization", "hyperparameter-selection"],
@@ -2354,7 +2362,7 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
     summary:
       "Separate parallel averaging from sequential correction and identify whether each ensemble attacks variance or bias.",
     durationMinutes: 50,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("ensemble-votes"),
     sourceIds: ["S83", "S84", "S07"],
     teaching: {
       title: "Combine different learners for a specific reason",
@@ -2856,7 +2864,7 @@ print("boosted:", boost_step(FEATURES, BASE_PREDICTIONS, TARGETS, STUMP_THRESHOL
     summary:
       "Construct two nonlinear hidden features that turn XOR into a linearly separable hidden representation.",
     durationMinutes: 50,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("xor-hidden-space"),
     sourceIds: ["S80", "S49", "S15"],
     teaching: {
       title: "Create new coordinates before drawing the final boundary",

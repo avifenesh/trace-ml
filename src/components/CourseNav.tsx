@@ -99,11 +99,15 @@ export function CourseNav({
 
       <nav className="module-list" aria-label="Course lessons">
         {courseModules.map((module) => (
-          <section className="module" key={module.id}>
+          <section
+            aria-labelledby={`module-${module.id}-title`}
+            className="module"
+            key={module.id}
+          >
             <header>
               <span>{module.number}</span>
               <div>
-                <strong>{module.title}</strong>
+                <h3 id={`module-${module.id}-title`}>{module.title}</h3>
                 <small>{module.purpose}</small>
               </div>
             </header>
@@ -146,12 +150,12 @@ export function CourseNav({
                       </span>
                       <span className="lesson-label">
                         <small>{lesson.number}</small>
-                        <strong>{lesson.title}</strong>
+                        <strong title={lesson.title}>{lesson.title}</strong>
                         <span className="sr-only">
                           {active
                             ? "Current lesson"
                             : state === "evidenced"
-                              ? "Objective checks complete"
+                              ? "Required checks recorded"
                               : locked
                                 ? "Locked"
                                 : "Available"}
@@ -169,21 +173,21 @@ export function CourseNav({
 
       <footer className="nav-footer">
         <div>
-          <span>Objective lesson checks</span>
+          <span>Required lesson checks</span>
           <strong>
             {demonstratedEvidence > 0
-              ? `${demonstratedEvidence} checks passed`
+              ? `${demonstratedEvidence} required checks recorded`
               : "Checks pending"}
           </strong>
         </div>
         <div
           className="evidence-markers"
-          aria-label="Current lesson objective checks"
+          aria-label="Current lesson required checks"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={checkpointActivities.length}
           aria-valuenow={demonstratedEvidence}
-          aria-valuetext={`${demonstratedEvidence} of ${checkpointActivities.length} objective checks passed`}
+          aria-valuetext={`${demonstratedEvidence} of ${checkpointActivities.length} required checks recorded`}
           style={{
             gridTemplateColumns: `repeat(${Math.max(1, checkpointActivities.length)}, minmax(0, 1fr))`,
           }}
@@ -206,10 +210,10 @@ export function CourseNav({
           ))}
         </div>
         <small>
-          Required: supported prediction + controlled comparison
+          Required: supported prediction
           {checkpointActivities.some((activity) => activity.kind === "code-lab")
             ? " + executable checks"
-            : ""}. Every lesson is already authored.
+            : ""}. Prose and comparisons stay formative.
         </small>
       </footer>
     </aside>

@@ -1,7 +1,6 @@
 import {
-  COURSE_REVISION,
-  PREREQUISITE_TRACE_REVISION,
   interactive,
+  lessonRevision,
   pythonLab,
   reading,
   responseActivity,
@@ -74,24 +73,24 @@ export const foundationLessons: Lesson[] = [
     published: true,
     title: "Trace the tools before the model",
     question:
-      "Can you trace Python state, array shape, plot axes, slope, and probability without guessing?",
+      "How do Python values, array shapes, coordinates, slopes, and class counts describe one calculation?",
     summary:
-      "Use a compact diagnostic and repair lab for Python, NumPy, plot coordinates, the chain rule, and a probability baseline.",
-    durationMinutes: 60,
-    revision: PREREQUISITE_TRACE_REVISION,
-    sourceIds: ["S43", "S48", "S58", "S76", "S85"],
+      "Start from the notation itself, then trace a small Python and NumPy program, a composed slope, and a probability baseline.",
+    durationMinutes: 75,
+    revision: lessonRevision("prerequisite-trace"),
+    sourceIds: ["S43", "S48", "S58", "S76", "S85", "S108", "S109"],
     mechanism: {
       input:
-        "A short Python function, a NumPy array, plot coordinates, a composed scalar function, and a class frequency.",
+        "Named values, a short Python function, a table of numbers, plot coordinates, a composed arithmetic rule, and two class counts.",
       process:
-        "Trace program state and dimensions, map columns to axes, multiply local derivatives, and convert counts into a base rate.",
+        "Read each symbol, follow stored values and dimensions, map columns to axes, multiply adjacent slopes, and turn counts into a fraction.",
       output:
         "Verified array and plot shapes, a derivative, and a probability baseline with visible arithmetic.",
     },
     starterQuestions: [
-      "Which dimensions survive a matrix operation?",
-      "How do array rows become x-y coordinates on a plot?",
-      "Where does each factor in a chain-rule derivative come from?",
+      "What do equals signs, brackets, def, and return mean in Python?",
+      "How do rows and columns become x-y coordinates on a plot?",
+      "How do two adjacent slopes and two class counts produce useful comparisons?",
     ],
     prerequisiteConceptIds: [],
     outcomes: [
@@ -121,11 +120,13 @@ export const foundationLessons: Lesson[] = [
       },
     ],
     teaching: {
-      title: "Trace the quantities that machine learning reuses",
+      title: "Start with the notation; no Python or calculus is assumed",
       introduction: [
-        "Machine learning starts with recorded examples. An example is one case, such as one delivery or one sensor reading. A feature is a measured input about that case, and a target is the value or category to be predicted. Tracing matters because a plausible final number can hide a wrong array dimension, a swapped plot axis, or an arithmetic mistake.",
-        "An array is an ordered collection of values. Its shape lists the length of each axis: a 4 by 3 array has four rows and three columns. In a typical data table, rows hold examples and columns hold features. A batch is a group of examples processed together. An array operation may combine one axis while preserving another. If x and prediction are separate one-dimensional arrays, NumPy's column_stack((x, prediction)) turns them into a two-dimensional table: x becomes column zero and prediction becomes column one.",
-        "A slope measures how much one quantity changes when another changes. A derivative is the slope at a particular input. The notation dy/dx means the derivative of output y with respect to input x. This lesson uses two derivative rules: if y = u squared, then dy/du = 2u; if u = 2x + 1, then du/dx = 2. When one calculation feeds another, the chain rule multiplies those adjacent local derivatives. Probability supplies a different trace: a base rate is an observed fraction, and a majority-class baseline is the accuracy obtained by always predicting the most frequent target category.",
+        "This course begins before machine-learning notation. An example is one recorded case, such as one delivery. A feature is a measured input about that case, and a target is the value or category to predict. A class is one possible category, such as positive or negative. Nothing on this page assumes that you already know Python, NumPy, matrix notation, derivatives, or probability.",
+        "Python reads instructions in order. In `count = 3`, the equals sign stores the value 3 under the variable name count; it does not claim that two algebraic expressions are forever equal. Square brackets make a list, so `[1, 2, 3]` is one ordered collection. `def center(values):` begins a reusable function whose indented lines belong to it. Calling `center([1, 2, 3])` supplies a list, and `return` sends the function's result back to the caller. A `for` loop repeats an indented step for each item.",
+        "NumPy is a Python tool for arrays, which are ordered tables of numbers. `import numpy as np` gives that tool the short name `np`, and `np.array([1, 2, 3])` constructs an array. A shape reports axis lengths in order: 4 by 3 means four rows and three columns. Here each row is one example and each column is one feature. If x and prediction are one-dimensional arrays, `np.column_stack((x, prediction))` makes x column zero and prediction column one, so every row is one plotted `(x, y)` coordinate pair.",
+        "Arithmetic notation can be read as instructions too. In `u = 2x + 1`, `2x` means 2 times x; calculate that product and then add 1. In `y = u^2`, the superscript 2 means multiply u by itself. A slope says how much an output changes when an input rises by one. A derivative is the slope at one particular input. For this page, accept two supplied rules: the slope of `u^2` with respect to u is `2u`, and the slope of `2x + 1` with respect to x is 2. The chain rule multiplies those adjacent slopes.",
+        "A probability can begin as a count divided by a total count. If 80 of 100 target labels are negative, the observed negative fraction is 80/100 = 0.80 = 80 percent. A majority-class baseline always predicts the most frequent class, so it is correct on those 80 negative cases and wrong on the 20 positive cases. It uses no features and gives a simple comparison floor for any model evaluated on comparable cases.",
       ],
       vocabulary: [
         {
@@ -134,29 +135,34 @@ export const foundationLessons: Lesson[] = [
             "The current values held by variables at a specific point while a program runs.",
         },
         {
-          term: "NumPy array",
+          term: "Variable and assignment",
           definition:
-            "An ordered, multidimensional collection of values whose axis lengths are reported by its shape.",
+            "A variable is a name for a stored value; Python's equals sign assigns the value on its right to the name on its left.",
         },
         {
-          term: "Shape",
+          term: "Function call and return",
           definition:
-            "The ordered list of axis lengths, such as 4 by 3 for four rows and three columns.",
+            "A function call supplies inputs to reusable instructions, and return sends the computed result back to the caller.",
         },
         {
-          term: "Derivative",
+          term: "Python list",
           definition:
-            "The local rate at which one quantity changes with respect to another quantity.",
+            "An ordered collection written between square brackets, such as three numeric values written as [1, 2, 3].",
         },
         {
-          term: "Derivative notation",
+          term: "NumPy array and shape",
           definition:
-            "In dy/dx, the numerator names the changing output y and the denominator names the input x whose change is being considered.",
+            "An ordered table of values whose shape lists each axis length, such as four rows by three columns.",
         },
         {
-          term: "Chain rule",
+          term: "Coordinate pair",
           definition:
-            "The rule that multiplies adjacent local derivatives when one function is composed with another.",
+            "Two ordered values written as (x, y), where x gives horizontal position and y gives vertical position.",
+        },
+        {
+          term: "Derivative and chain rule",
+          definition:
+            "A derivative is a local slope; the chain rule multiplies adjacent local slopes when one calculation feeds another.",
         },
         {
           term: "Majority-class baseline",
@@ -165,24 +171,24 @@ export const foundationLessons: Lesson[] = [
         },
       ],
       workedExample: {
-        title: "Trace shape, slope, and probability without skipping steps",
+        title: "Read one complete trace from symbols to results",
         setup:
           "A batch contains four examples with three features each. A separate plotting table contains three x-y points. The function uses u = 2x + 1 and y = u squared at x = 1. A dataset with two target categories has 80 negative and 20 positive targets.",
         steps: [
+          {
+            label: "Read the Python symbols",
+            explanation:
+              "`values = [1, 2, 3]` stores one list under the name values. A function call such as `sum(values)` produces 6, `len(values)` produces 3, and division gives the average 2. A function can return a new list after subtracting that average from each item.",
+          },
           {
             label: "Write the batch shape",
             explanation:
               "Four examples form the row axis and three features form the column axis, so the batch shape is 4 by 3.",
           },
           {
-            label: "Trace the matrix result",
+            label: "Trace scores and plot columns",
             explanation:
-              "Multiplying the batch by three weights combines each row's three feature values with the three weights. The feature axis is consumed, while the four-example axis remains, producing four scores.",
-          },
-          {
-            label: "Map the plot columns",
-            explanation:
-              "A 3 by 2 plotting table contains three rows and two values per row. NumPy's column_stack((x, prediction)) constructs that layout from two one-dimensional arrays: column zero supplies three x coordinates and column one supplies the matching three y coordinates.",
+              "Multiplying each four-row example by three weights combines its three feature values and leaves four scores. Separately, `column_stack((x, prediction))` makes a 3 by 2 plotting table: three coordinate-pair rows, with x in column zero and the matching prediction in column one.",
           },
           {
             label: "Evaluate the composed function",
@@ -221,28 +227,30 @@ export const foundationLessons: Lesson[] = [
         },
       ],
       summary: [
+        "Read Python assignment, lists, function calls, loops, and return as explicit state-changing instructions.",
         "Track array axes in order and state which axis an operation combines or preserves.",
         "For a composition, evaluate the intermediate value and multiply the adjacent local derivatives.",
         "Derive a majority baseline from class counts before judging a model's accuracy.",
       ],
-      sourceIds: ["S43", "S48", "S58", "S76", "S85"],
+      sourceIds: ["S43", "S48", "S58", "S76", "S85", "S108", "S109"],
     },
     blocks: [
       {
         id: "00-diagnostic-contract",
         kind: "opening",
-        heading: "This is a trace, not a placement exam",
-        sourceIds: ["S43", "S48", "S58", "S85"],
+        heading: "Start here: this lesson supplies the prerequisites",
+        sourceIds: ["S43", "S58", "S108", "S109"],
         body: [
-          "Machine-learning mechanisms repeatedly reuse three tools: array dimensions, rates of change, and probabilities. The diagnostic asks you to expose the intermediate quantities instead of recognizing a final answer.",
-          "A correct result with no trace is fragile evidence. Keep dimensions beside arrays, name each local derivative, and write the count behind every probability.",
+          "Many introductory machine-learning courses require Python, arrays, algebra, statistics, and sometimes calculus before the first lesson. Trace does not send you elsewhere for that prerequisite: the notation guide above and the worked specimen on this page teach the exact subset used here.",
+          "In the code lab, you are not expected to invent a program. Read the supplied comments and working example, predict the named values, run it, and repair one demonstrated array operation. Later lessons repeat this inspect-before-modify pattern.",
+          "A final number is easier to trust when its intermediate state remains visible. Keep dimensions beside arrays, name each adjacent slope, and write the count behind every probability.",
         ],
         conceptIds: [
           "array-shape",
           "slope-chain-rule",
           "probability-baseline",
         ],
-        tags: ["diagnostic", "trace", "dimensions", "derivative", "base rate"],
+        tags: ["from zero", "Python", "trace", "dimensions", "derivative", "base rate"],
       },
       {
         id: "00-shapes",
@@ -403,13 +411,16 @@ export const foundationLessons: Lesson[] = [
         "00-python-numpy-plot",
         ["python-state", "numpy-array", "plot-axes", "array-shape"],
         "array_plot_trace.py",
-        "Predict the centered list, the NumPy input shape, and the three plotted points before running. First inspect the working COLUMN_STACK_EXAMPLE: each one-dimensional input becomes one column. Then inspect the malformed 2 by 3 plotting table, identify which axis holds observations, and modify only line_points to apply the demonstrated operation. Check the repaired 3 by 2 table.",
+        "Read the supplied program from top to bottom. `def` starts a function, the indented lines belong to it, `for` repeats once per list item, and `return` sends back the result. Predict the centered list, NumPy input shape, and three plotted points before running. Inspect the working COLUMN_STACK_EXAMPLE, then modify only the marked return inside line_points to use the demonstrated column_stack operation. Check the repaired 3 by 2 table.",
         `import numpy as np
 
 
 def center(values):
     average = sum(values) / len(values)
-    return [value - average for value in values]
+    centered = []
+    for value in values:
+        centered.append(value - average)
+    return centered
 
 
 # Two one-dimensional arrays become two columns and one row per position.
@@ -513,7 +524,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
     summary:
       "Separate features, targets, predictions, parameters, training, inference, and a baseline.",
     durationMinutes: 50,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("data-and-baseline"),
     sourceIds: ["S66", "S01", "S13"],
     mechanism: {
       input: "Recorded examples with features and targets.",
@@ -845,7 +856,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
     summary:
       "Connect y_hat = wx + b across equation, table, and graph views.",
     durationMinutes: 50,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("linear-model"),
     sourceIds: ["S67", "S68", "S50"],
     mechanism: {
       input: "One numeric feature x and current parameters w and b.",
@@ -1166,7 +1177,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
     summary:
       "Trace signed residuals into squared errors, mean squared error, and a parameter-indexed loss landscape.",
     durationMinutes: 55,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("loss-landscape"),
     sourceIds: ["S55", "S67"],
     mechanism: {
       input: "Predictions and targets for fixed examples.",
@@ -1572,7 +1583,7 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
     summary:
       "Predict a descent direction, execute the update equation, and diagnose a learning rate that overshoots.",
     durationMinutes: 60,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("gradient-descent"),
     sourceIds: ["S54", "S56", "S69"],
     mechanism: {
       input: "Current parameters, a differentiable loss, and a learning rate.",
@@ -1976,7 +1987,7 @@ print("loss trace:", loss_history)
     summary:
       "Assign training, validation, and test data distinct jobs, then create and repair a controlled selection leak.",
     durationMinutes: 55,
-    revision: COURSE_REVISION,
+    revision: lessonRevision("split-and-leakage"),
     sourceIds: ["S70", "S53"],
     mechanism: {
       input: "Examples partitioned before fitting or model selection.",
@@ -2389,8 +2400,8 @@ print("final test loss:", mean_squared_error(TEST_ROWS, selected_prediction))
     summary:
       "Compare authored polynomial capacities on fixed data states, and keep that evidence distinct from a learning curve.",
     durationMinutes: 60,
-    revision: COURSE_REVISION,
-    sourceIds: ["S71", "S72", "S10"],
+    revision: lessonRevision("capacity-curves"),
+    sourceIds: ["S71", "S72", "S10", "S105"],
     mechanism: {
       input:
         "Authored polynomial capacities, fixed training rows, and separate held-out rows.",
@@ -2530,17 +2541,17 @@ print("final test loss:", mean_squared_error(TEST_ROWS, selected_prediction))
         "Diagnose underfit or overfit from training loss, held-out loss, and the gap between them.",
         "Reserve the term learning curve for repeated fits across multiple training sizes under one fixed evaluation protocol.",
       ],
-      sourceIds: ["S71", "S72", "S10"],
+      sourceIds: ["S71", "S72", "S10", "S105"],
     },
     blocks: [
       {
         id: "06-capacity",
         kind: "opening",
         heading: "Capacity is a set of possible rules",
-        sourceIds: ["S71"],
+        sourceIds: ["S71", "S105"],
         body: [
           "A linear polynomial can represent straight lines. Adding squared and higher-power terms expands the set of curves the model can fit.",
-          "More capacity is not automatically better. It can represent the underlying pattern, but it can also follow sample-specific noise.",
+          "More capacity is not automatically better. It can represent the underlying pattern, but it can also follow sample-specific noise. In the visual lab, a fixed coefficient-size penalty of 0.000001 adds that coefficient times the sum of squared coefficient values to the fitting objective. The tiny term slightly changes every fitted solution and selects one reproducible coefficient vector when the rows do not uniquely determine all coefficients; it is not merely a divide-by-zero guard.",
         ],
         conceptIds: ["model-capacity"],
         tags: ["capacity", "polynomial", "degree", "function family"],
@@ -2601,8 +2612,8 @@ print("final test loss:", mean_squared_error(TEST_ROWS, selected_prediction))
         "capacity-curves",
         ["model-capacity", "learning-curves", "generalization"],
         "Compare polynomial capacity at two authored data states",
-        "Change degree, then compare training and held-out MSE from the same deterministic ridge-stabilized least-squares procedure on the authored five-row and eight-row states. Treat the bars as separate capacity comparisons, not a learning curve.",
-        "Rows, probe points, raw monomial basis, squared-error loss, lambda = 1e-6 stabilizer, and partial-pivot solver remain fixed.",
+        "Change degree, then compare training and held-out MSE from the same deterministic squared-error polynomial fit on the authored five-row and eight-row states. Treat the bars as separate capacity comparisons, not a learning curve.",
+        "Rows, probe points, squared-error loss, and polynomial inputs [1, x, x squared, and so on] remain fixed; each power is used exactly as calculated from x. Every fit also uses the same objective: squared error plus 0.000001 times the sum of squared coefficients. This tiny fixed coefficient-size penalty slightly changes the objective and selects one reproducible coefficient vector when the rows do not uniquely determine all coefficients.",
         "Change only polynomial degree; each degree is refit separately on the five-row and eight-row training sets.",
         {
           label: "Polynomial degree",

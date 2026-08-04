@@ -28,8 +28,6 @@ interface VisualMechanismLabProps {
   enabled: boolean;
   initialState?: VisualLabState;
   persistenceStatus: "persistent" | "memory-only";
-  previouslyDemonstrated: boolean;
-  onEvidence: (response: string) => void;
   onStateChange: (state: VisualLabState) => void;
 }
 
@@ -60,8 +58,6 @@ export function VisualMechanismLab({
   enabled,
   initialState,
   persistenceStatus,
-  previouslyDemonstrated,
-  onEvidence,
   onStateChange,
 }: VisualMechanismLabProps) {
   const control = activity.control ?? FALLBACK_CONTROL;
@@ -92,9 +88,7 @@ export function VisualMechanismLab({
     useState<VisualMechanismObservation | null>(restoredBaseline);
   const [comparison, setComparison] =
     useState<VisualMechanismObservation | null>(restoredComparison);
-  const [recorded, setRecorded] = useState(
-    previouslyDemonstrated || restoredComparison !== null,
-  );
+  const recorded = baseline !== null && comparison !== null;
   const sliderRef = useRef<HTMLInputElement>(null);
   const diagramScrollRef = useRef<HTMLDivElement>(null);
   const [diagramPanState, setDiagramPanState] = useState(
@@ -164,17 +158,6 @@ export function VisualMechanismLab({
       baselineValue: baseline.value,
       comparisonValue: current.value,
     });
-    if (!recorded) {
-      setRecorded(true);
-      onEvidence(
-        [
-          `${control.label}: ${baseline.value} -> ${current.value}.`,
-          `Baseline: ${baseline.primary}; ${baseline.secondary}.`,
-          `Counterfactual: ${current.primary}; ${current.secondary}.`,
-          `Invariant: ${activity.invariant ?? "all non-intervened state"}.`,
-        ].join(" "),
-      );
-    }
   };
 
   const panDiagram = (direction: -1 | 1) => {
@@ -203,7 +186,7 @@ export function VisualMechanismLab({
   return (
     <section
       id={activity.id}
-      className={`visual-mechanism-lab lesson-activity ${recorded ? "demonstrated" : ""}`}
+      className={`visual-mechanism-lab lesson-activity ${recorded ? "recorded" : ""}`}
       aria-labelledby={`${activity.id}-title`}
       tabIndex={-1}
     >
@@ -288,8 +271,17 @@ export function VisualMechanismLab({
               Compare state
             </button>
           </div>
-          <p className="experiment-status" role="status">
-            {!enabled
+          <p
+            className="experiment-status"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {recorded
+              ? persistenceStatus === "persistent"
+                ? "Controlled comparison saved on this device. Understanding is checked separately."
+                : "Controlled comparison recorded for this session only; browser storage is unavailable."
+              : !enabled
               ? "Commit the prediction above before revealing the authored mechanism."
               : !baseline
               ? "Capture the authored starting state before changing the control."

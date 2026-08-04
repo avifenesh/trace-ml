@@ -21,7 +21,7 @@ import {
 import { CAPSTONE_INCIDENT } from "./capstone-incident";
 import {
   COURSE_REVISION,
-  PREREQUISITE_TRACE_REVISION,
+  lessonRevision,
   PYODIDE_ENVIRONMENT,
 } from "./lesson-helpers";
 import {
@@ -102,7 +102,7 @@ const EXPECTED_LESSON_IDS = EXPECTED_MODULES.flatMap(
   (module) => module.lessonIds,
 );
 const EXPECTED_SOURCE_IDS = Array.from(
-  { length: 104 },
+  { length: 109 },
   (_, index) => `S${String(index + 1).padStart(2, "0")}`,
 );
 const CODE_LAB_LESSON_IDS = [
@@ -124,6 +124,11 @@ const RESEARCH_ONLY_SOURCE_IDS = [
   "S12",
   "S54",
   "S64",
+  "S105",
+  "S106",
+  "S107",
+  "S108",
+  "S109",
 ];
 const RUNTIME_MATCHED_SOURCE_URLS = new Map([
   ["S58", "https://numpy.org/doc/2.4/user/whatisnumpy.html"],
@@ -444,11 +449,7 @@ describe("fixed authored course integrity", () => {
 
     lessons.forEach((lesson) => {
       expect(lesson.published, lesson.id).toBe(true);
-      expect(lesson.revision, lesson.id).toBe(
-        lesson.id === "prerequisite-trace"
-          ? PREREQUISITE_TRACE_REVISION
-          : COURSE_REVISION,
-      );
+      expect(lesson.revision, lesson.id).toBe(lessonRevision(lesson.id));
       expect(
         lessonState(lesson, "__no-active-lesson__", emptyRecord),
         lesson.id,
@@ -465,12 +466,12 @@ describe("fixed authored course integrity", () => {
   });
 
   it("protects authored content counts, IDs, and page chunks", () => {
-    expect(allOutcomes).toHaveLength(63);
+    expect(allOutcomes).toHaveLength(64);
     expect(allBlocks).toHaveLength(98);
-    expect(allActivities).toHaveLength(103);
+    expect(allActivities).toHaveLength(104);
     expect(predictionActivities).toHaveLength(21);
     expect(visualLabs).toHaveLength(21);
-    expect(textResponses).toHaveLength(42);
+    expect(textResponses).toHaveLength(43);
     expect(codeLabs).toHaveLength(19);
     expect(allResources).toHaveLength(41);
     expect(
@@ -601,7 +602,8 @@ describe("fixed authored course integrity", () => {
       expect(lesson.outcomes, lesson.id).toHaveLength(
         lesson.id === "linear-model"
           ? 2
-          : lesson.id === "prerequisite-trace"
+          : lesson.id === "prerequisite-trace" ||
+              lesson.id === "shift-monitor"
             ? 4
             : 3,
       );
@@ -720,11 +722,17 @@ describe("fixed authored course integrity", () => {
 
       expect(predictions, lesson.id).toHaveLength(1);
       expect(lessonVisualLabs, lesson.id).toHaveLength(1);
-      expect(responses, lesson.id).toHaveLength(2);
+      expect(responses, lesson.id).toHaveLength(
+        lesson.id === "shift-monitor" ? 3 : 2,
+      );
       expect(
         responses.map((response) => response.evidenceKind).sort(),
         lesson.id,
-      ).toEqual(["explanation", "transfer"]);
+      ).toEqual(
+        lesson.id === "shift-monitor"
+          ? ["explanation", "explanation", "transfer"]
+          : ["explanation", "transfer"],
+      );
 
       const prediction = predictions[0];
       if (!prediction) throw new Error(`Missing prediction: ${lesson.id}`);
@@ -1018,6 +1026,158 @@ describe("fixed authored course integrity", () => {
     );
   });
 
+  it("pins the reviewed curriculum repairs in authored page content", () => {
+    const capacityLesson = getLesson("capacity-curves");
+    const capacityVisual = capacityLesson?.activities.find(
+      (activity) => activity.id === "capacity-curves",
+    );
+    if (!capacityVisual || capacityVisual.kind !== "visual-lab") {
+      throw new Error("Missing capacity visual lab");
+    }
+    const capacityImplementationCopy = [
+      capacityVisual.prompt,
+      capacityVisual.invariant ?? "",
+    ].join(" ");
+    expect(capacityImplementationCopy).toContain(
+      "polynomial inputs [1, x, x squared, and so on]",
+    );
+    expect(capacityImplementationCopy).toContain(
+      "0.000001 times the sum of squared coefficients",
+    );
+    expect(capacityImplementationCopy).toContain(
+      "slightly changes the objective",
+    );
+    expect(capacityImplementationCopy).not.toContain(
+      "only inside the coefficient-fitting arithmetic",
+    );
+    expect(capacityImplementationCopy).not.toMatch(
+      /\b(?:ridge|lambda|partial-pivot|monomial basis)\b/i,
+    );
+
+    const regularizationLesson = getLesson("regularization-path");
+    const ridgeObjective = regularizationLesson?.blocks.find(
+      (block) => block.id === "regularization-objective",
+    )?.body.join(" ");
+    expect(ridgeObjective).toContain(
+      "J_SSE(w) = sum_i (y_i - w * x_i)^2 + lambda_SSE * w^2",
+    );
+    expect(ridgeObjective).toContain(
+      "J_MSE(w) = (1/n) * sum_i (y_i - w * x_i)^2 + lambda_MSE * w^2",
+    );
+    expect(ridgeObjective).toContain(
+      "sum_i x_i^2 + n * lambda_MSE",
+    );
+    expect(ridgeObjective).toContain(
+      "lambda_SSE = n * lambda_MSE",
+    );
+
+    const optimizerLesson = getLesson("optimizer-traces");
+    const adamUpdate = optimizerLesson?.blocks.find(
+      (block) => block.id === "optimizer-state",
+    )?.body.join(" ");
+    expect(adamUpdate).toContain(
+      "m_t = beta1 * m_(t-1) + (1 - beta1) * g_t",
+    );
+    expect(adamUpdate).toContain(
+      "v_t = beta2 * v_(t-1) + (1 - beta2) * g_t^2",
+    );
+    expect(adamUpdate).toContain(
+      "m_hat_t = m_t / (1 - beta1^t)",
+    );
+    expect(adamUpdate).toContain(
+      "v_hat_t = v_t / (1 - beta2^t)",
+    );
+    expect(adamUpdate).toContain(
+      "theta_t = theta_(t-1) - eta * m_hat_t / (sqrt(v_hat_t) + epsilon)",
+    );
+    expect(adamUpdate).toContain(
+      "the denominator is sqrt(v_hat_t) + epsilon, not sqrt(v_hat_t + epsilon)",
+    );
+    expect(adamUpdate).toContain(
+      "m_1 = 0.2 and v_1 = 0.004",
+    );
+    expect(adamUpdate).toContain(
+      "m_hat_1 = 0.2 / 0.1 = 2 and v_hat_1 = 0.004 / 0.001 = 4",
+    );
+    expect(adamUpdate).toContain("approximately 3.9");
+    expect(
+      optimizerLesson?.teaching.vocabulary.find(
+        ({ term }) => term === "Epsilon",
+      )?.definition,
+    ).toContain("after the square root");
+
+    const fairnessLesson = getLesson("shift-monitor");
+    expect(
+      fairnessLesson?.outcomes.find(
+        (outcome) => outcome.id === "shift-fairness-outcome",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        conceptId: "fairness",
+        requiredEvidenceKinds: ["explanation"],
+      }),
+    );
+    const fairnessBlock = fairnessLesson?.blocks.find(
+      (block) => block.id === "shift-fairness",
+    )?.body.join(" ");
+    expect(fairnessBlock).toContain(
+      "Group A has TP = 40, FN = 10, FP = 10, and TN = 40",
+    );
+    expect(fairnessBlock).toContain(
+      "selection rate is (40 + 10) / 100 = 50%",
+    );
+    expect(fairnessBlock).toContain(
+      "true-positive rate is 40 / (40 + 10) = 80%",
+    );
+    expect(fairnessBlock).toContain(
+      "Group B has TP = 20, FN = 20, FP = 0, and TN = 60",
+    );
+    expect(fairnessBlock).toContain(
+      "30-point selection-rate gap violates demographic parity",
+    );
+    expect(fairnessBlock).toContain(
+      "30-point true-positive-rate gap violates equality of opportunity",
+    );
+    expect(fairnessBlock).toContain(
+      "matching the first two metrics would leave a 10-point false-positive-rate gap",
+    );
+    expect(
+      fairnessLesson?.teaching.vocabulary.map(({ term }) => term),
+    ).toEqual(
+      expect.arrayContaining([
+        "Demographic parity",
+        "Equality of opportunity",
+      ]),
+    );
+
+    const fairnessActivity = fairnessLesson?.activities.find(
+      (activity) => activity.id === "shift-clinic-fairness-explanation",
+    );
+    if (!fairnessActivity || fairnessActivity.kind !== "text-response") {
+      throw new Error("Missing authored clinic fairness activity");
+    }
+    expect(fairnessActivity.evidenceKind).toBe("explanation");
+    expect(fairnessActivity.prompt).toContain(
+      "Group East: TP = 27, FN = 3, FP = 15, TN = 55",
+    );
+    expect(fairnessActivity.prompt).toContain(
+      "Group West: TP = 36, FN = 24, FP = 4, TN = 36",
+    );
+    expect(
+      fairnessActivity.rubric.criteria.map(({ label }) => label),
+    ).toEqual(
+      expect.arrayContaining([
+        "compute East and West selection rates as 42% and 40%",
+        "compute East and West true-positive rates as 90% and 60%",
+      ]),
+    );
+    expect(
+      fairnessLesson?.resources.find(
+        (resource) => resource.id === "shift-google-fairness",
+      )?.afterActivityId,
+    ).toBe("shift-clinic-fairness-explanation");
+  });
+
   it("keeps the authored capstone fixture coherent across prose and code", () => {
     const mean = (values: readonly number[]) =>
       values.reduce((total, value) => total + value, 0) /
@@ -1241,10 +1401,45 @@ describe("fixed authored course integrity", () => {
     });
   });
 
-  it("resolves every block and direct resource against 104 audited sources", () => {
-    expect(researchRegistry.generated).toBe("2026-08-03");
-    expect(researchRegistry.totalSources).toBe(104);
-    expect(researchRegistry.sources).toHaveLength(104);
+  it("keeps the documented reading and teaching chunk totals exact", () => {
+    const readingChunks = lessons.flatMap((lesson) =>
+      lesson.blocks.flatMap((block) => block.body)
+    );
+    const teachingChunks = lessons.flatMap(teachingChunksForLesson);
+
+    expect(readingChunks).toHaveLength(204);
+    expect(teachingChunks).toHaveLength(489);
+    expect(readingChunks.length + teachingChunks.length).toBe(693);
+  });
+
+  it("teaches odds, log-odds, and sigmoid as reversible representations", () => {
+    const logistic = getLesson("logistic-link");
+    if (!logistic) throw new Error("Missing logistic-link lesson");
+    const authoredText = [
+      ...logistic.teaching.introduction,
+      ...logistic.teaching.vocabulary.flatMap(({ term, definition }) => [
+        term,
+        definition,
+      ]),
+      ...logistic.teaching.workedExample.steps.map(
+        ({ explanation }) => explanation,
+      ),
+      ...logistic.blocks.flatMap((block) => block.body),
+    ].join(" ");
+
+    expect(logistic.revision).toBe("2026-08-04-r2");
+    expect(authoredText).toContain("p / (1 - p)");
+    expect(authoredText).toContain("z = ln(p / (1 - p))");
+    expect(authoredText).toContain("The two transformations are inverses");
+    expect(authoredText).toContain(
+      "p / (1 - p) = 0.75 / 0.25 = 3",
+    );
+  });
+
+  it("resolves every block and direct resource against 109 audited sources", () => {
+    expect(researchRegistry.generated).toBe("2026-08-04");
+    expect(researchRegistry.totalSources).toBe(109);
+    expect(researchRegistry.sources).toHaveLength(109);
     expect(researchRegistry.sources.map((source) => source.id)).toEqual(
       EXPECTED_SOURCE_IDS,
     );

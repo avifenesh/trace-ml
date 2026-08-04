@@ -772,7 +772,7 @@ export function visualMechanismObservation(
         primary: `degree ${degree}: train ${formatNumber(state.smallTrainLoss)}; validation ${formatNumber(state.smallValidationLoss)}`,
         secondary: `after 3 added examples: train ${formatNumber(state.largeTrainLoss)}; probe ${formatNumber(state.largeProbeLoss)}`,
         explanation:
-          "Every state uses raw powers 1 through x^degree and the same ridge-stabilized least-squares solve. A fixed lambda = 1e-6 makes underdetermined fits unique; partial-pivot Gaussian elimination, all rows, and all probe points stay fixed.",
+          "Every state minimizes squared error plus a fixed 0.000001 times the sum of squared coefficients. That tiny coefficient-size penalty slightly changes the fitted objective and selects one reproducible coefficient vector when the rows do not uniquely determine all coefficients; every input power, row, and probe point stays fixed.",
         metrics: {
           degree,
           smallRowCount: CAPACITY_TRAIN_ROWS.length,

@@ -1,10 +1,10 @@
 {
   "topic": "Evidence base for the fixed authored Trace ML course",
   "slug": "ml-course-research",
-  "generated": "2026-08-03",
+  "generated": "2026-08-04",
   "depth": "deep",
-  "totalSources": 104,
-  "verificationNote": "The original 95 URLs were reported live with HTTP 200 by one of five research lanes or three direct-resource audits on 2026-08-02. Nine claim-specific correction and teaching-design sources were live-validated on 2026-08-03. This registry preserves report-level metadata; unknown exact dates are null or qualified rather than inferred.",
+  "totalSources": 109,
+  "verificationNote": "The original 95 URLs were reported live with HTTP 200 by one of five research lanes or three direct-resource audits on 2026-08-02. Nine claim-specific correction and teaching-design sources were live-validated on 2026-08-03. Three exact sources for the ridge objective, demographic parity, and equality of opportunity were live-validated on 2026-08-04. This registry preserves report-level metadata; unknown exact dates are null or qualified rather than inferred.",
   "qualityScoring": {
     "method": "learn skill weighted rubric",
     "formula": "authority*3 + recency*2 + depth*2 + examples*2 + uniqueness",
@@ -1489,6 +1489,76 @@
       "keyInsights": ["In a randomized study of 164 adults, prompting learners to retrieve each upcoming step in later isomorphic worked examples improved one-week recall and problem-solving performance relative to stepwise example study without retrieval prompts."],
       "limitations": ["The study used two triplets of isomorphic examples with adult online participants; it does not validate Trace ML's complete lesson sequence or immediate choice questions."],
       "designImplications": ["Present a complete worked mechanism, then require retrieval on an analogous case whose decisive values and answer were not already disclosed."]
+    },
+    {
+      "id": "S105",
+      "url": "https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html",
+      "title": "sklearn.linear_model.Ridge",
+      "publisher": "scikit-learn developers",
+      "type": "official framework API reference",
+      "publicationOrUpdateDate": null,
+      "dateNote": "The current stable API page, objective equation, and L2 regularization-strength definition were live-validated on 2026-08-04.",
+      "verifiedAt": "2026-08-04",
+      "qualityScores": {"authority": 10, "recency": 10, "depth": 9, "examples": 8, "uniqueness": 8, "total": 92},
+      "keyInsights": ["Ridge minimizes squared error plus alpha times the squared L2 norm of the coefficient vector, so a nonzero alpha changes the fitting objective rather than acting only as a numerical division guard."],
+      "limitations": ["The API covers a general estimator and multiple solvers; Trace ML uses a fixed tiny penalty and its own deterministic elimination routine for a small visual mechanism."],
+      "designImplications": ["Describe the fixed 0.000001 term as a small coefficient-size penalty that changes the objective and selects a reproducible solution when the rows do not uniquely determine coefficients."]
+    },
+    {
+      "id": "S106",
+      "url": "https://developers.google.com/machine-learning/crash-course/fairness/demographic-parity",
+      "title": "Fairness: Demographic parity",
+      "publisher": "Google for Developers",
+      "type": "official course reference",
+      "publicationOrUpdateDate": "2025-08-25",
+      "dateNote": "The official page, overall acceptance-rate comparison, benefits, and limitations were live-validated on 2026-08-04.",
+      "verifiedAt": "2026-08-04",
+      "qualityScores": {"authority": 10, "recency": 9, "depth": 9, "examples": 9, "uniqueness": 9, "total": 93},
+      "keyInsights": ["Demographic parity compares overall positive-decision or acceptance rates across demographic groups without conditioning on individual qualification or the outcome label."],
+      "limitations": ["Equal selection rates can overlook differences within groups and do not by themselves determine whether a system is fair in context."],
+      "designImplications": ["Compute group selection rates from all cases, report the observed gap without inventing a universal tolerance, and keep the metric separate from stakeholder judgment."]
+    },
+    {
+      "id": "S107",
+      "url": "https://developers.google.com/machine-learning/crash-course/fairness/equality-of-opportunity",
+      "title": "Fairness: Equality of opportunity",
+      "publisher": "Google for Developers",
+      "type": "official course reference",
+      "publicationOrUpdateDate": "2025-12-03",
+      "dateNote": "The official page, qualified-subset acceptance comparison, benefits, and limitations were live-validated on 2026-08-04.",
+      "verifiedAt": "2026-08-04",
+      "qualityScores": {"authority": 10, "recency": 9, "depth": 9, "examples": 9, "uniqueness": 9, "total": 93},
+      "keyInsights": ["Equality of opportunity compares positive-decision rates within the actually positive or otherwise qualified subset of each group, corresponding to a true-positive-rate comparison."],
+      "limitations": ["The metric depends on trustworthy outcome labels and a meaningful preferred outcome; equal true-positive rates alone do not settle all fairness consequences."],
+      "designImplications": ["Compute true-positive rates only from actually positive cases, compare their observed gap with the selection-rate gap, and retain the label-quality and stakeholder-context boundary."]
+    },
+    {
+      "id": "S108",
+      "url": "https://developers.google.com/machine-learning/crash-course/prereqs-and-prework?hl=en",
+      "title": "Prerequisites and prework",
+      "publisher": "Google for Developers",
+      "type": "official course reference",
+      "publicationOrUpdateDate": "2025-08-25",
+      "dateNote": "The official prerequisite page, including its Python, NumPy, algebra, linear algebra, statistics, and optional calculus expectations, was live-validated on 2026-08-04.",
+      "verifiedAt": "2026-08-04",
+      "qualityScores": {"authority": 10, "recency": 9, "depth": 8, "examples": 8, "uniqueness": 10, "total": 90},
+      "keyInsights": ["A course described as serving beginners can still require prior Python, NumPy, algebra, statistics, and optional calculus, so a genuinely from-zero course must author those missing foundations rather than silently inherit them."],
+      "limitations": ["The page inventories prerequisites for Google's course; it does not establish one ideal order or teaching method for Trace ML's zero-onramp."],
+      "designImplications": ["Teach the exact Python and mathematical notation used in Lesson 00 before asking the learner to predict, manipulate, explain, transfer, or repair code."]
+    },
+    {
+      "id": "S109",
+      "url": "https://docs.python.org/3/tutorial/introduction.html",
+      "title": "An Informal Introduction to Python",
+      "publisher": "Python Software Foundation",
+      "type": "official language tutorial",
+      "publicationOrUpdateDate": "2026-08-04",
+      "dateNote": "The Python 3.14.6 tutorial sections on arithmetic, assignment, lists, and len were live-validated on 2026-08-04.",
+      "verifiedAt": "2026-08-04",
+      "qualityScores": {"authority": 10, "recency": 10, "depth": 9, "examples": 10, "uniqueness": 10, "total": 98},
+      "keyInsights": ["Python assignment binds names to values, square brackets construct lists, arithmetic expressions can be evaluated directly, and len reports the number of items in a sequence."],
+      "limitations": ["The tutorial is a language reference and introduction, not evidence that one syntax sequence is instructionally optimal or a guide to NumPy arrays."],
+      "designImplications": ["Define assignment, lists, function calls, loops, and return in plain language before the first editable Python specimen."]
     }
   ]
 }

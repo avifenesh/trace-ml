@@ -2,7 +2,7 @@
 
 **Research date:** 2026-08-02, with claim-specific corrections validated 2026-08-03  
 **Depth:** Deep  
-**Sources:** 104 live-validated resources
+**Sources:** 109 live-validated resources
 **Product:** Fixed, authored 21-lesson machine-learning course  
 **Source registry:** `resources/ml-course-research-sources.json`
 
@@ -29,7 +29,7 @@ remediation, or certify mastery.
 
 `data and prediction -> linear models -> loss -> optimization -> generalization -> classification -> features and classical models -> neural networks -> representation architectures -> sequential decisions -> deployment diagnosis`
 
-This order reflects substantial convergence among current official courses while remaining suitable for learners who know basic linear algebra and ML vocabulary but lack mechanism-level understanding. `[S01-S15]`
+This order reflects substantial convergence among current official courses. Those courses often call themselves beginner-friendly while still requiring Python, NumPy, algebra, statistics, and sometimes calculus. Trace therefore authors a Lesson 00 zero-onramp and assumes no prior ML, Python, NumPy, matrix, derivative, or probability vocabulary. `[S01-S15] [S108-S109]`
 
 **Product constraint:** The chatbot is a small, optional side feature. It may answer a learner's question about the current authored page, ask a clarifying question, or restate the page more simply. It may not teach a separate lesson, choose the next topic, alter the sequence, create material, grade, unlock progression, or estimate mastery.
 
@@ -81,9 +81,12 @@ Summaries are original, short, and copyright-safe. They capture implications rat
 
 **Sourced finding:** A recurring exercise structure is derive or trace, implement from scratch, use a library, and diagnose failure. `[S05-S12]`
 
+**Sourced finding:** A beginner label does not imply a from-zero prerequisite boundary. Google MLCC explicitly expects Python, NumPy, algebra, linear algebra, statistics, and optional calculus, while the official Python tutorial separately introduces assignment, arithmetic, lists, and sequence length. `[S108-S109]`
+
 ### Synthesized Design Decisions
 
 - Keep a fixed authored sequence. Remediation may repeat or expose an authored hint, but no runtime system changes the curriculum.
+- Teach the exact Python and mathematical notation used by the course inside Lesson 00; external prework may reinforce it but cannot be required.
 - Slow down the shared foundational order so each lesson can expose a mechanism, its assumptions, and a failure mode.
 - Introduce framework APIs only after the learner can trace the relevant mechanism in a small example.
 - Treat current LLM, agent, diffusion, and GNN content as post-course electives. Lesson 18 covers transformer mechanics because attention is now foundational, but not LLM product engineering.
@@ -185,15 +188,18 @@ Slider movement, elapsed time, and visiting controls are activity telemetry, not
 - Current scikit-learn material is strongest for pipelines, leakage prevention, model selection, and evaluation after core concepts. `[S07]`
 - PyTorch `gradcheck` compares analytical derivatives with finite-difference approximations at tested inputs and tolerances; a pass supports derivative implementation but not the model or objective. `[S100]`
 - PyTorch's momentum convention initializes the first buffer from the first gradient, while Adam carries first and second gradient moments and bias-corrects both. These exact state conventions must be visible whenever the course claims to reproduce them. `[S101-S102]`
+- Ridge minimizes squared error plus a coefficient-size penalty. Even a tiny nonzero penalty changes the objective; in an underdetermined fit it can select one reproducible coefficient vector. `[S105]`
+- Demographic parity compares overall positive-decision rates, while equality of opportunity compares positive-decision rates among actually positive or otherwise qualified cases. Neither metric supplies a universal fairness tolerance or settles stakeholder consequences alone. `[S106-S107]`
 
 ### Synthesized Progression
 
-1. **After loss:** Run a prewritten 12-20 line pure-Python specimen using scalar arithmetic, lists, and `math`. Predict output and loss before execution.
-2. **At gradient direction:** Modify one update expression and learning-rate value. Never require a blank-file optimizer as the first code task.
-3. **At vectors and batches:** Introduce NumPy when shapes, multiple features, one-hot vectors, or batching are visible subject matter.
-4. **At backpropagation:** Hand-trace one tiny branched scalar graph, add both routes into a shared parameter, verify several signed states with finite differences, then introduce autograd. Do not build a general autodiff engine.
-5. **At evaluation:** Introduce scikit-learn pipelines, splitting, cross-validation, baselines, and parameter search.
-6. **Across all code:** Predict before run, expose state, include held-out tests, and require an explanation of a failure and its repair.
+1. **Zero-onramp:** Read assignment, lists, function calls, loops, return, NumPy construction, shapes, and plot coordinates in a supplied specimen; repair one demonstrated array operation rather than inventing code.
+2. **After loss:** Run a prewritten 12-20 line pure-Python specimen using scalar arithmetic, lists, and `math`. Predict output and loss before execution.
+3. **At gradient direction:** Modify one update expression and learning-rate value. Never require a blank-file optimizer as the first code task.
+4. **At vectors and batches:** Use NumPy after its array and shape notation has been explicitly introduced.
+5. **At backpropagation:** Hand-trace one tiny branched scalar graph, add both routes into a shared parameter, verify several signed states with finite differences, then introduce autograd. Do not build a general autodiff engine.
+6. **At evaluation:** Introduce scikit-learn pipelines, splitting, cross-validation, baselines, and parameter search.
+7. **Across all code:** Predict before run, expose state, include held-out tests, and require an explanation of a failure and its repair.
 
 ## Fixed Authored Lesson Spine
 
@@ -201,7 +207,7 @@ This is a **synthesized design decision**, informed by the curriculum matrix and
 
 | ID | Authored lesson | Required mechanism evidence |
 |---|---|---|
-| 00 | Prerequisite diagnostic: Python, NumPy, plots, slope, chain rule, probability | Trace array shapes and complete one derivative and one probability calculation; only authored repair branches are available |
+| 00 | Zero-onramp: Python values, NumPy shapes, plot coordinates, arithmetic notation, slope, chain rule, and class-count probability | Read every introduced symbol, trace array shapes, complete one supplied derivative rule and one count-based probability, then make one demonstrated code repair |
 | 01 | Data, examples, targets, predictions, parameters, training vs. inference, baselines | Identify what changes during learning and beat a mean or majority baseline |
 | 02 | One-feature linear model | Predict how weight and bias move the line, then verify with linked equation and graph views |
 | 03 | Residuals, MSE, and the loss landscape | Trace every example's loss contribution and explain outlier sensitivity |
@@ -314,16 +320,18 @@ This architecture supports Q&A reliability only. It does not give the chatbot an
 
 The prose assessor is not the page Q&A chatbot and is not a curriculum agent.
 It receives one authored page, one authored prompt, the authored criterion
-labels, and one learner response. Its only output is a schema-validated
-formative assessment for that response.
+labels, and one learner response. Its only model output is a schema-validated
+partition of criterion IDs into matched, missing, and uncertain sets.
 
 Allowed:
 
 - Judge intended conceptual meaning rather than exact keyword overlap.
 - Accept clear novice paraphrases, minor language errors, and concise answers.
-- Identify which authored criteria are supported or need revision.
-- Acknowledge the strongest correct idea and direct the learner toward the
-  single most important missing or mistaken causal link.
+- Identify which authored criteria are supported, missing, or uncertain.
+
+Rust derives the formative level. Learner-facing acknowledgement and revision
+direction come only from authored feedback and criterion labels; the model does
+not write feedback, a replacement answer, or new teaching.
 
 Forbidden:
 
@@ -337,9 +345,9 @@ The webview sends authored IDs and the learner draft; Rust resolves the trusted
 lesson text and rubric from a generated manifest compiled into the app. The
 desktop backend sends one direct HTTPS request with strict structured output,
 validates that matched, missing, and uncertain IDs exactly partition the
-authored criteria, and rejects inconsistent levels. One active request is
-cancellable and rate-limited. Results remain revision-scoped formative
-activity state and never become concept evidence. The request sets
+authored criteria, derives the level, and renders authored feedback. One active
+request is cancellable and rate-limited. Results remain revision-scoped
+formative activity state and never become concept evidence. The request sets
 `store: false`, but remote retention and provider sharing remain governed by
 the effective AWS account/project policy. The configured account reported
 `provider_data_share` during the 2026-08-03 verification, so zero data

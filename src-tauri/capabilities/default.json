@@ -56,6 +56,12 @@
           "url": "https://developers.google.com/machine-learning/crash-course/embeddings/obtaining-embeddings"
         },
         {
+          "url": "https://developers.google.com/machine-learning/crash-course/fairness/demographic-parity"
+        },
+        {
+          "url": "https://developers.google.com/machine-learning/crash-course/fairness/equality-of-opportunity"
+        },
+        {
           "url": "https://developers.google.com/machine-learning/crash-course/fairness/evaluating-for-bias"
         },
         {
@@ -98,6 +104,9 @@
           "url": "https://developers.google.com/machine-learning/crash-course/overfitting/regularization?hl=en"
         },
         {
+          "url": "https://developers.google.com/machine-learning/crash-course/prereqs-and-prework?hl=en"
+        },
+        {
           "url": "https://developers.google.com/machine-learning/crash-course/production-ml-systems/monitoring#write_a_data_schema_to_validate_raw_data"
         },
         {
@@ -105,6 +114,9 @@
         },
         {
           "url": "https://distill.pub/2019/visual-exploration-gaussian-processes/"
+        },
+        {
+          "url": "https://docs.python.org/3/tutorial/introduction.html"
         },
         {
           "url": "https://docs.pytorch.org/docs/stable/generated/torch.autograd.gradcheck.gradcheck.html"
@@ -294,6 +306,9 @@
         },
         {
           "url": "https://scikit-learn.org/stable/modules/compose.html#pipeline-chaining-estimators"
+        },
+        {
+          "url": "https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html"
         },
         {
           "url": "https://seeing-theory.brown.edu/basic-probability/index.html"
