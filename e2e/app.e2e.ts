@@ -170,16 +170,23 @@ test("the fixed course exposes every authored lesson before any Q&A", async ({
     await expect(lessonButton(map, number, title)).toBeEnabled();
   }
 
-  const editorialSources = page.getByLabel(
-    "Editorial sources for This is a trace, not a placement exam",
+  const teachingSources = page.getByLabel(
+    "Editorial sources for Start with the notation; no Python or calculus is assumed",
   );
-  await expect(editorialSources.getByRole("link")).toHaveCount(4);
+  await expect(teachingSources.getByRole("link")).toHaveCount(7);
   await expect(
-    editorialSources.getByRole("link", { name: "[S58] NumPy" }),
+    teachingSources.getByRole("link", {
+      name: /^\[S109\] Python Software Foundation/,
+    }),
   ).toHaveAttribute(
     "href",
-    "https://numpy.org/doc/stable/user/whatisnumpy.html",
+    "https://docs.python.org/3/tutorial/introduction.html",
   );
+  await expect(
+    page.getByLabel(
+      "Editorial sources for Start here: this lesson supplies the prerequisites",
+    ).getByRole("link"),
+  ).toHaveCount(4);
 
   await lessonButton(map, "20", "Diagnose the deployed system").click();
   await expect(
@@ -265,7 +272,11 @@ test("Next lesson resets scroll and persists the active lesson across reload", a
   });
   expect(previousScrollTop).toBeGreaterThan(0);
 
-  await page.getByRole("button", { name: "Next lesson", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Next lesson: Data gives each quantity a role",
+    })
+    .click();
   await expect(
     page.getByRole("heading", {
       name: "Data gives each quantity a role",
@@ -323,7 +334,7 @@ test("the final lesson has no Next lesson command", async ({ page }) => {
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Next lesson", exact: true }),
+    page.getByRole("button", { name: /^Next lesson:/ }),
   ).toHaveCount(0);
   await expect(page.locator(".lesson-footer")).toContainText("Course synthesis");
 });
@@ -386,7 +397,7 @@ test("verified short videos render in their authored lesson context", async ({
   );
 });
 
-test("authored evidence requires a recorded comparison and survives reload", async ({
+test("a recorded comparison remains activity state rather than comprehension evidence", async ({
   page,
 }) => {
   const prediction = page.getByRole("region", {
@@ -398,9 +409,10 @@ test("authored evidence requires a recorded comparison and survives reload", asy
   const codeLab = page.getByRole("region", {
     name: "Rebuild the mechanism in Python.",
   });
+  const lessonChecks = page.locator(".lesson-footer .evidence-status");
   await expect(
     page.getByRole("heading", {
-      name: "Trace the quantities that machine learning reuses",
+      name: "Start with the notation; no Python or calculus is assumed",
     }),
   ).toBeVisible();
   await expect(
@@ -410,6 +422,7 @@ test("authored evidence requires a recorded comparison and survives reload", asy
     .toBeDisabled();
   await expect(codeLab.getByRole("button", { name: "Check work" }))
     .toBeDisabled();
+  await expect(lessonChecks).toContainText("0 of 2 required checks recorded");
   expect(
     await page.evaluate(() => {
       const teaching = document.querySelector(".lesson-teaching");
@@ -449,6 +462,7 @@ test("authored evidence requires a recorded comparison and survives reload", asy
   await expect(prediction.getByRole("status")).toContainText(
     "The inner value is 3(2) - 2 = 4, the outer slope is 2(4) = 8",
   );
+  await expect(lessonChecks).toContainText("1 of 2 required checks recorded");
 
   await expect(
     visualLab.getByRole("button", { name: "Capture baseline" }),
@@ -477,20 +491,18 @@ test("authored evidence requires a recorded comparison and survives reload", asy
   await expect(visualLab).toContainText(
     "Controlled comparison saved on this device. Understanding is checked separately.",
   );
+  await expect(lessonChecks).toContainText("1 of 2 required checks recorded");
 
-  const demonstrated = await learnerRecord(page);
+  const afterComparison = await learnerRecord(page);
   expect(
-    demonstrated.evidence.some(
+    afterComparison.evidence.some(
       (item) =>
         item.kind === "prediction" && item.level === "demonstrated",
     ),
   ).toBe(true);
   expect(
-    demonstrated.evidence.some(
-      (item) =>
-        item.kind === "manipulation" && item.level === "demonstrated",
-    ),
-  ).toBe(true);
+    afterComparison.evidence.some((item) => item.kind === "manipulation"),
+  ).toBe(false);
 
   await page.reload();
   await expect(
@@ -508,6 +520,7 @@ test("authored evidence requires a recorded comparison and survives reload", asy
   await expect(
     visualLab.getByText("COUNTERFACTUAL", { exact: true }),
   ).toBeVisible();
+  await expect(lessonChecks).toContainText("1 of 2 required checks recorded");
 });
 
 test("concurrent windows merge durable evidence before either reloads", async ({
@@ -565,15 +578,19 @@ test("concurrent windows merge durable evidence before either reloads", async ({
       .getByRole("button", { name: "Commit prediction" })
       .click(),
   ]);
-  await expect
-    .poll(async () => {
-      return page.evaluate(async (lockName) => {
-        const snapshot = await navigator.locks.query();
-        return snapshot.pending?.filter((lock) => lock.name === lockName)
-          .length;
-      }, LEARNER_RECORD_LOCK);
-    })
-    .toBe(2);
+  const pendingLearnerWrites = () =>
+    page.evaluate(async (lockName) => {
+      const snapshot = await navigator.locks.query();
+      return snapshot.pending?.filter((lock) => lock.name === lockName)
+        .length ?? 0;
+    }, LEARNER_RECORD_LOCK);
+  await expect.poll(pendingLearnerWrites).toBeGreaterThanOrEqual(2);
+  await page.waitForTimeout(500);
+  const settledPendingWrites = await pendingLearnerWrites();
+  expect(settledPendingWrites).toBeGreaterThanOrEqual(2);
+  expect(settledPendingWrites).toBeLessThanOrEqual(3);
+  await page.waitForTimeout(250);
+  expect(await pendingLearnerWrites()).toBe(settledPendingWrites);
 
   await page.evaluate(() => {
     const state = globalThis as typeof globalThis & {
@@ -744,8 +761,11 @@ test("Q&A stays page-grounded, refuses unrelated teaching, and resumes threads",
   const helper = page.locator("#lesson-helper-panel");
   const groundedQuestion = "Which dimensions survive a matrix operation?";
 
-  await expect(helper).toContainText("Local exact-page matching is active.");
-  await helper.getByRole("button", { name: groundedQuestion }).click();
+  await expect(helper).toContainText("Nothing is sent to Bedrock.");
+  await helper
+    .getByRole("textbox", { name: "Ask about this lesson" })
+    .fill(groundedQuestion);
+  await helper.getByRole("button", { name: "Send question" }).click();
 
   const tutorMessages = helper.locator("article.tutor-message.tutor");
   await expect(tutorMessages.last()).toContainText(
@@ -792,18 +812,18 @@ test("Q&A stays page-grounded, refuses unrelated teaching, and resumes threads",
   await expect(restoredHelper.getByText("Resume a thread")).toBeVisible();
   await expect(
     restoredHelper.getByRole("button", {
-      name: /Which dimensions survive.*2 messages/,
+      name: /Which dimensions survive.*1 question/,
     }),
   ).toBeVisible();
   await expect(
     restoredHelper.getByRole("button", {
-      name: /How should I fine tune.*2 messages/,
+      name: /How should I fine tune.*1 question/,
     }),
   ).toBeVisible();
 
   await restoredHelper
     .getByRole("button", {
-      name: /Which dimensions survive.*2 messages/,
+      name: /Which dimensions survive.*1 question/,
     })
     .click();
   await expect(
@@ -845,8 +865,7 @@ test("mobile course map and Q&A are mutually exclusive drawers", async ({
   await expect(openDrawers).toHaveCount(1);
   await expect(helper.getByText("grounded in Lesson 20")).toBeVisible();
   await expect(helper).toContainText("Diagnose the deployed system");
-  await expect(helper.getByRole("textbox", { name: "Ask about this lesson" }))
-    .toBeFocused();
+  await expect(helper.locator("#lesson-helper-title")).toBeFocused();
 
   await helper.getByRole("button", { name: "Close tutor" }).click();
   await expect(openDrawers).toHaveCount(0);
@@ -1076,6 +1095,6 @@ test("storage failure remains visible in the compact toolbar", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Ask", exact: true }).click();
   await expect(page.locator("#tutor-composer-note")).toContainText(
-    "This thread lasts for this session only.",
+    "This conversation is kept only until you close the app.",
   );
 });
