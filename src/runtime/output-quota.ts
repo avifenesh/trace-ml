@@ -1,3 +1,5 @@
+import { RUNTIME_PROTOCOL_LIMITS } from "./protocol";
+
 type OutputStream = "stdout" | "stderr";
 
 export interface TruncatedUtf8 {
@@ -50,6 +52,7 @@ export class Utf8TextQuota {
 export class OutputQuota {
   readonly #maxBytes: number;
   readonly #maxLines: number;
+  readonly #maxChunks: number;
   readonly #decoders = {
     stdout: new TextDecoder("utf-8", { fatal: true }),
     stderr: new TextDecoder("utf-8", { fatal: true }),
@@ -63,15 +66,25 @@ export class OutputQuota {
   #bytesProduced = 0;
   #lineCount = 0;
   #lineLimitReached = false;
+  #chunkLimitReached = false;
   #truncated = false;
 
-  constructor(maxBytes: number, maxLines: number) {
+  constructor(
+    maxBytes: number,
+    maxLines: number,
+    maxChunks: number = RUNTIME_PROTOCOL_LIMITS.maxOutputChunks,
+  ) {
     this.#maxBytes = Math.max(1, maxBytes);
     this.#maxLines = Math.max(1, maxLines);
+    this.#maxChunks = Math.max(1, maxChunks);
   }
 
   write(stream: OutputStream, buffer: Uint8Array) {
     this.#bytesProduced += buffer.byteLength;
+    if (this.#chunkLimitReached) {
+      this.#truncated = true;
+      return buffer.byteLength;
+    }
     const remainingBytes = this.#maxBytes - this.#acceptedBytes;
     if (remainingBytes <= 0) {
       this.#truncated = true;
@@ -113,8 +126,18 @@ export class OutputQuota {
   }
 
   #append(stream: OutputStream, value: string) {
-    if (!value || this.#lineLimitReached) {
+    if (!value || this.#lineLimitReached || this.#chunkLimitReached) {
       if (value) this.#truncated = true;
+      return;
+    }
+    const previous = this.#chunks.at(-1);
+    if (
+      previous &&
+      previous.stream !== stream &&
+      this.#chunks.length >= this.#maxChunks
+    ) {
+      this.#chunkLimitReached = true;
+      this.#truncated = true;
       return;
     }
 
@@ -133,7 +156,6 @@ export class OutputQuota {
     const accepted = value.slice(0, end);
     this.#output[stream] += accepted;
     if (accepted) {
-      const previous = this.#chunks.at(-1);
       if (previous?.stream === stream) {
         previous.text += accepted;
       } else {

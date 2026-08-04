@@ -14,6 +14,7 @@ import {
   truncateUtf8,
   Utf8TextQuota,
 } from "./output-quota";
+import { finishPythonOutput } from "./python-output";
 import {
   isWorkerConnectRequest,
   isWorkerRequest,
@@ -239,6 +240,29 @@ __trace_create_check_evaluator()
   }) as PyCallable;
 }
 
+function createPythonOutputFlusher(
+  runtime: PyodideAPI,
+  globals: PyProxy,
+) {
+  return runtime.runPython(`
+def __trace_create_output_flusher():
+    import sys
+    flush_stdout = sys.stdout.flush
+    flush_stderr = sys.stderr.flush
+
+    def flush():
+        flush_stdout()
+        flush_stderr()
+
+    return flush
+
+__trace_create_output_flusher()
+`, {
+    filename: "trace-output-flusher.py",
+    globals,
+  }) as PyCallable;
+}
+
 function capCheck(
   check: AssessmentCheckResult,
   quota: Utf8TextQuota,
@@ -274,15 +298,24 @@ async function run(
   });
 
   let globals: PyProxy | undefined;
+  let outputFlusherGlobals: PyProxy | undefined;
+  let outputFlusher: PyCallable | undefined;
   let trustedCheckGlobals: PyProxy | undefined;
   let trustedCheckEvaluator: PyCallable | undefined;
   const payloadQuota = new Utf8TextQuota(request.maxOutputBytes);
   let finishedOutput: ReturnType<OutputQuota["finish"]> | undefined;
   const finishOutput = () => {
-    finishedOutput ??= output.finish();
+    finishedOutput ??= finishPythonOutput(outputFlusher, () =>
+      output.finish()
+    );
     return finishedOutput;
   };
   try {
+    outputFlusherGlobals = createPythonNamespace(pyodide);
+    outputFlusher = createPythonOutputFlusher(
+      pyodide,
+      outputFlusherGlobals,
+    );
     globals = createPythonNamespace(pyodide);
     if (request.checks.length > 0) {
       trustedCheckGlobals = createPythonNamespace(pyodide);
@@ -377,6 +410,8 @@ async function run(
     ) {
       globals.destroy();
     }
+    outputFlusher?.destroy();
+    outputFlusherGlobals?.destroy();
     trustedCheckEvaluator?.destroy();
     trustedCheckGlobals?.destroy();
     running = false;

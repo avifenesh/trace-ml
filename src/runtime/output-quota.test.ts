@@ -4,6 +4,10 @@ import {
   truncateUtf8,
   Utf8TextQuota,
 } from "./output-quota";
+import {
+  isWorkerMessage,
+  RUNTIME_PROTOCOL_LIMITS,
+} from "./protocol";
 
 const bytes = (value: string) => new TextEncoder().encode(value);
 
@@ -83,6 +87,59 @@ describe("Python output quota", () => {
     expect(output.finish()).toMatchObject({
       stdout: "one\ntwo",
       outputTruncated: true,
+    });
+  });
+
+  it("caps alternating stream chunks at the worker protocol limit", () => {
+    const output = new OutputQuota(10_000, 10_000);
+    for (
+      let index = 0;
+      index < RUNTIME_PROTOCOL_LIMITS.maxOutputChunks + 10;
+      index += 1
+    ) {
+      output.write(index % 2 === 0 ? "stdout" : "stderr", bytes("x"));
+    }
+
+    const result = output.finish();
+    expect(result.output).toHaveLength(
+      RUNTIME_PROTOCOL_LIMITS.maxOutputChunks,
+    );
+    expect(result.stdout.length + result.stderr.length).toBe(
+      RUNTIME_PROTOCOL_LIMITS.maxOutputChunks,
+    );
+    expect(result.outputTruncated).toBe(true);
+    expect(result.bytesProduced).toBe(
+      RUNTIME_PROTOCOL_LIMITS.maxOutputChunks + 10,
+    );
+    expect(
+      isWorkerMessage({
+        type: "run-result",
+        runId: "chunk-limit",
+        result: {
+          status: "completed",
+          ...result,
+          result: null,
+          checks: [],
+          error: null,
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it("continues coalescing one stream at the chunk limit", () => {
+    const output = new OutputQuota(100, 100, 2);
+    output.write("stdout", bytes("a"));
+    output.write("stderr", bytes("b"));
+    output.write("stderr", bytes("c"));
+
+    expect(output.finish()).toMatchObject({
+      stdout: "a",
+      stderr: "bc",
+      output: [
+        { stream: "stdout", text: "a" },
+        { stream: "stderr", text: "bc" },
+      ],
+      outputTruncated: false,
     });
   });
 });

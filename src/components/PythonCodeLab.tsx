@@ -197,6 +197,7 @@ export function PythonCodeLab({
         },
       ]);
     } finally {
+      if (!assessment) currentRunner.restart();
       if (sequence === runSequence.current) {
         runInFlight.current = false;
         pendingOutputFocus.current = true;
