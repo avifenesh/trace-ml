@@ -272,6 +272,16 @@ export function PythonCodeLab({
     selectionStart?: number,
     selectionEnd?: number,
   ) => {
+    if (nextSource === source) return;
+    runSequence.current += 1;
+    runInFlight.current = false;
+    pendingOutputFocus.current = false;
+    runner.current?.dispose();
+    runner.current = null;
+    setStatus("idle");
+    setResult(null);
+    setChecks([]);
+    setActiveView("editor");
     setSource(nextSource);
     onStateChange({ kind: "code-lab", source: nextSource });
     if (selectionStart === undefined) return;
@@ -531,8 +541,9 @@ export function PythonCodeLab({
                     <span>
                       <strong>{check.label}</strong>
                       <small>
-                        {check.error ??
-                          `actual ${check.actual} · expected ${check.expected}`}
+                        {check.passed
+                          ? `actual ${check.actual} · expected ${check.expected}`
+                          : `Fix "${check.label}": expected ${check.expected}, but the run produced ${check.actual}.${check.error ? ` Runtime error: ${check.error}.` : ""} Edit the source, then run Check work again.`}
                       </small>
                     </span>
                   </li>
@@ -543,9 +554,9 @@ export function PythonCodeLab({
         </div>
       </div>
       <footer className="code-contract-note">
-        Practice runs reuse one worker. “Check work” starts a clean worker,
+        Every practice run and “Check work” attempt starts a fresh worker,
         records Python and pinned package versions in its environment digest,
-        and destroys it afterward.
+        and destroys the worker afterward.
       </footer>
     </section>
   );

@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CodeLabActivity } from "../content/types";
@@ -76,23 +78,56 @@ const completedResult: RunResult = {
   },
 };
 
+const checkedActivity: CodeLabActivity = {
+  ...activity,
+  spec: {
+    ...activity.spec,
+    checks: [
+      {
+        id: "returns-two",
+        label: "Return the value two",
+        expression: "value",
+        expected: 2,
+        conceptIds: ["python-state"],
+      },
+    ],
+  },
+};
+
+const passedCheckResult: RunResult = {
+  ...completedResult,
+  checks: [
+    {
+      id: "returns-two",
+      label: "Return the value two",
+      passed: true,
+      actual: "2",
+      expected: "2",
+    },
+  ],
+};
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
 
-function renderCodeLab(enabled = false) {
+function renderCodeLab(
+  enabled = false,
+  selectedActivity: CodeLabActivity = activity,
+) {
   const onStateChange = vi.fn();
+  const onEvidence = vi.fn();
   const rendered = render(
     <PythonCodeLab
-      activity={activity}
+      activity={selectedActivity}
       enabled={enabled}
       previouslyDemonstrated={false}
-      onEvidence={vi.fn()}
+      onEvidence={onEvidence}
       onStateChange={onStateChange}
     />,
   );
-  return { ...rendered, onStateChange };
+  return { ...rendered, onEvidence, onStateChange };
 }
 
 describe("PythonCodeLab keyboard access", () => {
@@ -157,5 +192,96 @@ describe("PythonCodeLab runtime isolation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Check work" }));
     await waitFor(() => expect(runnerMocks.runClean).toHaveBeenCalledOnce());
     expect(runnerMocks.restart).toHaveBeenCalledOnce();
+  });
+});
+
+describe("PythonCodeLab source result ownership", () => {
+  it("clears a completed run as soon as its source is edited", async () => {
+    runnerMocks.initialize.mockResolvedValue(completedResult.environment);
+    runnerMocks.run.mockResolvedValue({
+      ...completedResult,
+      output: [{ stream: "stdout", text: "old output\n" }],
+    });
+    renderCodeLab(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Run" }));
+    const output = screen.getByRole("region", { name: "Python output" });
+    await within(output).findByText("old output");
+
+    const source = screen.getByLabelText("Python source");
+    source.focus();
+    fireEvent.change(source, { target: { value: "value = 2" } });
+
+    expect(within(output).queryByText("old output")).toBeNull();
+    expect(
+      within(output).getByText("Run the file to inspect its output."),
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(source);
+  });
+
+  it("suppresses an in-flight check completion after its source is edited", async () => {
+    let resolveCheck!: (result: RunResult) => void;
+    runnerMocks.runClean.mockReturnValue(
+      new Promise<RunResult>((resolve) => {
+        resolveCheck = resolve;
+      }),
+    );
+    const { onEvidence } = renderCodeLab(true, checkedActivity);
+
+    fireEvent.click(screen.getByRole("button", { name: "Check work" }));
+    await waitFor(() => expect(runnerMocks.runClean).toHaveBeenCalledOnce());
+
+    const source = screen.getByLabelText("Python source");
+    source.focus();
+    fireEvent.change(source, { target: { value: "value = 2" } });
+    expect(runnerMocks.dispose).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      resolveCheck(passedCheckResult);
+      await Promise.resolve();
+    });
+
+    const output = screen.getByRole("region", { name: "Python output" });
+    expect(onEvidence).not.toHaveBeenCalled();
+    expect(
+      within(output).queryByRole("list", {
+        name: "Authored check results",
+      }),
+    ).toBeNull();
+    expect(
+      within(output).getByText("Run the file to inspect its output."),
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(source);
+    expect(
+      (screen.getByRole("button", {
+        name: "Check work",
+      }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
+  it("uses authored check details to direct a failed-check retry", async () => {
+    runnerMocks.runClean.mockResolvedValue({
+      ...completedResult,
+      status: "failed",
+      checks: [
+        {
+          id: "returns-two",
+          label: "Return the value two",
+          passed: false,
+          actual: "1",
+          expected: "2",
+          error: "AssertionError: values differ",
+        },
+      ],
+    });
+    renderCodeLab(true, checkedActivity);
+
+    fireEvent.click(screen.getByRole("button", { name: "Check work" }));
+
+    expect(
+      await screen.findByText(
+        'Fix "Return the value two": expected 2, but the run produced 1. Runtime error: AssertionError: values differ. Edit the source, then run Check work again.',
+      ),
+    ).toBeTruthy();
   });
 });

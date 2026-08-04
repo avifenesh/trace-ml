@@ -36,8 +36,7 @@ test("an authored Python lab runs through the accessible UI", async ({
   });
   await expect(lab).toContainText(/env [a-f0-9]{8}/);
 
-  const practiceWorkerCount = page.workers().length;
-  expect(practiceWorkerCount).toBeGreaterThan(0);
+  await expect.poll(() => page.workers().length).toBe(0);
   await source.fill(
     [
       "while True:",
@@ -61,13 +60,13 @@ test("an authored Python lab runs through the accessible UI", async ({
   );
   await expect
     .poll(() => page.workers().length)
-    .toBe(practiceWorkerCount);
+    .toBe(0);
 
   await check.click();
   await expect(stop).toBeVisible();
   await expect
     .poll(() => page.workers().length, { timeout: 30_000 })
-    .toBe(practiceWorkerCount + 1);
+    .toBe(1);
   await expect(lab.getByRole("status")).toHaveText(
     "Checking work in a clean worker",
     { timeout: 30_000 },
@@ -80,13 +79,14 @@ test("an authored Python lab runs through the accessible UI", async ({
   await expect(lab).toContainText("Run interrupted");
   await expect
     .poll(() => page.workers().length)
-    .toBe(practiceWorkerCount);
+    .toBe(0);
 
   await source.fill("print('trace UI recovered after clean stop')");
   await run.click();
   await expect(
     lab.getByText("trace UI recovered after clean stop", { exact: true }),
   ).toBeVisible({ timeout: 30_000 });
+  await expect.poll(() => page.workers().length).toBe(0);
 
   await source.fill(
     [
@@ -105,7 +105,7 @@ test("an authored Python lab runs through the accessible UI", async ({
   );
   await expect
     .poll(() => page.workers().length)
-    .toBe(practiceWorkerCount + 1);
+    .toBe(1);
   await page.locator('[data-lesson-id="linear-model"]').click();
   await expect(
     page.getByRole("heading", {
