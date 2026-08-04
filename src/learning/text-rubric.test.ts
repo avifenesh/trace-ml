@@ -70,6 +70,18 @@ describe("deterministic text-response assessment", () => {
     expect(assessment.missingCriteria).toEqual([]);
   });
 
+  it("recognizes one relationship expressed across adjacent natural clauses", () => {
+    const assessment = assessTextResponse(
+      activityWith(cancellationCriterion),
+      "Squaring makes residuals nonnegative. This prevents residuals with opposite signs from canceling when they are averaged.",
+    );
+
+    expect(assessment.matchedCriteria).toEqual([
+      cancellationCriterion.id,
+    ]);
+    expect(assessment.missingCriteria).toEqual([]);
+  });
+
   it("keeps an otherwise valid answer partial when one criterion is absent", () => {
     const assessment = assessTextResponse(
       activityWith(cancellationCriterion, testBoundaryCriterion),

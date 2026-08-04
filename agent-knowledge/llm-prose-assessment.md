@@ -24,10 +24,10 @@ direction, not certification or evidence of retention.
 - Use fixed lesson-specific analytic criteria, not a holistic model score.
 - Accept meaning-preserving novice paraphrases and language errors; reject
   polished misconceptions and unsupported keyword use.
-- Preserve supported ideas, identify one priority gap, and direct a retry
-  without supplying a complete replacement answer.
-- Represent genuine ambiguity as uncertainty and ask a clarifying question
-  instead of automatically marking the learner wrong.
+- Preserve supported ideas, identify one priority gap, and direct a retry using
+  authored criterion labels and feedback rather than model-written prose.
+- Represent genuine ambiguity as uncertainty and render an authored
+  clarification cue instead of automatically marking the learner wrong.
 - Derive labels in application code from schema-validated criterion sets. The
   model does not return a score, pass flag, or progression decision.
 - Keep the call tool-free, single-turn, bounded by request and response limits,
@@ -80,9 +80,10 @@ current response, the target, and a manageable next action. `[PA11-PA14]`
 
 Trace ML implication:
 
-- Acknowledge the strongest supported idea when one exists.
-- Name one highest-priority missing or mistaken relationship.
-- Give a concrete revision direction or clarifying question.
+- Render acknowledgement from an authored supported criterion label.
+- Name one highest-priority missing or uncertain relationship using its
+  authored label.
+- Use authored terminal feedback and deterministic partial-feedback templates.
 - Do not use percentages, rank, praise of ability, or generic "incorrect."
 - Require the learner to revise rather than replacing their explanation.
 
@@ -115,7 +116,8 @@ with representative human labels; self-reported confidence is overconfident.
 Trace ML implication:
 
 - Use pointwise criterion review rather than pairwise ranking.
-- Mark genuinely ambiguous criteria uncertain and ask for clarification.
+- Mark genuinely ambiguous criteria uncertain; the application renders an
+  authored clarification cue.
 - Build lesson-specific human-reviewed challenge sets before expanding the
   assessor beyond low-stakes feedback.
 - Measure criterion agreement, false-negative strictness, polished-error false
@@ -155,7 +157,7 @@ does not capture Mantle Responses calls. `[PA31-PA38]`
 Trace ML implication:
 
 - Send only the authored lesson text, activity prompt and guidance, rubric
-  labels and feedback, and current response.
+  labels, and current response. Keep authored feedback local.
 - Load the protected Bedrock token only in the Rust backend and place it only in
   the HTTPS authorization header.
 - Never return credentials to the webview, learner state, or diagnostics.
@@ -170,12 +172,13 @@ Trace ML implication:
 |---|---|
 | Curriculum authority | Fixed authored lesson page, prompt, guidance, and criterion labels |
 | Model | Direct Amazon Bedrock Mantle Responses call to `openai.gpt-5.6-sol` in `us-east-1` with max reasoning |
-| Runtime | Reused HTTPS client; one active cancellable request; six requests per ten minutes; no redirects or proxy; 8,192-token output ceiling; 180-second deadline; 256 KiB response cap |
+| Runtime | Reused HTTPS client; one active cancellable request; six requests per ten minutes; no redirects or proxy; 4,096-token output ceiling; 180-second deadline; 256 KiB response cap |
 | IPC authority | Webview sends lesson/revision/activity IDs plus the draft; Rust resolves a generated manifest compiled into the app and authorizes only the `main` window |
-| Input | Authored lesson text, prompt, guidance, rubric labels and feedback, plus one learner response; no chat history or external retrieval |
-| Output | Matched, missing, and uncertain criterion IDs plus bounded feedback |
-| Validation | Bedrock strict JSON Schema plus Rust checks for known, unique, disjoint, complete criterion partitions and bounded feedback |
+| Input | Authored lesson text, prompt, guidance, rubric labels, and one learner response; no authored feedback, chat history, or external retrieval |
+| Output | Matched, missing, and uncertain criterion IDs only |
+| Validation | Bedrock strict JSON Schema plus Rust checks for known, unique, disjoint, complete criterion partitions |
 | Label | Derived by Rust from criterion sets; never accepted from the model |
+| Feedback | Rendered locally from authored terminal feedback, criterion labels, and bounded deterministic templates; never written by the model |
 | UI | Editable draft during review, immutable submitted snapshot, cancellation, retryable failure, prior-result preservation, and exact remote-processing disclosure |
 | Persistence | Results are revalidated against the current rubric and stored only with revision-scoped activity drafts |
 | Progression | Prose creates no concept evidence and remains excluded from objective lesson completion |
@@ -193,9 +196,9 @@ Before changing the prompt, model, or rubric format, test:
 | Keyword list without relations | Not promoted |
 | Polished role reversal | Missing or mistaken criterion detected |
 | Mixed correct and incorrect claims | Correct evidence preserved; contradiction isolated |
-| Genuine ambiguity | Uncertain criterion and one clarifying question |
+| Genuine ambiguity | Uncertain criterion and one authored clarification cue |
 | Off-topic prose | Unsupported without invented requirements |
-| Learner prompt injection | Treated as untrusted response text |
+| Learner prompt injection | Explicit assessor-directed control text rejected before inference |
 | Unknown/duplicate criterion output | Rejected by application validation |
 | Repeated identical run | Stability measured, not assumed |
 | Human disagreement | Escalated for rubric or calibration review |

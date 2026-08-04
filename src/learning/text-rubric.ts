@@ -241,6 +241,21 @@ function splitClauses(value: string): Clause[] {
     }));
 }
 
+function withAdjacentClauseWindows(clauses: Clause[]) {
+  return clauses.flatMap((clause, index) => {
+    const next = clauses[index + 1];
+    if (!next) return [clause];
+    return [
+      clause,
+      {
+        raw: `${clause.raw}. ${next.raw}`,
+        tokens: [...clause.tokens, ...next.tokens],
+        keywordTokenIndices: new Set<number>(),
+      },
+    ];
+  });
+}
+
 function authoredVocabulary(activity: TextResponseActivity) {
   return new Set(
     tokenize(
@@ -457,7 +472,7 @@ export function assessTextResponse(
     };
   }
 
-  const clauses = splitClauses(response);
+  const clauses = withAdjacentClauseWindows(splitClauses(response));
   markKeywordTokens(clauses, activity.rubric.criteria);
   const vocabulary = authoredVocabulary(activity);
   const matchedCriteria = activity.rubric.criteria

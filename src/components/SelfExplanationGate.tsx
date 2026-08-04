@@ -9,6 +9,11 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import {
+  bedrockPolicyDetails,
+  bedrockPolicySummary,
+  type BedrockReadiness,
+} from "../bedrock-readiness";
 import type {
   Lesson,
   TextResponseActivity,
@@ -68,7 +73,10 @@ export function SelfExplanationGate({
   const [reviewMode, setReviewMode] = useState<ReviewMode>(
     semanticAssessment ? "checking" : "local",
   );
+  const [bedrockReadiness, setBedrockReadiness] =
+    useState<BedrockReadiness | null>(null);
   const [pending, setPending] = useState<PendingReview | null>(null);
+  const pendingReviewRef = useRef<PendingReview | null>(null);
   const pendingRequestRef = useRef<string | null>(null);
   const requestSequence = useRef(0);
   const [error, setError] = useState<string | null>(null);
@@ -77,8 +85,10 @@ export function SelfExplanationGate({
   useEffect(() => {
     if (!semanticAssessment) return;
     let current = true;
-    void proseAssessmentReady().then((ready) => {
-      if (current) setReviewMode(ready ? "semantic" : "local");
+    void proseAssessmentReady().then((readiness) => {
+      if (!current) return;
+      setBedrockReadiness(readiness);
+      setReviewMode(readiness?.available ? "semantic" : "local");
     });
     return () => {
       current = false;
@@ -89,6 +99,7 @@ export function SelfExplanationGate({
     () => () => {
       const requestId = pendingRequestRef.current;
       pendingRequestRef.current = null;
+      pendingReviewRef.current = null;
       if (requestId) void cancelProseAssessment(requestId);
     },
     [],
@@ -143,11 +154,13 @@ export function SelfExplanationGate({
       String(++requestSequence.current),
     ].join("-");
     pendingRequestRef.current = currentRequest;
-    setPending({
+    const nextPending = {
       requestId: currentRequest,
       response: trimmed,
       cancelling: false,
-    });
+    };
+    pendingReviewRef.current = nextPending;
+    setPending(nextPending);
     setError(null);
     setNotice(null);
     onStateChange(stateWithReview(trimmed));
@@ -161,19 +174,35 @@ export function SelfExplanationGate({
           currentRequest,
         )
         : assessTextResponse(activity, trimmed);
-      if (pendingRequestRef.current !== currentRequest) return;
+      const active = pendingReviewRef.current;
+      if (
+        pendingRequestRef.current !== currentRequest ||
+        active?.requestId !== currentRequest
+      ) return;
+      if (active.cancelling) {
+        setNotice("Prose review cancelled. Your draft is saved.");
+        return;
+      }
       applyAssessment(nextAssessment, trimmed);
     } catch (assessmentError) {
-      if (pendingRequestRef.current !== currentRequest) return;
+      const active = pendingReviewRef.current;
+      if (
+        pendingRequestRef.current !== currentRequest ||
+        active?.requestId !== currentRequest
+      ) return;
       const message = proseAssessmentError(assessmentError);
-      if (message.toLocaleLowerCase().includes("cancel")) {
-        setNotice(message);
+      if (
+        active.cancelling ||
+        message.toLocaleLowerCase().includes("cancel")
+      ) {
+        setNotice("Prose review cancelled. Your draft is saved.");
       } else {
         setError(message);
       }
     } finally {
       if (pendingRequestRef.current === currentRequest) {
         pendingRequestRef.current = null;
+        pendingReviewRef.current = null;
         setPending(null);
       }
     }
@@ -181,13 +210,26 @@ export function SelfExplanationGate({
 
   const cancelReview = () => {
     if (!pending || pending.cancelling) return;
-    pendingRequestRef.current = null;
-    setPending(null);
-    setNotice("Prose review cancelled. Your draft is saved.");
+    const cancelling = { ...pending, cancelling: true };
+    pendingReviewRef.current = cancelling;
+    setPending(cancelling);
+    setNotice(null);
     setError(null);
-    void cancelProseAssessment(pending.requestId).catch((cancelError) => {
-      setError(proseAssessmentError(cancelError));
-    });
+    void cancelProseAssessment(pending.requestId)
+      .then((accepted) => {
+        if (!accepted) {
+          throw new Error("The prose review could not be cancelled.");
+        }
+      })
+      .catch((cancelError) => {
+        if (pendingReviewRef.current?.requestId !== pending.requestId) {
+          return;
+        }
+        const active = { ...pending, cancelling: false };
+        pendingReviewRef.current = active;
+        setPending(active);
+        setError(proseAssessmentError(cancelError));
+      });
   };
 
   const criterionIds = activity.rubric.criteria.map(
@@ -237,6 +279,7 @@ export function SelfExplanationGate({
           maxLength={8_000}
           value={response}
           placeholder="Explain the mechanism in your own words…"
+          aria-describedby={`${activity.id}-review-privacy`}
           onChange={(event) => {
             const nextResponse = event.target.value;
             responseRef.current = nextResponse;
@@ -247,13 +290,28 @@ export function SelfExplanationGate({
           }}
         />
         <div className="explanation-actions">
-          <small>
-            {reviewMode === "semantic"
-              ? "Bedrock receives the authored lesson text, prompt, guidance, rubric labels and feedback, plus your draft. Store=false is not a zero-retention guarantee; AWS may retain classifier-flagged model traffic for up to 30 days. This never changes course access."
-              : reviewMode === "checking"
-                ? "Checking whether Bedrock review is available. Your draft remains editable."
-                : "The local check does not send your draft and finds rubric structure only; it cannot judge causal correctness."}
-          </small>
+          <div
+            id={`${activity.id}-review-privacy`}
+            className="explanation-privacy"
+          >
+            <p>
+              {reviewMode === "semantic"
+                ? `Your draft, this lesson page, and its authored rubric labels are sent to AWS Bedrock for formative review. The review never changes course access. ${bedrockReadiness ? bedrockPolicySummary(bedrockReadiness) : ""}`
+                : reviewMode === "checking"
+                  ? "Nothing is sent while review availability is checked. Your draft remains editable."
+                  : "Your draft stays on this device. The local check finds rubric structure only; it cannot judge causal correctness."}
+            </p>
+            {reviewMode === "semantic" && (
+              <details>
+                <summary>Privacy details</summary>
+                <p>
+                  {bedrockReadiness
+                    ? bedrockPolicyDetails(bedrockReadiness)
+                    : "The Bedrock policy could not be verified, so remote review is disabled."}
+                </p>
+              </details>
+            )}
+          </div>
           <div className="explanation-action-buttons">
             {error && reviewMode === "semantic" && (
               <button

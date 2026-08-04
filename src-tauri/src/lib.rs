@@ -21,11 +21,11 @@ fn cancel_lesson_answer(
 }
 
 #[tauri::command]
-fn lesson_helper_ready(
+async fn lesson_helper_ready(
     window: tauri::WebviewWindow,
     service: tauri::State<'_, lesson_helper::LessonHelperService>,
-) -> Result<bool, String> {
-    service.ready(window.label())
+) -> Result<bedrock::BedrockReadiness, String> {
+    service.readiness(window.label()).await
 }
 
 #[tauri::command]
@@ -47,11 +47,11 @@ fn cancel_prose_assessment(
 }
 
 #[tauri::command]
-fn prose_assessment_ready(
+async fn prose_assessment_ready(
     window: tauri::WebviewWindow,
     service: tauri::State<'_, prose_assessment::ProseAssessmentService>,
-) -> Result<bool, String> {
-    service.ready(window.label())
+) -> Result<bedrock::BedrockReadiness, String> {
+    service.readiness(window.label()).await
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

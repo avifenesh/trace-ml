@@ -19,6 +19,7 @@ import type {
 
 const STORAGE_KEY = "trace-ml:learner-record:v1";
 const STORAGE_LOCK = `${STORAGE_KEY}:write`;
+const JOURNAL_KEY_PREFIX = `${STORAGE_KEY}:journal:`;
 const evidenceKinds = new Set<EvidenceKind>([
   "prediction",
   "manipulation",
@@ -150,7 +151,7 @@ export function normalizeLearnerRecord(value: unknown): LearnerRecord {
   });
 }
 
-function loadRecord() {
+function loadStoredRecord() {
   try {
     const stored = readLocalStorage(STORAGE_KEY);
     return stored ? normalizeLearnerRecord(JSON.parse(stored)) : createLearnerRecord();
@@ -160,6 +161,57 @@ function loadRecord() {
   return createLearnerRecord();
 }
 
+function journalEntries() {
+  const entries: Array<{ key: string; record: LearnerRecord }> = [];
+  try {
+    for (let index = 0; index < globalThis.localStorage.length; index += 1) {
+      const key = globalThis.localStorage.key(index);
+      if (!key?.startsWith(JOURNAL_KEY_PREFIX)) continue;
+      const serialized = readLocalStorage(key);
+      if (!serialized) continue;
+      entries.push({
+        key,
+        record: normalizeLearnerRecord(JSON.parse(serialized)),
+      });
+    }
+  } catch {
+    // Unavailable or malformed journal entries are handled as memory-only state.
+  }
+  return entries;
+}
+
+function loadRecord() {
+  return mergeLearnerRecords(
+    loadStoredRecord(),
+    ...journalEntries().map((entry) => entry.record),
+  );
+}
+
+function recordDelta(previous: LearnerRecord, next: LearnerRecord) {
+  const previousEventIds = new Set(previous.events.map((event) => event.id));
+  const previousEvidenceIds = new Set(previous.evidence.map((item) => item.id));
+  return compactLearnerRecord({
+    version: 1,
+    events: next.events.filter((event) => !previousEventIds.has(event.id)),
+    evidence: next.evidence.filter((item) => !previousEvidenceIds.has(item.id)),
+  });
+}
+
+function writeJournal(record: LearnerRecord) {
+  const firstEventId = record.events[0]?.id;
+  if (!firstEventId) return null;
+  const key = `${JOURNAL_KEY_PREFIX}${encodeURIComponent(firstEventId)}`;
+  return writeLocalStorage(key, JSON.stringify(record)) ? key : null;
+}
+
+function removeJournal(key: string) {
+  try {
+    globalThis.localStorage.removeItem(key);
+  } catch {
+    // A retained journal is harmless because learner records merge by stable IDs.
+  }
+}
+
 export function useLearnerRecord() {
   const [record, setRecord] = useState<LearnerRecord>(loadRecord);
   const [persistenceStatus, setPersistenceStatus] = useState<
@@ -167,55 +219,81 @@ export function useLearnerRecord() {
   >("persistent");
   const recordRef = useRef(record);
 
+  const synchronizeAndWrite = useCallback(() => {
+    const pendingJournals = journalEntries();
+    const next = mergeLearnerRecords(
+      recordRef.current,
+      loadStoredRecord(),
+      ...pendingJournals.map((entry) => entry.record),
+    );
+    recordRef.current = next;
+    setRecord(next);
+    if (!writeLocalStorage(STORAGE_KEY, JSON.stringify(next))) {
+      setPersistenceStatus("memory-only");
+      return;
+    }
+    pendingJournals.forEach((entry) => removeJournal(entry.key));
+    setPersistenceStatus("persistent");
+  }, []);
+
+  const persistMergedRecord = useCallback(() => {
+    const locks = globalThis.navigator?.locks;
+    if (!locks) {
+      synchronizeAndWrite();
+      return;
+    }
+    try {
+      void locks
+        .request(STORAGE_LOCK, synchronizeAndWrite)
+        .catch(() => setPersistenceStatus("memory-only"));
+    } catch {
+      setPersistenceStatus("memory-only");
+    }
+  }, [synchronizeAndWrite]);
+
   const commit = useCallback(
     (update: (current: LearnerRecord) => LearnerRecord) => {
-      const optimistic = update(recordRef.current);
+      const current = recordRef.current;
+      const optimistic = update(current);
+      const journalKey = writeJournal(recordDelta(current, optimistic));
       recordRef.current = optimistic;
       setRecord(optimistic);
-
-      const synchronizeAndWrite = () => {
-        const latestStored = loadRecord();
-        const next = mergeLearnerRecords(recordRef.current, latestStored);
-        recordRef.current = next;
-        setRecord(next);
-        setPersistenceStatus(
-          writeLocalStorage(STORAGE_KEY, JSON.stringify(next))
-            ? "persistent"
-            : "memory-only",
-        );
-      };
-      const locks = globalThis.navigator?.locks;
-      if (!locks) {
-        synchronizeAndWrite();
-        return;
-      }
-      try {
-        void locks
-          .request(STORAGE_LOCK, synchronizeAndWrite)
-          .catch(() => setPersistenceStatus("memory-only"));
-      } catch {
-        setPersistenceStatus("memory-only");
-      }
+      setPersistenceStatus(journalKey ? "persistent" : "memory-only");
+      persistMergedRecord();
     },
-    [],
+    [persistMergedRecord],
   );
 
   useEffect(() => {
     const synchronize = (event: StorageEvent) => {
-      if (event.key !== STORAGE_KEY || !event.newValue) return;
+      if (
+        (event.key !== STORAGE_KEY &&
+          !event.key?.startsWith(JOURNAL_KEY_PREFIX)) ||
+        !event.newValue
+      ) {
+        return;
+      }
       try {
         const incoming = normalizeLearnerRecord(JSON.parse(event.newValue));
         const merged = mergeLearnerRecords(recordRef.current, incoming);
         recordRef.current = merged;
         setRecord(merged);
-        setPersistenceStatus("persistent");
+        if (JSON.stringify(merged) === JSON.stringify(incoming)) {
+          setPersistenceStatus("persistent");
+        } else {
+          persistMergedRecord();
+        }
       } catch {
         // Ignore malformed writes from another window.
       }
     };
     globalThis.addEventListener?.("storage", synchronize);
     return () => globalThis.removeEventListener?.("storage", synchronize);
-  }, []);
+  }, [persistMergedRecord]);
+
+  useEffect(() => {
+    if (journalEntries().length > 0) persistMergedRecord();
+  }, [persistMergedRecord]);
 
   const addResourceAttempt = useCallback(
     (

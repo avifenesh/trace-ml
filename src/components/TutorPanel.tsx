@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   MessageSquareText,
   Plus,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -19,6 +20,10 @@ import {
   pageChunksForLesson,
   type Lesson,
 } from "../content/types";
+import {
+  bedrockPolicyDetails,
+  bedrockPolicySummary,
+} from "../bedrock-readiness";
 import type { ReturnTypeUseTutorThreads } from "./types";
 
 interface TutorPanelProps {
@@ -45,7 +50,8 @@ export function TutorPanel({
   const [draft, setDraft] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
-  const questionRef = useRef<HTMLTextAreaElement>(null);
+  const threadButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const focusAfterDeleteRef = useRef<string | null>(null);
 
   useEffect(() => {
     transcriptRef.current?.scrollTo({
@@ -63,13 +69,29 @@ export function TutorPanel({
   useEffect(() => {
     setDraft("");
     setShowHistory(false);
-  }, [lesson.id, tutor.activeThread.id]);
+  }, [lesson.id]);
 
   useEffect(() => {
-    if (!mobileOpen || showHistory) return;
-    const frame = requestAnimationFrame(() => questionRef.current?.focus());
+    setDraft("");
+    if (!focusAfterDeleteRef.current) {
+      setShowHistory(false);
+    }
+  }, [tutor.activeThread.id]);
+
+  useEffect(() => {
+    const preferredThreadId = focusAfterDeleteRef.current;
+    if (!preferredThreadId) return;
+    const targetId = tutor.threads.some(
+        (thread) => thread.id === preferredThreadId,
+      )
+      ? preferredThreadId
+      : tutor.activeThread.id;
+    const frame = requestAnimationFrame(() => {
+      threadButtonRefs.current.get(targetId)?.focus();
+      focusAfterDeleteRef.current = null;
+    });
     return () => cancelAnimationFrame(frame);
-  }, [mobileOpen, showHistory, tutor.activeThread.id]);
+  }, [tutor.activeThread.id, tutor.threads]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -96,7 +118,36 @@ export function TutorPanel({
     tutor.selectThread(threadId);
   };
 
+  const deleteThread = (threadId: string, title: string) => {
+    const confirmed = globalThis.confirm(
+      `Delete "${title}"? This removes the conversation from this device.`,
+    );
+    if (!confirmed) return;
+    const deletedIndex = tutor.threads.findIndex(
+      (thread) => thread.id === threadId,
+    );
+    const remaining = tutor.threads.filter(
+      (thread) => thread.id !== threadId,
+    );
+    const focusTarget =
+      remaining[Math.min(Math.max(deletedIndex, 0), remaining.length - 1)]
+        ?.id ?? tutor.activeThread.id;
+    if (tutor.deleteThread(threadId)) {
+      focusAfterDeleteRef.current = focusTarget;
+    }
+  };
+
   const pageChunks = pageChunksForLesson(lesson);
+  const localThreadDisclosure =
+    tutor.persistenceStatus === "persistent"
+      ? "This conversation is saved only on this device."
+      : "This conversation is kept only until you close the app.";
+  const helperDisclosure =
+    tutor.helperMode === "semantic"
+      ? `Your question, this page, and recent messages are sent to AWS Bedrock. ${tutor.helperReadiness ? bedrockPolicySummary(tutor.helperReadiness) : ""} ${localThreadDisclosure}`
+      : tutor.helperMode === "checking"
+        ? `Checking whether the page helper is available. Nothing is sent until you submit a question. ${localThreadDisclosure}`
+        : `Nothing is sent to Bedrock. Answers use exact text from this page on this device. ${localThreadDisclosure}`;
   const sourceFromChunk = (chunkId: string) => {
     const chunk = pageChunks.find((item) => item.id === chunkId);
     if (!chunk) return null;
@@ -124,7 +175,9 @@ export function TutorPanel({
             <MessageSquareText size={17} />
           </div>
           <div>
-            <strong id="lesson-helper-title">Lesson Q&amp;A</strong>
+            <strong id="lesson-helper-title" tabIndex={-1}>
+              Lesson Q&amp;A
+            </strong>
             <span><i /> grounded in Lesson {lesson.number}</span>
           </div>
         </div>
@@ -161,6 +214,11 @@ export function TutorPanel({
           </button>
         </div>
       </header>
+      {showHistory && tutor.helperNotice && (
+        <p className="sr-only" role="status" aria-live="polite">
+          {tutor.helperNotice}
+        </p>
+      )}
 
       {showHistory ? (
         <div className="thread-history">
@@ -179,33 +237,63 @@ export function TutorPanel({
             </button>
           </div>
           <ol>
-            {tutor.threads.map((thread) => (
-              <li key={thread.id}>
-                <button
-                  type="button"
-                  className={
-                    thread.id === tutor.activeThread.id ? "active" : ""
-                  }
-                  aria-current={
-                    thread.id === tutor.activeThread.id ? "true" : undefined
-                  }
-                  disabled={tutor.pendingAnswer !== null}
-                  onClick={() => selectThread(thread.id)}
-                >
-                  <MessageSquareText size={15} />
-                  <span>
-                    <strong>{thread.title}</strong>
-                    <small>
-                      {thread.id === tutor.activeThread.id && (
-                        <span className="current-thread">Current · </span>
-                      )}
-                      {thread.messages.length - 1} messages ·{" "}
-                      {new Date(thread.updatedAt).toLocaleDateString()}
-                    </small>
-                  </span>
-                </button>
-              </li>
-            ))}
+            {tutor.threads.map((thread) => {
+              const learnerMessages = thread.messages.filter(
+                (message) => message.role === "learner",
+              );
+              const fullQuestion = learnerMessages[0]?.text ?? thread.title;
+              const questionCount = learnerMessages.length;
+              const date = new Date(thread.updatedAt).toLocaleDateString();
+              const questionSeparator = /[.!?]$/.test(fullQuestion) ? " " : ". ";
+              return (
+                <li key={thread.id}>
+                  <div className="thread-history-item">
+                    <button
+                      type="button"
+                      className={`thread-history-select ${
+                        thread.id === tutor.activeThread.id ? "active" : ""
+                      }`}
+                      aria-label={`${thread.id === tutor.activeThread.id ? "Current conversation. " : ""}${fullQuestion}${questionSeparator}${questionCount} ${questionCount === 1 ? "question" : "questions"}. Updated ${date}.`}
+                      aria-current={
+                        thread.id === tutor.activeThread.id ? "true" : undefined
+                      }
+                      disabled={tutor.pendingAnswer !== null}
+                      onClick={() => selectThread(thread.id)}
+                      ref={(node) => {
+                        if (node) {
+                          threadButtonRefs.current.set(thread.id, node);
+                        } else {
+                          threadButtonRefs.current.delete(thread.id);
+                        }
+                      }}
+                    >
+                      <MessageSquareText size={15} />
+                      <span>
+                        <strong title={fullQuestion}>{thread.title}</strong>
+                        <small>
+                          {thread.id === tutor.activeThread.id && (
+                            <span className="current-thread">Current · </span>
+                          )}
+                          {questionCount}{" "}
+                          {questionCount === 1 ? "question" : "questions"} ·{" "}
+                          {date}
+                        </small>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="thread-history-delete"
+                      disabled={tutor.pendingAnswer !== null}
+                      onClick={() => deleteThread(thread.id, fullQuestion)}
+                      title={`Delete conversation: ${fullQuestion}`}
+                      aria-label={`Delete conversation: ${fullQuestion}`}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       ) : (
@@ -214,7 +302,7 @@ export function TutorPanel({
             <BookOpenText size={15} />
             <span>
               Current context
-              <strong>{lesson.title}</strong>
+              <strong title={lesson.title}>{lesson.title}</strong>
             </span>
           </div>
 
@@ -286,11 +374,7 @@ export function TutorPanel({
               );
             })}
             {tutor.pendingAnswer && (
-              <article
-                className="tutor-message tutor pending"
-                role="status"
-                aria-live="polite"
-              >
+              <article className="tutor-message tutor pending">
                 <span>HELPER</span>
                 <div>
                   <LoaderCircle
@@ -360,13 +444,11 @@ export function TutorPanel({
             <div>
               <textarea
                 id="tutor-question"
-                ref={questionRef}
                 rows={2}
                 value={draft}
                 maxLength={2_000}
                 placeholder="Ask about a term or mechanism…"
                 aria-describedby="tutor-composer-note"
-                data-drawer-initial-focus
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={(event) => {
                   if (
@@ -393,19 +475,22 @@ export function TutorPanel({
                 <ArrowUp size={17} />
               </button>
             </div>
-            <small id="tutor-composer-note">
-              {tutor.helperMode === "semantic"
-                ? `Bedrock receives this authored page, your question, and recent thread context. Store=false is not a zero-retention guarantee; AWS may retain classifier-flagged model traffic for up to 30 days. ${
-                  tutor.persistenceStatus === "persistent"
-                    ? "The thread is saved locally."
-                    : "The thread lasts for this session only."
-                }`
-                : tutor.helperMode === "checking"
-                  ? "Preparing the page-grounded helper..."
-                  : tutor.persistenceStatus === "persistent"
-                    ? "Local exact-page matching is active. The thread is saved locally."
-                    : "Local exact-page matching is active. This thread lasts for this session only."}
-            </small>
+            <div
+              id="tutor-composer-note"
+              className="tutor-composer-note"
+            >
+              <p>{helperDisclosure}</p>
+              {tutor.helperMode === "semantic" && (
+                <details>
+                  <summary>Privacy details</summary>
+                  <p>
+                    {tutor.helperReadiness
+                      ? bedrockPolicyDetails(tutor.helperReadiness)
+                      : "The Bedrock policy could not be verified, so remote answers are disabled."}
+                  </p>
+                </details>
+              )}
+            </div>
           </form>
         </>
       )}

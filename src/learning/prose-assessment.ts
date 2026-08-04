@@ -1,4 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { normalizeBedrockReadiness } from "../bedrock-readiness";
 import type {
   Lesson,
   TextResponseActivity,
@@ -15,6 +16,8 @@ interface SemanticAssessmentRequest {
   activityId: string;
   learnerResponse: string;
 }
+
+const MAX_FEEDBACK_CHARACTERS = 1_200;
 
 function objectRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null
@@ -57,7 +60,7 @@ function normalizeExplanationAssessment(
     !uncertain ||
     typeof feedback !== "string" ||
     !feedback.trim() ||
-    feedback.length > 2_000
+    Array.from(feedback).length > MAX_FEEDBACK_CHARACTERS
   ) {
     throw new Error("The assessment service returned an invalid result.");
   }
@@ -142,11 +145,13 @@ export function semanticProseAssessmentAvailable() {
 }
 
 export async function proseAssessmentReady() {
-  if (!isTauri()) return false;
+  if (!isTauri()) return null;
   try {
-    return await invoke<boolean>("prose_assessment_ready");
+    return normalizeBedrockReadiness(
+      await invoke<unknown>("prose_assessment_ready"),
+    );
   } catch {
-    return false;
+    return null;
   }
 }
 

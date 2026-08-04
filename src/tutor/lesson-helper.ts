@@ -1,5 +1,8 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
+  normalizeBedrockReadiness,
+} from "../bedrock-readiness";
+import {
   pageChunksForLesson,
   type Lesson,
 } from "../content/types";
@@ -136,6 +139,7 @@ function normalizeAnswer(lesson: Lesson, value: unknown): LessonHelperAnswer {
       typeof sourceChunkId !== "string" ||
       typeof quote !== "string" ||
       !quote.trim() ||
+      claimText.trim() !== quote.trim() ||
       Array.from(claimText).length > 2_000
     ) {
       throw new Error("The lesson helper returned an invalid cited claim.");
@@ -176,11 +180,13 @@ export function nativeLessonHelperAvailable() {
 }
 
 export async function lessonHelperReady() {
-  if (!isTauri()) return false;
+  if (!isTauri()) return null;
   try {
-    return await invoke<boolean>("lesson_helper_ready");
+    return normalizeBedrockReadiness(
+      await invoke<unknown>("lesson_helper_ready"),
+    );
   } catch {
-    return false;
+    return null;
   }
 }
 

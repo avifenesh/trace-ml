@@ -86,7 +86,7 @@ enum HelperStatus {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ModelHelperAnswer {
     status: HelperStatus,
     response: String,
@@ -94,7 +94,7 @@ struct ModelHelperAnswer {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ModelHelperClaim {
     text: String,
     source_chunk_id: String,
@@ -271,10 +271,13 @@ impl LessonHelperService {
         Ok(true)
     }
 
-    pub(crate) fn ready(&self, window_label: &str) -> Result<bool, String> {
+    pub(crate) async fn readiness(
+        &self,
+        window_label: &str,
+    ) -> Result<bedrock::BedrockReadiness, String> {
         authorize_window(window_label)?;
         authored_lessons()?;
-        Ok(bedrock::token().is_ok())
+        bedrock::readiness(&self.client, bedrock::token()?).await
     }
 }
 
@@ -489,18 +492,54 @@ fn references_another_numbered_lesson(normalized: &str, lesson_number: &str) -> 
     })
 }
 
-fn crosses_helper_boundary(question: &str, lesson_number: &str) -> bool {
+fn contains_normalized_phrase(haystack: &str, needle: &str) -> bool {
+    if needle.is_empty() {
+        return false;
+    }
+    format!(" {haystack} ").contains(&format!(" {needle} "))
+}
+
+fn references_another_authored_lesson(normalized: &str, current: &AuthoredLesson) -> bool {
+    authored_lessons().map_or(true, |lessons| {
+        lessons
+            .iter()
+            .filter(|lesson| lesson.lesson_id != current.lesson_id)
+            .any(|lesson| {
+                let id = normalized_query(&lesson.lesson_id);
+                let title = normalized_query(&lesson.lesson_title);
+                [
+                    format!("lesson {id}"),
+                    format!("{id} lesson"),
+                    format!("lesson {title}"),
+                    format!("{title} lesson"),
+                ]
+                .iter()
+                .any(|phrase| contains_normalized_phrase(normalized, phrase))
+            })
+    })
+}
+
+fn crosses_helper_boundary(question: &str, lesson: &AuthoredLesson) -> bool {
     let normalized = normalized_query(question);
     helper_boundary_patterns()
         .iter()
         .any(|pattern| pattern.is_match(&normalized))
-        || references_another_numbered_lesson(&normalized, lesson_number)
+        || references_another_numbered_lesson(&normalized, &lesson.lesson_number)
+        || references_another_authored_lesson(&normalized, lesson)
 }
 
 fn boundary_answer() -> LessonHelperAnswer {
     LessonHelperAnswer {
         status: HelperStatus::Boundary,
         text: "I can explain or answer questions from this page, but I cannot grade work, reveal activity answers, create or choose course material, or change progress. Ask me about a term or mechanism visible here.".to_string(),
+        claims: vec![],
+    }
+}
+
+fn unsupported_answer() -> LessonHelperAnswer {
+    LessonHelperAnswer {
+        status: HelperStatus::Unsupported,
+        text: "This page does not contain enough information to answer that question. Ask about a term, sentence, diagram, control, activity, or mechanism visible here.".to_string(),
         claims: vec![],
     }
 }
@@ -620,8 +659,7 @@ fn resolve_request(
         }
         match message.role {
             HelperRole::Learner => {
-                drop_next_tutor_message =
-                    crosses_helper_boundary(&message.text, &lesson.lesson_number);
+                drop_next_tutor_message = crosses_helper_boundary(&message.text, lesson);
                 if !drop_next_tutor_message {
                     let sanitized = sanitized_user_text(&message.text).trim().to_string();
                     if sanitized.is_empty() {
@@ -656,9 +694,8 @@ fn resolve_request(
     Ok((lesson, history))
 }
 
-fn helper_schema(lesson: &AuthoredLesson) -> Value {
-    let chunk_ids = lesson
-        .chunks
+fn helper_schema_for_chunks(chunks: &[HelperChunk]) -> Value {
+    let chunk_ids = chunks
         .iter()
         .map(|chunk| chunk.id.as_str())
         .collect::<Vec<_>>();
@@ -708,7 +745,7 @@ Authority:
 
 Allowed:
 - Answer the learner's specific question about a term, sentence, diagram, control, activity, or mechanism on this current page.
-- Explain and paraphrase the cited authored material in plain beginner language. Connect statements that are explicit in the page.
+- Select the shortest complete authored sentences that directly answer the question. Connect statements only when each one is independently quoted from the page.
 - Resolve normal pronouns and concise follow-ups from recent_conversation.
 - Correct a misunderstanding only by pointing back to what the current page says.
 
@@ -720,7 +757,7 @@ Boundaries:
 
 Output:
 - For a supported page question, use status "answered", an empty response, and 1 to 5 concise claims.
-- Every claim must contain one factual statement, one sourceChunkId that directly supports the entire statement, and a short verbatim quote copied exactly from that authored chunk.
+- Every claim must be one complete authored sentence. Copy the same sentence verbatim into both text and quote, and provide its sourceChunkId. Never extract a shorter substring whose meaning could change without its surrounding words.
 - Use no more than 3 unique sourceChunkIds. Do not put uncited transitions, conclusions, examples, or factual statements between claims.
 - Activity context can identify what visible wording the learner means, but factual explanations must be supported by cited lesson chunks.
 - If the current page does not support an answer, use status "unsupported", no claims, and put a brief clarification request in response.
@@ -732,6 +769,7 @@ Return only the JSON object required by the output schema."#
 
 fn helper_input<'a>(
     lesson: &'a AuthoredLesson,
+    chunks: &'a [HelperChunk],
     history: &'a [HelperHistoryMessage],
     question: &'a str,
 ) -> HelperInput<'a> {
@@ -741,19 +779,29 @@ fn helper_input<'a>(
         lesson_question: &lesson.lesson_question,
         lesson_summary: &lesson.lesson_summary,
         mechanism: &lesson.mechanism,
-        chunks: &lesson.chunks,
+        chunks,
         activity_context: &lesson.activity_context,
         recent_conversation: history,
         learner_question: question,
     }
 }
 
+#[cfg(test)]
 fn bedrock_request(
     lesson: &AuthoredLesson,
     history: &[HelperHistoryMessage],
     question: &str,
 ) -> Result<Value, String> {
-    let input = serde_json::to_string(&helper_input(lesson, history, question))
+    bedrock_request_for_chunks(lesson, &lesson.chunks, history, question)
+}
+
+fn bedrock_request_for_chunks(
+    lesson: &AuthoredLesson,
+    chunks: &[HelperChunk],
+    history: &[HelperHistoryMessage],
+    question: &str,
+) -> Result<Value, String> {
+    let input = serde_json::to_string(&helper_input(lesson, chunks, history, question))
         .map_err(|_| "Could not prepare the authored lesson context.".to_string())?;
     Ok(json!({
         "model": bedrock::BEDROCK_MODEL,
@@ -770,10 +818,79 @@ fn bedrock_request(
                 "type": "json_schema",
                 "name": "trace_ml_lesson_helper",
                 "strict": true,
-                "schema": helper_schema(lesson)
+                "schema": helper_schema_for_chunks(chunks)
             }
         }
     }))
+}
+
+fn retrieval_token(token: &str) -> Option<String> {
+    const STOP_WORDS: [&str; 31] = [
+        "a", "about", "an", "and", "are", "can", "could", "do", "does", "explain", "for",
+        "from", "how", "i", "in", "is", "it", "me", "of", "on", "or", "that", "the",
+        "this", "to", "what", "when", "where", "which", "why", "with",
+    ];
+    if token.len() <= 1 || STOP_WORDS.contains(&token) {
+        return None;
+    }
+    let stemmed = if token.ends_with("ies") && token.len() > 4 {
+        format!("{}y", &token[..token.len() - 3])
+    } else if token.ends_with("sses") && token.len() > 5 {
+        token[..token.len() - 2].to_string()
+    } else if token.ends_with('s') && !token.ends_with("ss") && token.len() > 3 {
+        token[..token.len() - 1].to_string()
+    } else {
+        token.to_string()
+    };
+    Some(stemmed)
+}
+
+fn retrieval_tokens(value: &str) -> HashSet<String> {
+    normalized_query(value)
+        .split_whitespace()
+        .filter_map(retrieval_token)
+        .collect()
+}
+
+fn relevant_chunks(
+    lesson: &AuthoredLesson,
+    history: &[HelperHistoryMessage],
+    question: &str,
+) -> Vec<HelperChunk> {
+    let query_tokens = retrieval_tokens(question);
+    let prior_sources = history
+        .iter()
+        .flat_map(|message| message.source_chunk_ids.iter())
+        .collect::<HashSet<_>>();
+    let mut scored = lesson
+        .chunks
+        .iter()
+        .filter_map(|chunk| {
+            let heading_tokens = retrieval_tokens(&chunk.heading);
+            let tag_tokens = retrieval_tokens(&chunk.tags.join(" "));
+            let text_tokens = retrieval_tokens(&chunk.text);
+            let score = query_tokens
+                .iter()
+                .map(|token| {
+                    usize::from(text_tokens.contains(token))
+                        + 3 * usize::from(heading_tokens.contains(token))
+                        + 4 * usize::from(tag_tokens.contains(token))
+                })
+                .sum::<usize>()
+                + 100 * usize::from(prior_sources.contains(&chunk.id));
+            (score > 0).then_some((score, chunk))
+        })
+        .collect::<Vec<_>>();
+    scored.sort_by(|(left_score, left), (right_score, right)| {
+        right_score
+            .cmp(left_score)
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    scored
+        .into_iter()
+        .take(12)
+        .map(|(_, chunk)| chunk.clone())
+        .collect()
 }
 
 fn model_answer(response: Value) -> Result<ModelHelperAnswer, String> {
@@ -786,13 +903,60 @@ fn model_answer(response: Value) -> Result<ModelHelperAnswer, String> {
         .map_err(|_| "The lesson helper returned invalid JSON.".to_string())
 }
 
+fn authored_sentence_spans(text: &str) -> Vec<&str> {
+    let mut spans = Vec::new();
+    let mut start = 0;
+
+    for (index, character) in text.char_indices() {
+        if !matches!(character, '.' | '?' | '!') {
+            continue;
+        }
+        let end = index + character.len_utf8();
+        let ends_sentence = text[end..].chars().next().map_or(true, char::is_whitespace);
+        if !ends_sentence {
+            continue;
+        }
+        let span = text[start..end].trim();
+        if span.chars().count() >= 12 {
+            spans.push(span);
+        }
+        start = end;
+    }
+
+    let tail = text[start..].trim();
+    if tail.chars().count() >= 12 {
+        spans.push(tail);
+    }
+    if spans.is_empty() {
+        let whole = text.trim();
+        if whole.chars().count() >= 12 {
+            spans.push(whole);
+        }
+    }
+    spans
+}
+
+fn claim_is_authored_sentence(claim: &str, quote: &str, chunk_text: &str) -> bool {
+    claim == quote
+        && authored_sentence_spans(chunk_text)
+            .into_iter()
+            .any(|sentence| sentence == quote)
+}
+
+#[cfg(test)]
 fn validate_answer(
     lesson: &AuthoredLesson,
+    answer: ModelHelperAnswer,
+) -> Result<LessonHelperAnswer, String> {
+    validate_answer_for_chunks(&lesson.chunks, answer)
+}
+
+fn validate_answer_for_chunks(
+    allowed_chunks: &[HelperChunk],
     mut answer: ModelHelperAnswer,
 ) -> Result<LessonHelperAnswer, String> {
     answer.response = answer.response.trim().to_string();
-    let chunks = lesson
-        .chunks
+    let chunks = allowed_chunks
         .iter()
         .map(|chunk| (chunk.id.as_str(), chunk))
         .collect::<HashMap<_, _>>();
@@ -822,10 +986,13 @@ fn validate_answer(
                     let chunk = chunks.get(claim.source_chunk_id.as_str()).ok_or_else(|| {
                         "The lesson helper returned an invalid source.".to_string()
                     })?;
-                    if !chunk.text.contains(&claim.quote) {
+                    if !claim_is_authored_sentence(
+                        &claim.text,
+                        &claim.quote,
+                        &chunk.text,
+                    ) {
                         return Err(
-                            "The lesson helper returned a quote that is not on the page."
-                                .to_string(),
+                            "The lesson helper returned a claim that is not a complete authored sentence.".to_string(),
                         );
                     }
                     if !claim_texts.insert(claim.text.clone()) {
@@ -858,12 +1025,10 @@ fn validate_answer(
             if !answer.claims.is_empty() {
                 return Err("The lesson helper returned claims for a refusal.".to_string());
             }
-            non_blank_within(&answer.response, MAX_ANSWER_CHARS, "Helper response")
-                .map_err(|_| "The lesson helper returned an invalid response.".to_string())?;
-            Ok(LessonHelperAnswer {
-                status: answer.status,
-                text: answer.response,
-                claims: vec![],
+            Ok(match answer.status {
+                HelperStatus::Unsupported => unsupported_answer(),
+                HelperStatus::Boundary => boundary_answer(),
+                HelperStatus::Answered => unreachable!(),
             })
         }
     }
@@ -876,6 +1041,7 @@ fn cancelled_error() -> String {
 async fn run_helper(
     client: &reqwest::Client,
     lesson: &'static AuthoredLesson,
+    chunks: Vec<HelperChunk>,
     history: Vec<HelperHistoryMessage>,
     question: String,
     token: String,
@@ -884,7 +1050,9 @@ async fn run_helper(
     let send = client
         .post(bedrock::BEDROCK_ENDPOINT)
         .bearer_auth(token)
-        .json(&bedrock_request(lesson, &history, &question)?)
+        .json(&bedrock_request_for_chunks(
+            lesson, &chunks, &history, &question,
+        )?)
         .send();
     tokio::pin!(send);
 
@@ -937,7 +1105,7 @@ async fn run_helper(
 
     let response = serde_json::from_slice::<Value>(&contents)
         .map_err(|_| "The lesson helper returned invalid JSON.".to_string())?;
-    validate_answer(lesson, model_answer(response)?)
+    validate_answer_for_chunks(&chunks, model_answer(response)?)
 }
 
 pub(crate) async fn answer(
@@ -947,8 +1115,13 @@ pub(crate) async fn answer(
 ) -> Result<LessonHelperAnswer, String> {
     authorize_window(window_label)?;
     let (lesson, history) = resolve_request(&request)?;
-    if crosses_helper_boundary(&request.question, &lesson.lesson_number) {
+    if crosses_helper_boundary(&request.question, lesson) {
         return Ok(boundary_answer());
+    }
+    let question = sanitized_user_text(&request.question).trim().to_string();
+    let chunks = relevant_chunks(lesson, &history, &question);
+    if chunks.is_empty() {
+        return Ok(unsupported_answer());
     }
     let token = bedrock::token().map_err(|_| {
         "The Bedrock lesson helper is unavailable; use the local page match.".to_string()
@@ -957,8 +1130,9 @@ pub(crate) async fn answer(
     run_helper(
         &service.client,
         lesson,
+        chunks,
         history,
-        sanitized_user_text(&request.question).trim().to_string(),
+        question,
         token,
         cancelled,
     )
@@ -1000,6 +1174,7 @@ mod tests {
         tauri::async_runtime::block_on(run_helper(
             &service.client,
             lesson(),
+            relevant_chunks(lesson(), &[], question),
             vec![],
             question.to_string(),
             bedrock::token()?,
@@ -1115,7 +1290,7 @@ mod tests {
         .unwrap();
         for case in cases {
             assert_eq!(
-                crosses_helper_boundary(&case.question, &lesson().lesson_number),
+                crosses_helper_boundary(&case.question, lesson()),
                 case.expected_boundary,
                 "{}",
                 case.question
@@ -1124,10 +1299,55 @@ mod tests {
     }
 
     #[test]
+    fn deterministic_boundary_requires_explicit_cross_lesson_intent() {
+        assert!(crosses_helper_boundary(
+            "Explain lesson GRADIENT-descent.",
+            lesson()
+        ));
+        assert!(crosses_helper_boundary(
+            "Explain the lesson Gradient descent follows repeated local measurements.",
+            lesson()
+        ));
+        assert!(!crosses_helper_boundary(
+            "What exactly becomes smaller when a linear model improves?",
+            authored_lessons()
+                .unwrap()
+                .iter()
+                .find(|lesson| lesson.lesson_id == "loss-landscape")
+                .unwrap()
+        ));
+        assert!(!crosses_helper_boundary(
+            "What does prerequisite-trace mean?",
+            lesson()
+        ));
+        assert!(!crosses_helper_boundary(
+            "Explain Trace the tools before the model.",
+            lesson()
+        ));
+        assert!(!crosses_helper_boundary(
+            "Why do two parameters draw a line?",
+            lesson()
+        ));
+    }
+
+    #[test]
+    fn every_authored_lesson_question_stays_inside_its_own_boundary() {
+        for authored in authored_lessons().unwrap() {
+            assert!(
+                !crosses_helper_boundary(&authored.lesson_question, authored),
+                "{}: {}",
+                authored.lesson_id,
+                authored.lesson_question
+            );
+        }
+    }
+
+    #[test]
     fn deterministic_boundary_returns_before_inference() {
         let service = LessonHelperService::new().unwrap();
         let mut boundary_request = request();
-        boundary_request.question = "Grade my answer and unlock the next lesson.".to_string();
+        boundary_request.question =
+            "Explain the lesson Gradient descent follows repeated local measurements.".to_string();
         let result =
             tauri::async_runtime::block_on(answer(&service, "main", boundary_request)).unwrap();
         assert_eq!(result.status, HelperStatus::Boundary);
@@ -1158,10 +1378,9 @@ mod tests {
                 status: HelperStatus::Answered,
                 response: String::new(),
                 claims: vec![ModelHelperClaim {
-                    text: "The two classes are negative and positive.".to_string(),
+                    text: "In this binary example, 80 of 100 recorded cases are negative and the other 20 are positive.".to_string(),
                     source_chunk_id: "00-base-rate:p1".to_string(),
-                    quote: "80 of 100 recorded cases are negative and the other 20 are positive"
-                        .to_string(),
+                    quote: "In this binary example, 80 of 100 recorded cases are negative and the other 20 are positive.".to_string(),
                 }],
             },
         )
@@ -1208,6 +1427,161 @@ mod tests {
             },
         )
         .is_err());
+    }
+
+    #[test]
+    fn rejects_unrelated_claims_with_exact_authored_quotes() {
+        assert!(validate_answer(
+            lesson(),
+            ModelHelperAnswer {
+                status: HelperStatus::Answered,
+                response: String::new(),
+                claims: vec![ModelHelperClaim {
+                    text: "Gradient descent repeatedly updates model parameters.".to_string(),
+                    source_chunk_id: "00-base-rate:p1".to_string(),
+                    quote: "Classes are the possible target-label categories.".to_string(),
+                }],
+            },
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn question_aware_sources_reject_exact_but_irrelevant_sentences() {
+        let allowed = relevant_chunks(lesson(), &[], "What are classes?");
+        assert!(allowed.iter().any(|chunk| chunk.id == "00-base-rate:p1"));
+        let irrelevant = lesson()
+            .chunks
+            .iter()
+            .find(|chunk| chunk.text.contains("Shape is ordered."))
+            .unwrap();
+        assert!(!allowed.iter().any(|chunk| chunk.id == irrelevant.id));
+        let sentence = authored_sentence_spans(&irrelevant.text)[0].to_string();
+        assert!(validate_answer_for_chunks(
+            &allowed,
+            ModelHelperAnswer {
+                status: HelperStatus::Answered,
+                response: String::new(),
+                claims: vec![ModelHelperClaim {
+                    text: sentence.clone(),
+                    source_chunk_id: irrelevant.id.clone(),
+                    quote: sentence,
+                }],
+            },
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn rejects_context_stripped_substrings_that_invert_authored_meaning() {
+        assert!(!claim_is_authored_sentence(
+            "optimizer chooses the objective",
+            "Neither optimizer chooses the objective.",
+            "Neither optimizer chooses the objective.",
+        ));
+    }
+
+    #[test]
+    fn rejects_stopword_only_exact_quotes() {
+        assert!(validate_answer(
+            lesson(),
+            ModelHelperAnswer {
+                status: HelperStatus::Answered,
+                response: String::new(),
+                claims: vec![ModelHelperClaim {
+                    text: "The negative class is the majority.".to_string(),
+                    source_chunk_id: "00-base-rate:p1".to_string(),
+                    quote: "and the other".to_string(),
+                }],
+            },
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn rejects_entity_substitution_despite_high_token_overlap() {
+        let chunk = lesson()
+            .chunks
+            .iter()
+            .find(|chunk| chunk.id == "00-base-rate:p1")
+            .unwrap();
+        assert!(validate_answer(
+            lesson(),
+            ModelHelperAnswer {
+                status: HelperStatus::Answered,
+                response: String::new(),
+                claims: vec![ModelHelperClaim {
+                    text: "Classes are the possible animal categories.".to_string(),
+                    source_chunk_id: chunk.id.clone(),
+                    quote: chunk.text.clone(),
+                }],
+            },
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn accepts_concise_exact_authored_support() {
+        let answer = validate_answer(
+            lesson(),
+            ModelHelperAnswer {
+                status: HelperStatus::Answered,
+                response: String::new(),
+                claims: vec![ModelHelperClaim {
+                    text: "Always predicting the negative majority is therefore correct 80 percent of the time, and that majority baseline uses no features.".to_string(),
+                    source_chunk_id: "00-base-rate:p1".to_string(),
+                    quote: "Always predicting the negative majority is therefore correct 80 percent of the time, and that majority baseline uses no features.".to_string(),
+                }],
+            },
+        )
+        .unwrap();
+        assert_eq!(answer.claims.len(), 1);
+    }
+
+    #[test]
+    fn refusal_text_is_backend_authored_and_model_prose_is_discarded() {
+        let unsupported = validate_answer(
+            lesson(),
+            ModelHelperAnswer {
+                status: HelperStatus::Unsupported,
+                response: "Invented model refusal text.".to_string(),
+                claims: vec![],
+            },
+        )
+        .unwrap();
+        assert_eq!(unsupported, unsupported_answer());
+
+        let boundary = validate_answer(
+            lesson(),
+            ModelHelperAnswer {
+                status: HelperStatus::Boundary,
+                response: "Another invented refusal.".to_string(),
+                claims: vec![],
+            },
+        )
+        .unwrap();
+        assert_eq!(boundary, boundary_answer());
+    }
+
+    #[test]
+    fn response_parser_rejects_unknown_model_fields() {
+        let response = json!({
+            "status": "completed",
+            "output": [{
+                "type": "message",
+                "role": "assistant",
+                "content": [{
+                    "type": "output_text",
+                    "text": r#"{
+                      "status": "answered",
+                      "response": "",
+                      "claims": [],
+                      "lessonComplete": true
+                    }"#
+                }]
+            }]
+        });
+        assert!(model_answer(response).is_err());
     }
 
     #[test]
@@ -1262,7 +1636,7 @@ mod tests {
                       "status": "answered",
                       "response": "",
                       "claims": [{
-                        "text": "Classes are target-label categories.",
+                        "text": "Classes are the possible target-label categories.",
                         "sourceChunkId": "00-base-rate:p1",
                         "quote": "Classes are the possible target-label categories."
                       }]

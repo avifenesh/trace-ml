@@ -126,22 +126,18 @@ describe("native lesson helper boundary", () => {
     expect(
       lessonHelperInternals.normalizeAnswer(lesson, {
         status: "answered",
-        text:
-          "The classes are the negative and positive target-label categories.",
+        text: "Classes are the possible target-label categories.",
         claims: [{
-          text:
-            "The classes are the negative and positive target-label categories.",
+          text: "Classes are the possible target-label categories.",
           sourceChunkId: "00-base-rate:p1",
           quote: "Classes are the possible target-label categories.",
         }],
       }),
     ).toEqual({
       status: "answered",
-      text:
-        "The classes are the negative and positive target-label categories.",
+      text: "Classes are the possible target-label categories.",
       claims: [{
-        text:
-          "The classes are the negative and positive target-label categories.",
+        text: "Classes are the possible target-label categories.",
         sourceChunkId: "00-base-rate:p1",
         quote: "Classes are the possible target-label categories.",
       }],
@@ -166,7 +162,7 @@ describe("native lesson helper boundary", () => {
           quote: "Invented.",
         }],
       })
-    ).toThrow("invalid source quote");
+    ).toThrow("invalid cited claim");
     expect(() =>
       lessonHelperInternals.normalizeAnswer(lesson, {
         status: "answered",
@@ -183,7 +179,7 @@ describe("native lesson helper boundary", () => {
         status: "boundary",
         text: "I cannot grade the response.",
         claims: [{
-          text: "I cannot grade the response.",
+          text: baseRateChunk.text,
           sourceChunkId: "00-base-rate:p1",
           quote: baseRateChunk.text,
         }],

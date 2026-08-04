@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireLesson } from "../content/course";
+import type { BedrockReadiness } from "../bedrock-readiness";
 import { useTutorThreads } from "./useTutorThreads";
 
 const { invokeMock, isTauriMock } = vi.hoisted(() => ({
@@ -21,6 +22,13 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 const lesson = requireLesson("prerequisite-trace");
+const verifiedReadiness = {
+  available: true,
+  model: "openai.gpt-5.6-sol",
+  retentionMode: "provider_data_share",
+  retentionSource: "account",
+  allowedRetentionModes: ["default", "provider_data_share"],
+} satisfies BedrockReadiness;
 const storedValues = new Map<string, string>();
 const localStorageStub: Storage = {
   get length() {
@@ -57,13 +65,27 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("useTutorThreads native helper", () => {
+  it("fails closed when readiness lacks verified policy metadata", async () => {
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "lesson_helper_ready") return Promise.resolve(true);
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+
+    const { result } = renderHook(() => useTutorThreads(lesson));
+
+    await waitFor(() => expect(result.current.helperMode).toBe("local"));
+    expect(result.current.helperReadiness).toBeNull();
+  });
+
   it("persists the question and appends the cited Bedrock answer", async () => {
     let resolveAnswer: (value: unknown) => void = () => {};
     const answer = new Promise((resolve) => {
       resolveAnswer = resolve;
     });
     invokeMock.mockImplementation((command: string) => {
-      if (command === "lesson_helper_ready") return Promise.resolve(true);
+      if (command === "lesson_helper_ready") {
+        return Promise.resolve(verifiedReadiness);
+      }
       if (command === "answer_lesson_question") return answer;
       if (command === "cancel_lesson_answer") return Promise.resolve(true);
       return Promise.reject(new Error(`Unexpected command: ${command}`));
@@ -82,11 +104,9 @@ describe("useTutorThreads native helper", () => {
     await act(async () => {
       resolveAnswer({
         status: "answered",
-        text:
-          "The two classes are the negative and positive target-label categories.",
+        text: "Classes are the possible target-label categories.",
         claims: [{
-          text:
-            "The two classes are the negative and positive target-label categories.",
+          text: "Classes are the possible target-label categories.",
           sourceChunkId: "00-base-rate:p1",
           quote: "Classes are the possible target-label categories.",
         }],
@@ -97,8 +117,7 @@ describe("useTutorThreads native helper", () => {
     await waitFor(() => expect(result.current.pendingAnswer).toBeNull());
     expect(result.current.activeThread.messages.at(-1)).toMatchObject({
       role: "tutor",
-      text:
-        "The two classes are the negative and positive target-label categories.",
+      text: "Classes are the possible target-label categories.",
       sourceBlockIds: ["00-base-rate"],
       sourceChunkIds: ["00-base-rate:p1"],
       claims: [{
@@ -115,18 +134,22 @@ describe("useTutorThreads native helper", () => {
     });
     let answerCalls = 0;
     invokeMock.mockImplementation((command: string) => {
-      if (command === "lesson_helper_ready") return Promise.resolve(true);
+      if (command === "lesson_helper_ready") {
+        return Promise.resolve(verifiedReadiness);
+      }
       if (command === "answer_lesson_question") {
         answerCalls += 1;
         if (answerCalls === 1) return oldAnswer;
         return Promise.resolve({
           status: "answered",
-          text: "The weight controls how much the prediction changes per input unit.",
+          text:
+            "The weight controls how much the prediction changes for a one-unit change in x.",
           claims: [{
-            text: "The weight controls how much the prediction changes per input unit.",
-            sourceChunkId: "02-weight:p1",
+            text:
+              "The weight controls how much the prediction changes for a one-unit change in x.",
+            sourceChunkId: "linear-model-teaching:introduction-2",
             quote:
-              "increasing x by one increases y_hat by three while b stays fixed",
+              "The weight controls how much the prediction changes for a one-unit change in x.",
           }],
         });
       }
@@ -159,16 +182,17 @@ describe("useTutorThreads native helper", () => {
     await waitFor(() => expect(result.current.pendingAnswer).toBeNull());
     expect(result.current.activeThread.messages.at(-1)).toMatchObject({
       role: "tutor",
-      text: "The weight controls how much the prediction changes per input unit.",
-      sourceChunkIds: ["02-weight:p1"],
+      text:
+        "The weight controls how much the prediction changes for a one-unit change in x.",
+      sourceChunkIds: ["linear-model-teaching:introduction-2"],
     });
 
     await act(async () => {
       resolveOldAnswer({
         status: "answered",
-        text: "A late answer from the previous lesson.",
+        text: "Classes are the possible target-label categories.",
         claims: [{
-          text: "A late answer from the previous lesson.",
+          text: "Classes are the possible target-label categories.",
           sourceChunkId: "00-base-rate:p1",
           quote: "Classes are the possible target-label categories.",
         }],
@@ -185,7 +209,9 @@ describe("useTutorThreads native helper", () => {
 
   it("uses the exact-page fallback after a remote failure", async () => {
     invokeMock.mockImplementation((command: string) => {
-      if (command === "lesson_helper_ready") return Promise.resolve(true);
+      if (command === "lesson_helper_ready") {
+        return Promise.resolve(verifiedReadiness);
+      }
       if (command === "answer_lesson_question") {
         return Promise.reject("The lesson helper is unavailable.");
       }
@@ -209,13 +235,15 @@ describe("useTutorThreads native helper", () => {
     );
   });
 
-  it("invalidates locally on cancel and ignores a late native answer", async () => {
+  it("keeps cancellation pending and ignores a late native answer", async () => {
     let resolveAnswer: (value: unknown) => void = () => {};
     const answer = new Promise((resolve) => {
       resolveAnswer = resolve;
     });
     invokeMock.mockImplementation((command: string) => {
-      if (command === "lesson_helper_ready") return Promise.resolve(true);
+      if (command === "lesson_helper_ready") {
+        return Promise.resolve(verifiedReadiness);
+      }
       if (command === "answer_lesson_question") return answer;
       if (command === "cancel_lesson_answer") return Promise.resolve(true);
       return Promise.reject(new Error(`Unexpected command: ${command}`));
@@ -230,15 +258,15 @@ describe("useTutorThreads native helper", () => {
     act(() => {
       result.current.cancelAnswer();
     });
-    expect(result.current.pendingAnswer).toBeNull();
-    expect(result.current.helperNotice).toContain("cancelled");
+    expect(result.current.pendingAnswer?.cancelling).toBe(true);
+    expect(result.current.helperNotice).toBeNull();
 
     await act(async () => {
       resolveAnswer({
         status: "answered",
-        text: "This late answer must be ignored.",
+        text: "Classes are the possible target-label categories.",
         claims: [{
-          text: "This late answer must be ignored.",
+          text: "Classes are the possible target-label categories.",
           sourceChunkId: "00-base-rate:p1",
           quote: "Classes are the possible target-label categories.",
         }],
@@ -246,10 +274,13 @@ describe("useTutorThreads native helper", () => {
       await answer;
     });
 
+    expect(result.current.pendingAnswer).toBeNull();
+    expect(result.current.helperNotice).toContain("cancelled");
     expect(result.current.activeThread.messages).toHaveLength(messageCount);
     expect(
       result.current.activeThread.messages.some(
-        (message) => message.text === "This late answer must be ignored.",
+        (message) =>
+          message.text === "Classes are the possible target-label categories.",
       ),
     ).toBe(false);
   });

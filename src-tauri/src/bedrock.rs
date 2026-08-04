@@ -1,9 +1,43 @@
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{env, fs, path::PathBuf, time::Duration};
 
 pub(crate) const BEDROCK_ENDPOINT: &str =
     "https://bedrock-mantle.us-east-1.api.aws/openai/v1/responses";
+const BEDROCK_MODELS_ENDPOINT: &str =
+    "https://bedrock-mantle.us-east-1.api.aws/v1/models";
 pub(crate) const BEDROCK_MODEL: &str = "openai.gpt-5.6-sol";
+const MAX_MODELS_RESPONSE_BYTES: usize = 2 * 1_024 * 1_024;
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct BedrockReadiness {
+    available: bool,
+    model: String,
+    retention_mode: String,
+    retention_source: String,
+    allowed_retention_modes: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModelList {
+    object: String,
+    data: Vec<ModelMetadata>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModelMetadata {
+    id: String,
+    status: String,
+    data_retention: ModelRetention,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModelRetention {
+    mode: String,
+    source: String,
+    allowed_modes: Vec<String>,
+}
 
 pub(crate) fn client(
     timeout: Duration,
@@ -55,6 +89,88 @@ pub(crate) fn token() -> Result<String, String> {
         fs::read_to_string(path).map_err(|_| "Bedrock credentials are unavailable.".to_string())?;
     env_value(&contents, "AWS_BEARER_TOKEN_BEDROCK")
         .ok_or_else(|| "Bedrock credentials are unavailable.".to_string())
+}
+
+fn readiness_from_value(value: Value) -> Result<BedrockReadiness, String> {
+    const RETENTION_MODES: [&str; 3] = ["default", "provider_data_share", "none"];
+    let models = serde_json::from_value::<ModelList>(value)
+        .map_err(|_| "Bedrock model policy metadata is invalid.".to_string())?;
+    if models.object != "list" {
+        return Err("Bedrock model policy metadata is invalid.".to_string());
+    }
+    let mut selected = models
+        .data
+        .into_iter()
+        .filter(|model| model.id == BEDROCK_MODEL);
+    let model = selected
+        .next()
+        .ok_or_else(|| "The configured Bedrock model is unavailable.".to_string())?;
+    if selected.next().is_some()
+        || !RETENTION_MODES.contains(&model.data_retention.mode.as_str())
+        || model.data_retention.source.trim().is_empty()
+        || model.data_retention.source.chars().count() > 100
+        || model.data_retention.allowed_modes.is_empty()
+        || model
+            .data_retention
+            .allowed_modes
+            .iter()
+            .any(|mode| !RETENTION_MODES.contains(&mode.as_str()))
+        || !model
+            .data_retention
+            .allowed_modes
+            .contains(&model.data_retention.mode)
+    {
+        return Err("Bedrock model policy metadata is invalid.".to_string());
+    }
+    let mut allowed_retention_modes = model.data_retention.allowed_modes;
+    allowed_retention_modes.sort();
+    allowed_retention_modes.dedup();
+    Ok(BedrockReadiness {
+        available: model.status == "available",
+        model: model.id,
+        retention_mode: model.data_retention.mode,
+        retention_source: model.data_retention.source,
+        allowed_retention_modes,
+    })
+}
+
+pub(crate) async fn readiness(
+    client: &reqwest::Client,
+    token: String,
+) -> Result<BedrockReadiness, String> {
+    let mut response = client
+        .get(BEDROCK_MODELS_ENDPOINT)
+        .bearer_auth(token)
+        .send()
+        .await
+        .map_err(|_| "Bedrock model policy could not be verified.".to_string())?;
+    if !response.status().is_success() {
+        eprintln!(
+            "Trace ML Bedrock model-policy check failed with HTTP {}.",
+            response.status()
+        );
+        return Err("Bedrock model policy could not be verified.".to_string());
+    }
+    if response
+        .content_length()
+        .is_some_and(|length| length > MAX_MODELS_RESPONSE_BYTES as u64)
+    {
+        return Err("Bedrock model policy metadata is oversized.".to_string());
+    }
+    let mut contents = Vec::new();
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|_| "Bedrock model policy could not be read.".to_string())?
+    {
+        if contents.len() + chunk.len() > MAX_MODELS_RESPONSE_BYTES {
+            return Err("Bedrock model policy metadata is oversized.".to_string());
+        }
+        contents.extend_from_slice(&chunk);
+    }
+    let value = serde_json::from_slice::<Value>(&contents)
+        .map_err(|_| "Bedrock model policy metadata is invalid.".to_string())?;
+    readiness_from_value(value)
 }
 
 pub(crate) fn single_assistant_output_text<'a>(
@@ -188,5 +304,50 @@ mod tests {
             }]
         });
         assert!(single_assistant_output_text(&mixed_content, "incomplete", "invalid").is_err());
+    }
+
+    #[test]
+    fn validates_effective_model_retention_metadata() {
+        let readiness = readiness_from_value(json!({
+            "object": "list",
+            "data": [{
+                "id": BEDROCK_MODEL,
+                "status": "available",
+                "data_retention": {
+                    "mode": "provider_data_share",
+                    "source": "account",
+                    "allowed_modes": ["provider_data_share", "default"]
+                }
+            }]
+        }))
+        .unwrap();
+        assert!(readiness.available);
+        assert_eq!(readiness.retention_mode, "provider_data_share");
+        assert_eq!(readiness.retention_source, "account");
+        assert_eq!(
+            readiness.allowed_retention_modes,
+            vec!["default".to_string(), "provider_data_share".to_string()]
+        );
+    }
+
+    #[test]
+    fn rejects_missing_or_inconsistent_model_retention_metadata() {
+        for value in [
+            json!({"object": "list", "data": []}),
+            json!({
+                "object": "list",
+                "data": [{
+                    "id": BEDROCK_MODEL,
+                    "status": "available",
+                    "data_retention": {
+                        "mode": "provider_data_share",
+                        "source": "account",
+                        "allowed_modes": ["default"]
+                    }
+                }]
+            }),
+        ] {
+            assert!(readiness_from_value(value).is_err());
+        }
     }
 }
