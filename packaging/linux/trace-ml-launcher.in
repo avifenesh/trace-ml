@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -u
+
+binary=@BINARY_PATH_SHELL@
+uid="$(id -u)"
+: "${XDG_RUNTIME_DIR:=/run/user/$uid}"
+export XDG_RUNTIME_DIR
+
+if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" && -S "$XDG_RUNTIME_DIR/bus" ]]; then
+  DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+  export DBUS_SESSION_BUS_ADDRESS
+fi
+
+if [[ -z "${WAYLAND_DISPLAY:-}" && -S "$XDG_RUNTIME_DIR/wayland-0" ]]; then
+  WAYLAND_DISPLAY=wayland-0
+  export WAYLAND_DISPLAY
+fi
+
+if [[ -z "${DISPLAY:-}" && -S /tmp/.X11-unix/X0 ]]; then
+  DISPLAY=:0
+  export DISPLAY
+fi
+
+log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/trace-ml"
+mkdir -p "$log_dir"
+
+launch_nonce="${TRACE_ML_LAUNCH_NONCE:-}"
+if [[ ! "$launch_nonce" =~ ^[a-fA-F0-9-]{16,64}$ ]]; then
+  launch_nonce="$(<"/proc/sys/kernel/random/uuid")"
+fi
+expected_executable="$(readlink -f -- "$binary")"
+process_start_time="$(awk '{ print $22 }' "/proc/$$/stat")"
+proof_dir="$XDG_RUNTIME_DIR/trace-ml"
+mkdir -p -- "$proof_dir"
+umask 077
+proof_path="$proof_dir/launch-$launch_nonce.proof"
+proof_staging="$(mktemp "$proof_dir/.launch-proof.XXXXXX")"
+{
+  printf 'nonce=%s\n' "$launch_nonce"
+  printf 'pid=%s\n' "$$"
+  printf 'executable=%s\n' "$expected_executable"
+  printf 'start_time=%s\n' "$process_start_time"
+} >"$proof_staging"
+mv -fT -- "$proof_staging" "$proof_path"
+
+{
+  printf '\n[%s] launching Trace ML (%s)\n' \
+    "$(date '+%Y-%m-%dT%H:%M:%S%z')" \
+    "$launch_nonce"
+  printf 'WAYLAND_DISPLAY=%s DISPLAY=%s XDG_RUNTIME_DIR=%s\n' \
+    "${WAYLAND_DISPLAY:-}" "${DISPLAY:-}" "$XDG_RUNTIME_DIR"
+} >>"$log_dir/launcher.log"
+
+exec "$binary" "$@" >>"$log_dir/launcher.log" 2>&1

@@ -3,9 +3,10 @@
 Trace ML is an inspectable, evidence-led machine-learning course delivered as a
 React web app and a Tauri desktop app. The curriculum is fixed and pre-authored:
 all 21 published lessons are visible and selectable from the first run.
-Objective checkpoints record supported predictions, controlled comparisons,
-and executable checks; they do not claim durable retention, unlock, generate,
-or reorder course material. Free-form explanation and transfer prompts remain
+Objective checkpoints record supported predictions and executable checks.
+Controlled comparisons remain saved experiment state rather than comprehension
+evidence. None of these signals claims durable retention, unlocks, generates, or
+reorders course material. Free-form explanation and transfer prompts remain
 formative drafts and never control access or objective completion.
 
 ## Course
@@ -29,12 +30,13 @@ current course includes 19 Python labs and 41 optional external resources:
 pages. Opening a resource records exposure only; authored activities provide
 immediate evidence without inferring retention or mastery.
 
-Lesson completion uses only objectively checkable prediction, comparison, and
-code activities. In the desktop app, a bounded Bedrock model reviews prose
-against the current authored page and rubric, then gives novice-appropriate
-direction on the most important mistake. It accepts reasonable paraphrases and
-does not require expert wording. The browser build retains a deterministic
-structure-only fallback when the desktop command is unavailable.
+Lesson completion uses only objectively checkable prediction and code
+activities. In the desktop app, a bounded Bedrock model classifies prose against
+the current authored page and rubric. Rust derives the formative level and
+renders novice-appropriate revision direction from authored course strings; the
+model cannot write feedback or replacement teaching. It accepts reasonable
+paraphrases and does not require expert wording. The browser build retains a
+deterministic structure-only fallback when the desktop command is unavailable.
 
 The prose assessor may label the submitted activity `unsupported`, `partial`,
 or `demonstrated`, but that immediate formative label is not evidence of
@@ -42,8 +44,8 @@ retention or mastery and is excluded from lesson completion. It cannot change
 the rubric, lesson sequence, course material, helper conversation, or learner
 access.
 
-The 195 focused reading paragraphs and 476 new teaching chunks form 671
-source-linked page chunks backed by a 104-source research registry. Compact
+The 204 focused reading paragraphs and 489 teaching chunks form 693
+source-linked page chunks backed by a 109-source research registry. Compact
 editorial citations under teaching and reading blocks are separate from
 optional resources and never record learner activity.
 
@@ -93,11 +95,12 @@ Vite and Tauri then serve every runtime asset from the same origin; lesson
 execution never fetches a package from the network. The development server
 also sets the cross-origin isolation headers needed for interrupt support.
 
-Practice runs reuse a worker. **Check work** runs the submitted code and the
-authored checks in a fresh worker, with a fixed seed, timeout, and output quota,
-then destroys that worker. Stop, timeout, lesson navigation, and component
-teardown all force termination after a short cooperative-interrupt grace
-period. Fourteen labs use the Python standard library only.
+Every practice run starts in a fresh worker and destroys it afterward. **Check
+work** likewise runs the submitted code and authored checks in a separate fresh
+worker, with a fixed seed, timeout, and output quota, then destroys that worker.
+Stop, timeout, lesson navigation, and component teardown all force termination
+after a short cooperative-interrupt grace period. Fourteen labs use the Python
+standard library only.
 Five scientific labs load pinned, checksum-verified local wheels for NumPy
 `2.4.3`, scikit-learn `1.8.0`, or autograd `1.9.1`; no package is fetched at
 lesson runtime.
@@ -122,6 +125,8 @@ Trace ML persists local state with `localStorage`:
 - `trace-ml:learner-record:v1`: activity attempts, resource opens, and concept
   evidence.
 - `trace-ml:tutor-threads:v1`: lesson-scoped helper conversations.
+- `trace-ml:tutor-thread-deleted:v1:*`: durable per-thread deletion markers
+  that prevent stale same-origin windows from restoring deleted conversations.
 - `trace-ml:active-thread:v1`: the selected helper thread.
 - `trace-ml:active-lesson:v1`: the last selected authored lesson.
 - `trace-ml:activity-state:v1:*`: revision-scoped drafts and formative prose
@@ -131,12 +136,14 @@ State belongs to the current browser or Tauri webview profile. There is no
 account or cloud sync, and clearing site storage resets it. Same-origin windows
 serialize learner-record writes with the Web Locks API, re-read and merge the
 latest ledger inside the lock, and synchronize subsequent storage events.
-Malformed or orphaned evidence is discarded during normalization.
+Helper threads merge ordinary concurrent writes and honor explicit deletion
+markers rather than inferring deletion from an absent record. Malformed or
+orphaned evidence is discarded during normalization.
 
 Desktop Q&A sends the current authored lesson, the question, and bounded recent
 thread context to the configured Amazon Bedrock model. Desktop prose review
-sends the authored lesson text, activity prompt and guidance, rubric labels and
-feedback, and the submitted draft. The webview supplies only authored IDs and
+sends the authored lesson text, activity prompt and guidance, rubric labels,
+and the submitted draft. The webview supplies only authored IDs and
 learner text; Rust resolves trusted material from generated manifests compiled
 into the app. The backend sends direct HTTPS requests to the documented Mantle
 Responses endpoint with strict structured output, `tool_choice: "none"`,
@@ -168,6 +175,7 @@ automatically synchronizes the local Pyodide assets.
 | Command | Purpose |
 | --- | --- |
 | `npm run sync:pyodide` | Refresh `public/pyodide/` from the pinned package |
+| `npm run check:manifests` | Verify compiled lesson, rubric, and opener authority without rewriting it |
 | `npm run typecheck` | Run the TypeScript project build checks |
 | `npm run lint` | Run Oxlint |
 | `npm test` | Run the Vitest unit suite |
@@ -205,21 +213,45 @@ sudo apt install libwebkit2gtk-4.1-dev \
   librsvg2-dev
 ```
 
-Run the desktop app in development or build release bundles:
+Run the desktop app in development:
 
 ```bash
 npm run tauri dev
-npm run tauri build
 ```
 
-Tauri runs the configured Vite command before development and `npm run build`
-before bundling the generated `dist/` frontend. Bundle targets are selected
-from those supported by the current host.
+Build, test, install, and verify the self-contained Linux release:
 
-On this machine, the local release is available as **Trace ML** in the
-applications menu and as `~/Desktop/Trace ML.desktop`. Double-click either
-launcher; startup diagnostics are written to
-`~/.cache/trace-ml/launcher.log`.
+```bash
+npm run desktop:install
+```
+
+The release command verifies generated authority, runs lint, typecheck, unit,
+Rust, and serial Playwright tests, builds Tauri, installs that exact artifact,
+and runs the installed-app smoke with port `5173` closed. The low-level
+installer is idempotent. It copies the release binary from
+`src-tauri/target/release/trace-ml`, installs the hicolor icon at 32, 64, 128,
+256, and 512 pixels, refreshes the desktop and icon caches, and creates both
+the **Trace ML** applications-menu entry and `Trace ML.desktop` in the
+configured XDG desktop directory.
+To install a different release artifact, run
+`scripts/install-linux-desktop.sh --binary /absolute/path/to/trace-ml`.
+
+The smoke test deliberately fails while anything is listening on port `5173`.
+It activates the installed desktop file, establishes cleanup ownership for the
+new process, proves the window's `/proc` executable and `WM_CLASS`, resolves
+the installed icon through GTK, starts a fresh helper conversation, submits an
+authored page question, and requires a completed local or Bedrock response. Run
+`npm run desktop:smoke -- --require-bedrock` for the optional credentialed
+semantic-readiness check.
+Startup diagnostics are written to `~/.cache/trace-ml/launcher.log`.
+
+Tauri uses `devUrl` only for development and embeds `frontendDist` in release
+builds. The bundle category follows the official
+[Tauri 2 configuration reference](https://v2.tauri.app/reference/config/);
+the installed entries follow the freedesktop
+[Desktop Entry](https://specifications.freedesktop.org/desktop-entry-spec/latest/)
+and [Icon Theme](https://specifications.freedesktop.org/icon-theme-spec/latest/)
+specifications (accessed 2026-08-04).
 
 ## Repository Map
 
@@ -237,7 +269,7 @@ launcher; startup diagnostics are written to
 
 The research synthesis is in
 [`agent-knowledge/ml-course-research.md`](agent-knowledge/ml-course-research.md).
-Its 104-source registry is
+Its 109-source registry is
 [`agent-knowledge/resources/ml-course-research-sources.json`](agent-knowledge/resources/ml-course-research-sources.json).
 Source IDs in lesson content resolve against that registry; the guide also
 records synthesized design decisions and known evidence gaps.

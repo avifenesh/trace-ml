@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Trace ML
+GenericName=Machine Learning Course
+Comment=Interactive, inspectable machine-learning course
+Exec="@LAUNCHER_PATH_EXEC@"
+Icon=trace-ml
+Terminal=false
+Categories=Education;
+Keywords=machine learning;ML;course;education;
+StartupNotify=true
+StartupWMClass=trace-ml

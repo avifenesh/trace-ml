@@ -3,6 +3,7 @@ import path from "node:path";
 import ts from "typescript";
 
 const root = path.resolve(import.meta.dirname, "..");
+const checkOnly = process.argv.slice(2).includes("--check");
 const registryPath = path.join(
   root,
   "agent-knowledge/resources/ml-course-research-sources.json",
@@ -70,10 +71,22 @@ const capability = {
   ],
 };
 
-fs.writeFileSync(
-  capabilityPath,
-  `${JSON.stringify(capability, null, 2)}\n`,
-);
-console.log(
-  `Wrote ${allowedUrls.length} exact opener URL scopes to ${path.relative(root, capabilityPath)}.`,
-);
+const serialized = `${JSON.stringify(capability, null, 2)}\n`;
+if (checkOnly) {
+  const current = fs.existsSync(capabilityPath)
+    ? fs.readFileSync(capabilityPath, "utf8")
+    : "";
+  if (current !== serialized) {
+    throw new Error(
+      `${path.relative(root, capabilityPath)} is stale. Run npm run sync:opener-scope.`,
+    );
+  }
+  console.log(
+    `Verified ${allowedUrls.length} exact opener URL scopes in ${path.relative(root, capabilityPath)}.`,
+  );
+} else {
+  fs.writeFileSync(capabilityPath, serialized);
+  console.log(
+    `Wrote ${allowedUrls.length} exact opener URL scopes to ${path.relative(root, capabilityPath)}.`,
+  );
+}

@@ -1,8 +1,9 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createServer } from "vite";
 
 const root = path.resolve(import.meta.dirname, "..");
+const checkOnly = process.argv.slice(2).includes("--check");
 const outputPath = path.join(
   root,
   "src-tauri/prose-assessment-manifest.json",
@@ -42,10 +43,23 @@ try {
       }));
   });
 
-  await writeFile(outputPath, `${JSON.stringify(manifest, null, 2)}\n`);
-  console.log(
-    `Wrote ${manifest.length} authored prose rubrics to ${path.relative(root, outputPath)}.`,
-  );
+  const serialized = `${JSON.stringify(manifest, null, 2)}\n`;
+  if (checkOnly) {
+    const current = await readFile(outputPath, "utf8").catch(() => "");
+    if (current !== serialized) {
+      throw new Error(
+        `${path.relative(root, outputPath)} is stale. Run npm run sync:prose-manifest.`,
+      );
+    }
+    console.log(
+      `Verified ${manifest.length} authored prose rubrics in ${path.relative(root, outputPath)}.`,
+    );
+  } else {
+    await writeFile(outputPath, serialized);
+    console.log(
+      `Wrote ${manifest.length} authored prose rubrics to ${path.relative(root, outputPath)}.`,
+    );
+  }
 } finally {
   await server.close();
 }

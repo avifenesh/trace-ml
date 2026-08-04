@@ -8,6 +8,7 @@
     "sync:opener-scope": "node scripts/sync-opener-scope.mjs",
     "sync:prose-manifest": "node scripts/sync-prose-assessment-manifest.mjs",
     "sync:helper-manifest": "node scripts/sync-lesson-helper-manifest.mjs",
+    "check:manifests": "node scripts/sync-prose-assessment-manifest.mjs --check && node scripts/sync-lesson-helper-manifest.mjs --check && node scripts/sync-opener-scope.mjs --check",
     "predev": "npm run sync:pyodide && npm run sync:prose-manifest && npm run sync:helper-manifest",
     "dev": "vite",
     "prebuild": "npm run sync:pyodide && npm run sync:prose-manifest && npm run sync:helper-manifest && npm run sync:opener-scope",
@@ -16,6 +17,9 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "tauri": "tauri",
+    "desktop:install": "bash scripts/release-linux-desktop.sh",
+    "desktop:install-artifact": "bash scripts/install-linux-desktop.sh",
+    "desktop:smoke": "bash scripts/smoke-installed-linux.sh",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },
