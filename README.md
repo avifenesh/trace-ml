@@ -9,6 +9,46 @@ evidence. None of these signals claims durable retention, unlocks, generates, or
 reorders course material. Free-form explanation and transfer prompts remain
 formative drafts and never control access or objective completion.
 
+## Quick Start on Another Machine
+
+Trace ML builds natively on Linux and macOS. Install Node 24 LTS and the stable
+Rust toolchain. On macOS Catalina 10.15 or newer, also install Apple's desktop
+build tools:
+
+```bash
+xcode-select --install
+```
+
+Clone this private repository, then run the first-machine setup:
+
+```bash
+git clone https://github.com/avifenesh/trace-ml.git
+cd trace-ml
+make doctor
+make first-run
+```
+
+`make first-run` installs the pinned dependencies, verifies the project, builds
+the native app, installs it for the current user, and opens it. On macOS the app
+is installed at `~/Applications/Trace ML.app`; on Linux the existing
+applications-menu and desktop launchers are installed. Subsequent launches need
+only:
+
+```bash
+make start
+```
+
+The application works without Bedrock credentials by using its local,
+page-grounded fallback. To enable semantic Q&A and prose review in a
+Finder-launched macOS app, put
+`AWS_BEARER_TOKEN_BEDROCK=<your token>` in
+`~/.config/claude/bedrock.env` and restrict that file to the current user with
+`chmod 600`. Never commit that file or token.
+
+Git synchronizes the authored course and application code. Learner progress and
+helper conversations remain local to each machine and are not synced through
+GitHub.
+
 ## Course
 
 The course contains seven authored modules:
@@ -162,10 +202,30 @@ the current evidence will not survive a reload.
 
 ## Development
 
-Requirements are Node.js with npm. Install dependencies and start Vite:
+The desktop build requires Node `^20.19.0` or `>=22.12.0`, npm, Rust `1.77.2`
+or newer, and the operating-system prerequisites below. Node 24 LTS is the
+recommended version; `.nvmrc` and `rust-toolchain.toml` describe the expected
+toolchains.
+
+The portable Make targets are:
+
+| Command | Purpose |
+| --- | --- |
+| `make doctor` | Check Node, Rust, and native desktop prerequisites |
+| `make setup` | Run deterministic `npm ci` and synchronize local runtime assets |
+| `make web` | Start browser development on `127.0.0.1:5173` |
+| `make dev` | Start Tauri desktop development |
+| `make check` | Verify manifests, lint, types, frontend tests, and Rust tests |
+| `make test-e2e` | Run browser and real-Pyodide integration tests |
+| `make build` | Build native bundles for the current operating system |
+| `make install` | Verify, build, and install the native app |
+| `make start` | Open the installed native app |
+| `make dmg` | Build a macOS DMG on a Mac |
+
+The equivalent npm-only browser setup remains:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -189,15 +249,44 @@ npm run test:e2e
 ```
 
 Playwright uses the installed Google Chrome channel at a `1440x1000` viewport.
-It starts or reuses the Vite server on port `5173`. Browser course-flow tests
-and the real Pyodide runtime test live in `e2e/`; saved failure traces are
-written to `outputs/playwright/`.
+It allocates an isolated loopback port, starts a fresh Vite server, and runs one
+worker so multi-window persistence cases cannot interfere with one another.
+Browser course-flow tests and the real Pyodide runtime test live in `e2e/`;
+saved failure traces are written to `outputs/playwright/`.
 
 ## Tauri Desktop
 
-The desktop shell requires Node.js/npm, a Rust toolchain compatible with the
-manifest's Rust `1.77.2` minimum, and the platform dependencies required by
-Tauri 2. On Debian or Ubuntu, install the
+The desktop shell uses Tauri 2 and must be built on the target operating
+system. Run `make doctor` before setup.
+
+### macOS
+
+Tauri's current macOS prerequisites require Catalina 10.15 or newer and Xcode
+or Xcode Command Line Tools. Desktop-only builds can use:
+
+```bash
+xcode-select --install
+```
+
+`make install` runs the core quality gates, builds the official Tauri `.app`
+bundle on that Mac, validates its bundle identifier, executable, and `.icns`
+icon, then transactionally installs it to `~/Applications/Trace ML.app`.
+An interrupted replacement restores the previous app. `make start` opens the
+installed app through macOS Launch Services.
+
+To produce a drag-to-Applications installer on a Mac:
+
+```bash
+make dmg
+```
+
+Local source builds are intended for personal use. Sharing a binary with other
+Mac users requires Apple Developer ID signing and notarization; the repository
+does not contain signing credentials.
+
+### Linux
+
+On Debian or Ubuntu, install the
 [official Tauri prerequisites](https://v2.tauri.app/start/prerequisites/):
 
 ```bash
@@ -213,22 +302,22 @@ sudo apt install libwebkit2gtk-4.1-dev \
   librsvg2-dev
 ```
 
-Run the desktop app in development:
+Run the desktop app in development on either supported operating system:
 
 ```bash
-npm run tauri dev
+make dev
 ```
 
-Build, test, install, and verify the self-contained Linux release:
+Build, test, install, and verify the self-contained native release:
 
 ```bash
-npm run desktop:install
+make install
 ```
 
-The release command verifies generated authority, runs lint, typecheck, unit,
-Rust, and serial Playwright tests, builds Tauri, installs that exact artifact,
-and runs the installed-app smoke with port `5173` closed. The low-level
-installer is idempotent. It copies the release binary from
+On Linux, the release command additionally runs serial Playwright tests,
+installs the exact built artifact, and runs the installed-app smoke with port
+`5173` closed. The low-level installer is idempotent. It copies the release
+binary from
 `src-tauri/target/release/trace-ml`, installs the hicolor icon at 32, 64, 128,
 256, and 512 pixels, refreshes the desktop and icon caches, and creates both
 the **Trace ML** applications-menu entry and `Trace ML.desktop` in the
@@ -245,13 +334,20 @@ authored page question, and requires a completed local or Bedrock response. Run
 semantic-readiness check.
 Startup diagnostics are written to `~/.cache/trace-ml/launcher.log`.
 
+The `macOS build` GitHub Actions workflow compiles and validates the `.app`
+bundle on both Apple Silicon and Intel macOS runners after every push to
+`main`.
+
 Tauri uses `devUrl` only for development and embeds `frontendDist` in release
 builds. The bundle category follows the official
 [Tauri 2 configuration reference](https://v2.tauri.app/reference/config/);
 the installed entries follow the freedesktop
 [Desktop Entry](https://specifications.freedesktop.org/desktop-entry-spec/latest/)
 and [Icon Theme](https://specifications.freedesktop.org/icon-theme-spec/latest/)
-specifications (accessed 2026-08-04).
+specifications. The macOS setup and bundle commands follow the official
+[prerequisites](https://v2.tauri.app/start/prerequisites/),
+[application bundle](https://v2.tauri.app/distribute/macos-application-bundle/),
+and [DMG](https://v2.tauri.app/distribute/dmg/) guides (accessed 2026-08-05).
 
 ## Repository Map
 

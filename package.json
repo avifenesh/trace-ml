@@ -3,7 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "scripts": {
+    "setup": "bash scripts/setup.sh",
     "sync:pyodide": "node scripts/sync-pyodide.mjs",
     "sync:opener-scope": "node scripts/sync-opener-scope.mjs",
     "sync:prose-manifest": "node scripts/sync-prose-assessment-manifest.mjs",
@@ -17,9 +21,12 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "tauri": "tauri",
-    "desktop:install": "bash scripts/release-linux-desktop.sh",
+    "desktop:install": "bash scripts/install-desktop.sh",
+    "desktop:install:linux": "bash scripts/release-linux-desktop.sh",
+    "desktop:install:macos": "bash scripts/release-macos-desktop.sh",
     "desktop:install-artifact": "bash scripts/install-linux-desktop.sh",
     "desktop:smoke": "bash scripts/smoke-installed-linux.sh",
+    "desktop:start": "bash scripts/start-desktop.sh",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },
