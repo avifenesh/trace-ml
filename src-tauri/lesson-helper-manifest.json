@@ -27,7 +27,7 @@
         "id": "prerequisite-trace-teaching:introduction-2",
         "blockId": "prerequisite-trace-teaching",
         "heading": "Trace the quantities that machine learning reuses",
-        "text": "An array is an ordered collection of values. Its shape lists the length of each axis: a 4 by 3 array has four rows and three columns. In a typical data table, rows hold examples and columns hold features. A batch is a group of examples processed together. An array operation may combine one axis while preserving another. If each plotted row stores two coordinates, the first column can supply horizontal x values and the second can supply vertical y values.",
+        "text": "An array is an ordered collection of values. Its shape lists the length of each axis: a 4 by 3 array has four rows and three columns. In a typical data table, rows hold examples and columns hold features. A batch is a group of examples processed together. An array operation may combine one axis while preserving another. If x and prediction are separate one-dimensional arrays, NumPy's column_stack((x, prediction)) turns them into a two-dimensional table: x becomes column zero and prediction becomes column one.",
         "tags": [
           "teaching",
           "mental model",
@@ -159,7 +159,7 @@
         "id": "prerequisite-trace-teaching:example-step-3",
         "blockId": "prerequisite-trace-teaching",
         "heading": "Trace shape, slope, and probability without skipping steps · Map the plot columns",
-        "text": "A 3 by 2 plotting table contains three rows and two values per row. Column zero supplies three x coordinates; column one supplies the matching three y coordinates.",
+        "text": "A 3 by 2 plotting table contains three rows and two values per row. NumPy's column_stack((x, prediction)) constructs that layout from two one-dimensional arrays: column zero supplies three x coordinates and column one supplies the matching three y coordinates.",
         "tags": [
           "teaching",
           "worked example",
@@ -338,7 +338,7 @@
         "id": "00-shapes:p3",
         "blockId": "00-shapes",
         "heading": "Shapes describe which axes can interact",
-        "text": "In NumPy, shape reports axis lengths in order. A plotting table with shape 3 by 2 can store three observations as rows: column zero supplies x coordinates and column one supplies y coordinates. Transposing it to 2 by 3 swaps the meaning of rows and columns.",
+        "text": "In NumPy, shape reports axis lengths in order. Given one-dimensional x and prediction arrays, np.column_stack((x, prediction)) makes each input a column, producing one (x, prediction) row per observation. A plotting table with shape 3 by 2 therefore has three points; transposing it to 2 by 3 swaps the meaning of rows and columns.",
         "tags": [
           "Python",
           "NumPy",
@@ -409,8 +409,8 @@
       "Explanation guidance: Name the preserved axis, both local derivative factors, and the majority count.",
       "Explanation prompt: A sensor system receives 12 windows with 5 measurements each, averages the five measurements in each window into one scalar t, computes z = 3t - 2 and score = z^2, and has 90 normal versus 10 fault records. State the score-vector shape, dscore/dt at t = 2, and the accuracy of an always-normal baseline.",
       "Explanation guidance: Reduce each window to one t, map windows to the preserved axis, trace both derivative factors, and use the observed class counts.",
-      "Code lab instructions: Predict the centered list, the NumPy input shape, and the three plotted points before running. Run the working Python function and inspect the malformed 2 by 3 plotting table. Investigate which axis now holds observations. Modify only line_points so it stacks x and prediction as columns, then check the repaired 3 by 2 table.",
-      "Authored starter file array_plot_trace.py:\nimport numpy as np\n\n\ndef center(values):\n    average = sum(values) / len(values)\n    return [value - average for value in values]\n\n\ndef line_points(inputs, weight, bias):\n    x = np.asarray(inputs, dtype=float)\n    prediction = weight * x + bias\n    # REPAIR: each row must be one (x, prediction) point.\n    return np.vstack((x, prediction))\n\n\nINPUTS = np.array([0.0, 1.0, 2.0])\nPLOT_POINTS = line_points(INPUTS, weight=2.0, bias=1.0)\n\nprint(\"centered:\", center([1.0, 2.0, 3.0]))\nprint(\"input shape:\", INPUTS.shape)\nprint(\"plot table shape:\", PLOT_POINTS.shape)\nprint(\"rows interpreted as (x, y):\", PLOT_POINTS.tolist())\n"
+      "Code lab instructions: Predict the centered list, the NumPy input shape, and the three plotted points before running. First inspect the working COLUMN_STACK_EXAMPLE: each one-dimensional input becomes one column. Then inspect the malformed 2 by 3 plotting table, identify which axis holds observations, and modify only line_points to apply the demonstrated operation. Check the repaired 3 by 2 table.",
+      "Authored starter file array_plot_trace.py:\nimport numpy as np\n\n\ndef center(values):\n    average = sum(values) / len(values)\n    return [value - average for value in values]\n\n\n# Two one-dimensional arrays become two columns and one row per position.\nCOLUMN_STACK_EXAMPLE = np.column_stack((\n    np.array([0.0, 1.0]),\n    np.array([10.0, 11.0]),\n))\n\n\ndef line_points(inputs, weight, bias):\n    x = np.asarray(inputs, dtype=float)\n    prediction = weight * x + bias\n    # REPAIR: each row must be one (x, prediction) point.\n    return np.vstack((x, prediction))\n\n\nINPUTS = np.array([0.0, 1.0, 2.0])\nPLOT_POINTS = line_points(INPUTS, weight=2.0, bias=1.0)\n\nprint(\"centered:\", center([1.0, 2.0, 3.0]))\nprint(\"column-stack example:\", COLUMN_STACK_EXAMPLE.tolist())\nprint(\"input shape:\", INPUTS.shape)\nprint(\"plot table shape:\", PLOT_POINTS.shape)\nprint(\"rows interpreted as (x, y):\", PLOT_POINTS.tolist())\n"
     ]
   },
   {
@@ -1627,7 +1627,7 @@
         "id": "gradient-descent-teaching:example-setup",
         "blockId": "gradient-descent-teaching",
         "heading": "Follow two gradient updates from the same starting weight",
-        "text": "The model predicts y_hat = 1 + wx for rows (1, 3), (2, 5), and (3, 7). It starts at weight w = 0 with gradient -18.666667 and uses learning rate 0.05.",
+        "text": "The model predicts y_hat = 1 + wx for rows (1, 3), (2, 5), and (3, 7). Its loss is the mean squared residual. It starts at weight w = 0 and uses learning rate 0.05.",
         "tags": [
           "teaching",
           "worked example",
@@ -1637,8 +1637,8 @@
       {
         "id": "gradient-descent-teaching:example-step-1",
         "blockId": "gradient-descent-teaching",
-        "heading": "Follow two gradient updates from the same starting weight · Read the first direction",
-        "text": "The gradient is negative, so increasing the weight is locally downhill. The update equation will subtract this negative value.",
+        "heading": "Follow two gradient updates from the same starting weight · Derive and average the row gradients",
+        "text": "For one row, residual r = 1 + wx - y and dr/dw = x, so the chain rule gives d(r squared)/dw = 2r times x. At w = 0 the three contributions are 2(-2)(1) = -4, 2(-4)(2) = -16, and 2(-6)(3) = -36. Their mean is -56/3 = -18.666667.",
         "tags": [
           "teaching",
           "worked example",
@@ -1648,8 +1648,8 @@
       {
         "id": "gradient-descent-teaching:example-step-2",
         "blockId": "gradient-descent-teaching",
-        "heading": "Follow two gradient updates from the same starting weight · Scale the first gradient",
-        "text": "Multiply learning rate by gradient: 0.05(-18.666667) = -0.933333.",
+        "heading": "Follow two gradient updates from the same starting weight · Read and scale the first direction",
+        "text": "The gradient is negative, so increasing the weight is locally downhill. Scale it by the learning rate: 0.05(-18.666667) = -0.933333.",
         "tags": [
           "teaching",
           "worked example",
@@ -1805,7 +1805,7 @@
         "id": "04-update:p1",
         "blockId": "04-update",
         "heading": "Subtract the measured slope",
-        "text": "Gradient descent applies parameter_new = parameter_old - learning_rate times gradient. The minus sign reverses the uphill direction reported by the gradient.",
+        "text": "For one row with prediction 1 + wx, target y, and squared residual r squared, r = 1 + wx - y and dr/dw = x. The chain rule gives d(r squared)/dw = 2r x. Mean squared error averages that contribution over all rows.",
         "tags": [
           "update equation",
           "minus gradient",
@@ -1814,6 +1814,17 @@
       },
       {
         "id": "04-update:p2",
+        "blockId": "04-update",
+        "heading": "Subtract the measured slope",
+        "text": "Gradient descent applies parameter_new = parameter_old - learning_rate times gradient. The minus sign reverses the uphill direction reported by the gradient.",
+        "tags": [
+          "update equation",
+          "minus gradient",
+          "learning rate"
+        ]
+      },
+      {
+        "id": "04-update:p3",
         "blockId": "04-update",
         "heading": "Subtract the measured slope",
         "text": "The learning rate scales the move without changing the measured gradient itself.",
@@ -1882,8 +1893,8 @@
       "Explanation guidance: Separate sign, new position, and step distance.",
       "Explanation prompt: A controller tunes a valve coefficient. At coefficient 4.0 the loss gradient is +8.0. Compute one update with learning rate 0.1, then explain what a trace alternating between coefficients 3.2 and 4.8 would test and which single variable you would change first.",
       "Explanation guidance: Map the same local update to a physical coefficient and preserve the controlled comparison.",
-      "Code lab instructions: Predict: determine the first weight update and whether learning_rate = 0.5 will be stable. Run the working specimen and inspect its loss trace. Investigate the gradient at each position. Modify only learning_rate to 0.05 and rerun; the checks verify the gradient and the actual displayed trace driven by that learning rate.",
-      "Authored starter file descent_trace.py:\nROWS = [\n    (1.0, 3.0),\n    (2.0, 5.0),\n    (3.0, 7.0),\n]\n\n\ndef predict(x, weight, bias=1.0):\n    return bias + weight * x\n\n\ndef mean_squared_error(rows, weight):\n    return sum((predict(x, weight) - target) ** 2 for x, target in rows) / len(rows)\n\n\ndef weight_gradient(rows, weight):\n    return sum(\n        2 * (predict(x, weight) - target) * x\n        for x, target in rows\n    ) / len(rows)\n\n\ndef train(rows, weight, learning_rate, steps):\n    history = [mean_squared_error(rows, weight)]\n    for _ in range(steps):\n        weight = weight - learning_rate * weight_gradient(rows, weight)\n        history.append(mean_squared_error(rows, weight))\n    return weight, history\n\n\nlearning_rate = 0.5  # Modify to 0.05 after investigating the first trace.\nfinal_weight, loss_history = train(ROWS, 0.0, learning_rate, 12)\nprint(\"final weight:\", final_weight)\nprint(\"loss trace:\", loss_history)\n"
+      "Code lab instructions: Predict: derive 2 * residual * x for one row, average the three row contributions at weight zero, determine the first update, and decide whether learning_rate = 0.5 will be stable. Run the working specimen and inspect its loss trace. Investigate the gradient at each position. Modify only learning_rate to 0.05 and rerun; the checks verify the gradient and the actual displayed trace driven by that learning rate.",
+      "Authored starter file descent_trace.py:\nROWS = [\n    (1.0, 3.0),\n    (2.0, 5.0),\n    (3.0, 7.0),\n]\n\n\ndef predict(x, weight, bias=1.0):\n    return bias + weight * x\n\n\ndef mean_squared_error(rows, weight):\n    return sum((predict(x, weight) - target) ** 2 for x, target in rows) / len(rows)\n\n\ndef weight_gradient(rows, weight):\n    # For one row: d((prediction - target)^2)/dw\n    # = 2 * (prediction - target) * d(prediction)/dw\n    # = 2 * residual * x. MSE averages those row derivatives.\n    return sum(\n        2 * (predict(x, weight) - target) * x\n        for x, target in rows\n    ) / len(rows)\n\n\ndef train(rows, weight, learning_rate, steps):\n    history = [mean_squared_error(rows, weight)]\n    for _ in range(steps):\n        weight = weight - learning_rate * weight_gradient(rows, weight)\n        history.append(mean_squared_error(rows, weight))\n    return weight, history\n\n\nlearning_rate = 0.5  # Modify to 0.05 after investigating the first trace.\nfinal_weight, loss_history = train(ROWS, 0.0, learning_rate, 12)\nprint(\"final weight:\", final_weight)\nprint(\"loss trace:\", loss_history)\n"
     ]
   },
   {
@@ -3049,7 +3060,7 @@
       "Explanation prompt: A quality-control model predicts whether a part is defective. For one part its defect logit is ln(1/4). Derive p(defect) and p(no defect), place the defect probability relative to 0.5, and explain why observing a defect produces the larger log loss.",
       "Explanation guidance: Use exp(-ln(1/4)) = 4, compute both class probabilities, and compare the probability assigned to each possible observed target.",
       "Code lab instructions: Predict the five check results before running, including the feature-vector logit and extreme-logit stability. Run the nearly working specimen, investigate why the target-0 loss is wrong, then modify log_loss so it reads p for target 1 and 1-p for target 0.",
-      "Authored starter file logistic_link.py:\nimport math\n\n\ndef linear_logit(features, weights, bias):\n    return sum(x * w for x, w in zip(features, weights)) + bias\n\n\ndef sigmoid(logit):\n    if logit >= 0:\n        return 1.0 / (1.0 + math.exp(-logit))\n    exp_logit = math.exp(logit)\n    return exp_logit / (1.0 + exp_logit)\n\n\ndef log_loss(probability, target):\n    probability = min(max(probability, 1e-12), 1.0 - 1e-12)\n    # BUG TO REPAIR: this branch only scores target 1.\n    return -math.log(probability)\n\n\ndef predict_probability(features, weights, bias):\n    return sigmoid(linear_logit(features, weights, bias))\n\n\nprint(\"p(z=0):\", sigmoid(0.0))\nprint(\"p(z=ln(3)):\", sigmoid(math.log(3.0)))\nprint(\"loss(p=.8, y=1):\", log_loss(0.8, 1))\nprint(\"loss(p=.2, y=0):\", log_loss(0.2, 0))\n"
+      "Authored starter file logistic_link.py:\nimport math\n\n\ndef linear_logit(features, weights, bias):\n    return sum(x * w for x, w in zip(features, weights)) + bias\n\n\ndef sigmoid(logit):\n    if logit >= 0:\n        return 1.0 / (1.0 + math.exp(-logit))\n    exp_logit = math.exp(logit)\n    return exp_logit / (1.0 + exp_logit)\n\n\ndef log_loss(probability, target):\n    probability = min(max(probability, 1e-12), 1.0 - 1e-12)\n    # BUG TO REPAIR: this branch only scores target 1.\n    return -math.log(probability)\n\n\ndef predict_probability(features, weights, bias):\n    return sigmoid(linear_logit(features, weights, bias))\n\n\nprint(\"p(z=0):\", sigmoid(0.0))\nprint(\"p(z=ln(3)):\", sigmoid(math.log(3.0)))\nprint(\"loss(p=.8, y=1):\", log_loss(0.8, 1))\nprint(\"loss(p=.8, y=0):\", log_loss(0.8, 0))\n"
     ]
   },
   {
@@ -3450,8 +3461,8 @@
       "Explanation guidance: Keep the fixed score list, thresholded labels, confusion counts, metric denominators, and observed frequencies separate.",
       "Explanation prompt: A wildfire alert system sends a crew to inspect predicted hotspots. A missed fire costs 20 units; an unnecessary inspection costs 2. Explain which threshold direction you would test first, which confusion cells drive cost, and how you would check whether predicted 0.8 risks are calibrated before deployment.",
       "Explanation guidance: Name the expensive error, the expected directional tradeoff, the cost expression, and an observed-frequency calibration check.",
-      "Code lab instructions: Predict the confusion counts, undefined-precision result, and cheapest candidate threshold. Run the specimen, investigate why it chooses the most expensive threshold, then modify choose_threshold to minimize validation cost.",
-      "Authored starter file decision_costs.py:\nimport math\n\n\ndef confusion_counts(scores, targets, threshold):\n    tp = fp = tn = fn = 0\n    for score, target in zip(scores, targets):\n        prediction = int(score >= threshold)\n        if prediction == 1 and target == 1:\n            tp += 1\n        elif prediction == 1 and target == 0:\n            fp += 1\n        elif prediction == 0 and target == 0:\n            tn += 1\n        else:\n            fn += 1\n    return tp, fp, tn, fn\n\n\ndef precision_recall(counts):\n    tp, fp, _tn, fn = counts\n    precision = tp / (tp + fp) if tp + fp else math.nan\n    recall = tp / (tp + fn) if tp + fn else math.nan\n    return precision, recall\n\n\ndef empirical_total_cost(counts, false_positive_cost, false_negative_cost):\n    _tp, fp, _tn, fn = counts\n    return fp * false_positive_cost + fn * false_negative_cost\n\n\ndef choose_threshold(scores, targets, candidates, fp_cost, fn_cost):\n    scored = []\n    for threshold in candidates:\n        counts = confusion_counts(scores, targets, threshold)\n        scored.append((empirical_total_cost(counts, fp_cost, fn_cost), threshold))\n    # BUG TO REPAIR: policy selection should minimize validation cost.\n    return max(scored)[1]\n\n\nSCORES = [0.9, 0.7, 0.6, 0.4, 0.2]\nTARGETS = [1, 0, 1, 0, 1]\nprint(\"counts:\", confusion_counts(SCORES, TARGETS, 0.5))\nprint(\"precision, recall:\", precision_recall(confusion_counts(SCORES, TARGETS, 0.5)))\nprint(\"no-positive precision:\", precision_recall((0, 0, 3, 2))[0])\nprint(\"chosen:\", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))\n"
+      "Code lab instructions: Predict the confusion counts, undefined-precision result, and cheapest candidate threshold in both validation tables. Run the specimen, investigate why it chooses the most expensive threshold, then modify choose_threshold to minimize validation cost. The two tables deliberately have different winning thresholds.",
+      "Authored starter file decision_costs.py:\nimport math\n\n\ndef confusion_counts(scores, targets, threshold):\n    tp = fp = tn = fn = 0\n    for score, target in zip(scores, targets):\n        prediction = int(score >= threshold)\n        if prediction == 1 and target == 1:\n            tp += 1\n        elif prediction == 1 and target == 0:\n            fp += 1\n        elif prediction == 0 and target == 0:\n            tn += 1\n        else:\n            fn += 1\n    return tp, fp, tn, fn\n\n\ndef precision_recall(counts):\n    tp, fp, _tn, fn = counts\n    precision = tp / (tp + fp) if tp + fp else math.nan\n    recall = tp / (tp + fn) if tp + fn else math.nan\n    return precision, recall\n\n\ndef empirical_total_cost(counts, false_positive_cost, false_negative_cost):\n    _tp, fp, _tn, fn = counts\n    return fp * false_positive_cost + fn * false_negative_cost\n\n\ndef choose_threshold(scores, targets, candidates, fp_cost, fn_cost):\n    scored = []\n    for threshold in candidates:\n        counts = confusion_counts(scores, targets, threshold)\n        scored.append((empirical_total_cost(counts, fp_cost, fn_cost), threshold))\n    # BUG TO REPAIR: policy selection should minimize validation cost.\n    return max(scored)[1]\n\n\nSCORES = [0.9, 0.7, 0.6, 0.4, 0.2]\nTARGETS = [1, 0, 1, 0, 1]\nALTERNATE_SCORES = [0.9, 0.7, 0.4, 0.2]\nALTERNATE_TARGETS = [1, 0, 0, 0]\nprint(\"counts:\", confusion_counts(SCORES, TARGETS, 0.5))\nprint(\"precision, recall:\", precision_recall(confusion_counts(SCORES, TARGETS, 0.5)))\nprint(\"no-positive precision:\", precision_recall((0, 0, 3, 2))[0])\nprint(\"chosen:\", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))\nprint(\"alternate chosen:\", choose_threshold(ALTERNATE_SCORES, ALTERNATE_TARGETS, [0.3, 0.5, 0.8], 5, 1))\n"
     ]
   },
   {
@@ -4632,7 +4643,7 @@
       "Explanation prompt: A vibration model has 40 correlated sensor features and only 160 machines. Describe a defensible comparison of L1 and L2, including fold-local preprocessing, the evidence used to select lambda, what coefficient patterns you expect, and when the test set is opened.",
       "Explanation guidance: Account for correlation, pipeline fitting inside folds, repeated validation, and the final frozen evaluation.",
       "Code lab instructions: Predict the manual ridge weights and soft-threshold outputs. Run the specimen, compare the explicit formula with scikit-learn Ridge, investigate why cross-validation chooses the worst candidate, then repair choose_lambda to minimize mean fold loss.",
-      "Authored starter file regularization_path.py:\nimport numpy as np\nfrom sklearn.linear_model import Ridge\n\n\ndef ridge_weight(xs, ys, penalty):\n    numerator = sum(x * y for x, y in zip(xs, ys))\n    denominator = sum(x * x for x in xs) + penalty\n    return numerator / denominator\n\n\ndef soft_threshold(value, penalty):\n    if value > penalty:\n        return value - penalty\n    if value < -penalty:\n        return value + penalty\n    return 0.0\n\n\ndef mean(values):\n    return sum(values) / len(values)\n\n\ndef sklearn_ridge_weight(xs, ys, penalty):\n    features = np.asarray(xs, dtype=float).reshape(-1, 1)\n    targets = np.asarray(ys, dtype=float)\n    model = Ridge(alpha=penalty, fit_intercept=False)\n    model.fit(features, targets)\n    return float(model.coef_[0])\n\n\ndef choose_lambda(fold_losses):\n    scored = [(mean(losses), penalty) for penalty, losses in fold_losses.items()]\n    # BUG TO REPAIR: lower validation loss is better.\n    return max(scored)[1]\n\n\nFOLD_LOSSES = {\n    0.0: [0.52, 0.66, 0.61],\n    0.5: [0.48, 0.51, 0.50],\n    2.0: [0.62, 0.57, 0.65],\n}\nALTERNATE_FOLD_LOSSES = {\n    0.0: [0.10, 0.90, 0.80],\n    0.5: [0.30, 0.35, 0.40],\n    2.0: [0.40, 0.45, 0.50],\n}\nprint(\"ridge lambda 0:\", ridge_weight([1.0, 2.0], [2.0, 4.0], 0.0))\nprint(\"ridge lambda 5:\", ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))\nprint(\"scikit-learn lambda 5:\", sklearn_ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))\nprint(\"chosen lambda:\", choose_lambda(FOLD_LOSSES))\n"
+      "Authored starter file regularization_path.py:\nimport numpy as np\nfrom sklearn.linear_model import Ridge\n\n\ndef ridge_weight(xs, ys, penalty):\n    numerator = sum(x * y for x, y in zip(xs, ys))\n    denominator = sum(x * x for x in xs) + penalty\n    return numerator / denominator\n\n\ndef soft_threshold(value, penalty):\n    if value > penalty:\n        return value - penalty\n    if value < -penalty:\n        return value + penalty\n    return 0.0\n\n\ndef mean(values):\n    return sum(values) / len(values)\n\n\ndef sklearn_ridge_weight(xs, ys, penalty):\n    features = np.asarray(xs, dtype=float).reshape(-1, 1)\n    targets = np.asarray(ys, dtype=float)\n    model = Ridge(alpha=penalty, fit_intercept=False)\n    model.fit(features, targets)\n    return float(model.coef_[0])\n\n\ndef choose_lambda(fold_losses):\n    scored = [(mean(losses), penalty) for penalty, losses in fold_losses.items()]\n    # BUG TO REPAIR: lower validation loss is better.\n    return max(scored)[1]\n\n\nFOLD_LOSSES = {\n    0.0: [0.52, 0.66, 0.61],\n    0.5: [0.48, 0.51, 0.50],\n    2.0: [0.62, 0.57, 0.65],\n}\nALTERNATE_FOLD_LOSSES = {\n    0.0: [0.10, 0.90, 0.80],\n    0.5: [0.30, 0.35, 0.40],\n    2.0: [0.50, 0.20, 0.15],\n}\nprint(\"ridge lambda 0:\", ridge_weight([1.0, 2.0], [2.0, 4.0], 0.0))\nprint(\"ridge lambda 5:\", ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))\nprint(\"scikit-learn lambda 5:\", sklearn_ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))\nprint(\"chosen lambda:\", choose_lambda(FOLD_LOSSES))\n"
     ]
   },
   {
@@ -4674,7 +4685,7 @@
         "id": "ensemble-votes-teaching:introduction-3",
         "blockId": "ensemble-votes-teaching",
         "heading": "Combine different learners for a specific reason",
-        "text": "Boosting uses a different timeline. It builds learners sequentially, with each new stage aimed at error left by the current ensemble. Under squared error, that remaining error can be written as the residual target minus current prediction. A learning rate scales how much of the new correction is added. Bagging and forests primarily target sample-driven instability, while boosting can reduce systematic underfit; validation is still required for either choice.",
+        "text": "Boosting uses a different timeline. It builds learners sequentially, with each new stage aimed at error left by the current ensemble. Under squared error, training first computes residual targets as target minus current prediction, then fits a small learner g(x) to those residuals. The update adds learning_rate times g(x), not each row's raw target or residual. Once fitted, g predicts from features at inference time without receiving the unknown target. Bagging and forests primarily target sample-driven instability, while boosting can reduce systematic underfit; validation is still required for either choice.",
         "tags": [
           "teaching",
           "mental model",
@@ -4795,7 +4806,7 @@
         "id": "ensemble-votes-teaching:example-step-4",
         "blockId": "ensemble-votes-teaching",
         "heading": "Trace parallel averaging and sequential correction · Compute the boosting residual",
-        "text": "For the second case, residual target = target - current prediction = 4 - 2 = 2. The next base learner g is fitted across the training rows to predict residual targets; assume its fitted prediction for this case is g(x) = 2.",
+        "text": "For the second case, residual target = target - current prediction = 4 - 2 = 2. During training, the next base learner g is fitted across all training rows to approximate their residual targets from features.",
         "tags": [
           "teaching",
           "worked example",
@@ -4805,8 +4816,19 @@
       {
         "id": "ensemble-votes-teaching:example-step-5",
         "blockId": "ensemble-votes-teaching",
-        "heading": "Trace parallel averaging and sequential correction · Scale and add the correction",
-        "text": "The ensemble update is F_new(x) = F(x) + learning_rate * g(x) = 2 + 0.5(2) = 3. The fitted learner's prediction, not the raw residual copied directly, supplies the correction.",
+        "heading": "Trace parallel averaging and sequential correction · Use the fitted learner's prediction",
+        "text": "Assume the fitted learner predicts g(x) = 1.5 for this case. The ensemble update is F_new(x) = F(x) + learning_rate * g(x) = 2 + 0.5(1.5) = 2.75. The correction can miss the raw residual because g is a constrained learner shared across rows.",
+        "tags": [
+          "teaching",
+          "worked example",
+          "step"
+        ]
+      },
+      {
+        "id": "ensemble-votes-teaching:example-step-6",
+        "blockId": "ensemble-votes-teaching",
+        "heading": "Trace parallel averaging and sequential correction · Separate training from inference",
+        "text": "Targets are used to create residual training targets and fit g. For a new case, the saved ensemble evaluates its already fitted learners from the new features; the unknown target is not an input to prediction.",
         "tags": [
           "teaching",
           "worked example",
@@ -4850,7 +4872,7 @@
         "id": "ensemble-votes-teaching:misconception-3",
         "blockId": "ensemble-votes-teaching",
         "heading": "Common confusions",
-        "text": "Boosting is sequential: each stage depends on error left by the current ensemble, and its contribution is scaled before being added.",
+        "text": "Boosting is sequential: training targets define residuals for fitting the next stage, but at inference each fitted stage predicts its scaled correction from features without the unknown target.",
         "tags": [
           "teaching",
           "misconception",
@@ -4966,7 +4988,7 @@
         "id": "ensemble-boosting:p1",
         "blockId": "ensemble-boosting",
         "heading": "Boosting trains in sequence",
-        "text": "Boosting adds a small learner that focuses on what the current ensemble still gets wrong. For squared error, one simple view fits the next learner to residuals target minus current prediction.",
+        "text": "Boosting adds a small learner that focuses on what the current ensemble still gets wrong. For squared error, training computes residual targets as target minus current prediction, then fits the next learner g(x) to approximate those residuals from features.",
         "tags": [
           "sequential",
           "residual",
@@ -4978,7 +5000,7 @@
         "id": "ensemble-boosting:p2",
         "blockId": "ensemble-boosting",
         "heading": "Boosting trains in sequence",
-        "text": "If the current prediction is 2 for a target of 4, the residual is 2. Adding half of that correction moves the prediction to 3. The learning rate controls how much of each stage is accepted.",
+        "text": "The updated ensemble is F_new(x) = F(x) + learning_rate times g(x). The fitted correction can differ from an individual row's raw residual because one constrained learner must serve multiple rows. At inference, the saved g(x) reads features, not the unknown target.",
         "tags": [
           "sequential",
           "residual",
@@ -5021,8 +5043,8 @@
       "Explanation guidance: Contrast parallel resampling and aggregation with sequential error correction.",
       "Explanation prompt: A power-grid tree model changes sharply when a few training days are replaced, and most trees always split first on temperature. A separate shallow model underfits every fold. Propose one ensemble intervention for each failure and state the evidence that would support it.",
       "Explanation guidance: Diagnose instability, correlated trees, and systematic underfit separately.",
-      "Code lab instructions: Predict the vote, average, and one residual correction before running. Run the specimen, investigate the boosting sign error, then modify boost_step so it moves predictions toward targets.",
-      "Authored starter file ensemble_votes.py:\ndef majority_vote(predictions):\n    return int(sum(predictions) * 2 >= len(predictions))\n\n\ndef average_predictions(model_predictions):\n    columns = zip(*model_predictions)\n    return [sum(values) / len(values) for values in columns]\n\n\ndef residuals(predictions, targets):\n    return [target - prediction for prediction, target in zip(predictions, targets)]\n\n\ndef boost_step(predictions, targets, learning_rate):\n    corrections = residuals(predictions, targets)\n    # BUG TO REPAIR: add the residual correction instead of moving away from it.\n    return [\n        prediction - learning_rate * correction\n        for prediction, correction in zip(predictions, corrections)\n    ]\n\n\ndef mse(predictions, targets):\n    return sum((prediction - target) ** 2 for prediction, target in zip(predictions, targets)) / len(targets)\n\n\nprint(\"vote:\", majority_vote([1, 0, 1]))\nprint(\"average:\", average_predictions([[1.0, 3.0], [3.0, 5.0], [5.0, 7.0]]))\nprint(\"boosted:\", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))\n"
+      "Code lab instructions: Predict the vote and average, then compute residual targets for the four training rows. Fit the one-split residual stump by averaging residuals on each side, and predict its shared corrections before running. Investigate the boosting sign error, then modify only the update direction so the fitted stump moves the ensemble toward the targets.",
+      "Authored starter file ensemble_votes.py:\ndef majority_vote(predictions):\n    return int(sum(predictions) * 2 >= len(predictions))\n\n\ndef average_predictions(model_predictions):\n    columns = zip(*model_predictions)\n    return [sum(values) / len(values) for values in columns]\n\n\ndef residuals(predictions, targets):\n    return [target - prediction for prediction, target in zip(predictions, targets)]\n\n\ndef fit_residual_stump(features, residual_targets, threshold):\n    left = [\n        residual\n        for feature, residual in zip(features, residual_targets)\n        if feature < threshold\n    ]\n    right = [\n        residual\n        for feature, residual in zip(features, residual_targets)\n        if feature >= threshold\n    ]\n    return sum(left) / len(left), sum(right) / len(right)\n\n\ndef stump_predictions(features, threshold, left_value, right_value):\n    return [\n        left_value if feature < threshold else right_value\n        for feature in features\n    ]\n\n\ndef boost_step(features, predictions, targets, threshold, learning_rate):\n    stage_targets = residuals(predictions, targets)\n    left_value, right_value = fit_residual_stump(\n        features,\n        stage_targets,\n        threshold,\n    )\n    corrections = stump_predictions(\n        features,\n        threshold,\n        left_value,\n        right_value,\n    )\n    # BUG TO REPAIR: add the fitted learner's correction instead of moving away.\n    return [\n        prediction - learning_rate * correction\n        for prediction, correction in zip(predictions, corrections)\n    ]\n\n\ndef mse(predictions, targets):\n    return sum((prediction - target) ** 2 for prediction, target in zip(predictions, targets)) / len(targets)\n\n\nFEATURES = [0.0, 1.0, 2.0, 3.0]\nBASE_PREDICTIONS = [2.0, 2.0, 5.0, 5.0]\nTARGETS = [4.0, 2.0, 1.0, 3.0]\nSTUMP_THRESHOLD = 2.0\n\nprint(\"vote:\", majority_vote([1, 0, 1]))\nprint(\"average:\", average_predictions([[1.0, 3.0], [3.0, 5.0], [5.0, 7.0]]))\nprint(\"residuals:\", residuals(BASE_PREDICTIONS, TARGETS))\nprint(\"boosted:\", boost_step(FEATURES, BASE_PREDICTIONS, TARGETS, STUMP_THRESHOLD, 0.5))\n"
     ]
   },
   {
@@ -6964,7 +6986,7 @@
       "Explanation guidance: Connect local patches, the same kernel, output location, possible influence, and a controlled shift.",
       "Explanation prompt: An audio model scans a waveform for a short click pattern. Explain how convolution detects the click at different times, how stacked layers enlarge temporal context, and how y = x + F(x) preserves a direct signal and gradient route.",
       "Explanation guidance: Map image position to time, spatial patch to waveform window, and the skip connection to the unchanged waveform path.",
-      "Code lab instructions: PRIMM: Predict the four output cells before running. Run the receptive-field and residual specimens, investigate their arithmetic, then complete the shared-kernel accumulation. Modify one image cell and identify exactly which outputs can change.",
+      "Code lab instructions: PRIMM: Predict the four output cells before running. Run the receptive-field and residual specimens, investigate their arithmetic, then complete the shared-kernel accumulation. The check also applies your function to a different rectangular image so the operation, not one memorized grid, must transfer. Modify one image cell and identify exactly which outputs can change.",
       "Authored starter file convolution_trace.py:\n# This is the unflipped cross-correlation convention that deep-learning\n# libraries commonly call convolution.\ndef conv2d_valid(image, kernel):\n    output_height = len(image) - len(kernel) + 1\n    output_width = len(image[0]) - len(kernel[0]) + 1\n    output = []\n    for row in range(output_height):\n        output_row = []\n        for column in range(output_width):\n            # Modify: accumulate patch values times the same kernel values.\n            value = None\n            output_row.append(value)\n        output.append(output_row)\n    return output\n\n\ndef receptive_field_width(kernel_width, layer_count):\n    return 1 + layer_count * (kernel_width - 1)\n\n\ndef residual_forward(value, branch_value):\n    return value + branch_value\n\n\ndef residual_backward(upstream_gradient, branch_derivative):\n    return upstream_gradient * (1.0 + branch_derivative)\n\n\nIMAGE = [\n    [1.0, 2.0, 0.0],\n    [0.0, 1.0, 3.0],\n    [2.0, 1.0, 0.0],\n]\nKERNEL = [\n    [1.0, 0.0],\n    [0.0, -1.0],\n]\n"
     ]
   },
@@ -7380,7 +7402,7 @@
       "Explanation guidance: Trace score, softmax weight, value mixture, later paths, and an ablation or replacement.",
       "Explanation prompt: A dispatcher has one request, three depot descriptions, and three depot payloads containing available inventory. Map request, descriptions, and payloads to query, keys, and values. Explain the weighted response and why a high routing weight does not prove the depot caused the final delivery outcome.",
       "Explanation guidance: Map all three roles, normalization, content mixing, and the downstream causal boundary.",
-      "Code lab instructions: PRIMM: Predict the equal-score mixture before running. Run the working softmax and causal mask, investigate the weights, then complete the value-weighted sum. Modify one key score and trace the output change. This isolated inference pass assumes position information was already supplied; it performs no training update.",
+      "Code lab instructions: PRIMM: Predict the equal-score mixture before running. Run the working softmax and causal mask, investigate the weights, then complete the value-weighted sum. The check routes two different value sets so one memorized output cannot pass. Modify one key score and trace the output change. This isolated inference pass assumes position information was already supplied; it performs no training update.",
       "Authored starter file attention_inference.py:\nfrom math import exp, log\n\n\ndef softmax(scores):\n    maximum = max(scores)\n    numerators = [exp(score - maximum) for score in scores]\n    denominator = sum(numerators)\n    return [value / denominator for value in numerators]\n\n\ndef causal_scores(scores, query_position):\n    return [\n        score if key_position <= query_position else float(\"-inf\")\n        for key_position, score in enumerate(scores)\n    ]\n\n\ndef scalar_attention(query, keys, values):\n    scores = [query * key for key in keys]\n    weights = softmax(scores)\n    # Modify: return weights and their weighted sum of values.\n    output = None\n    return weights, output\n\n\nLOG_THREE = log(3.0)\n"
     ]
   },

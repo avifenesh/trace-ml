@@ -124,7 +124,7 @@ export const foundationLessons: Lesson[] = [
       title: "Trace the quantities that machine learning reuses",
       introduction: [
         "Machine learning starts with recorded examples. An example is one case, such as one delivery or one sensor reading. A feature is a measured input about that case, and a target is the value or category to be predicted. Tracing matters because a plausible final number can hide a wrong array dimension, a swapped plot axis, or an arithmetic mistake.",
-        "An array is an ordered collection of values. Its shape lists the length of each axis: a 4 by 3 array has four rows and three columns. In a typical data table, rows hold examples and columns hold features. A batch is a group of examples processed together. An array operation may combine one axis while preserving another. If each plotted row stores two coordinates, the first column can supply horizontal x values and the second can supply vertical y values.",
+        "An array is an ordered collection of values. Its shape lists the length of each axis: a 4 by 3 array has four rows and three columns. In a typical data table, rows hold examples and columns hold features. A batch is a group of examples processed together. An array operation may combine one axis while preserving another. If x and prediction are separate one-dimensional arrays, NumPy's column_stack((x, prediction)) turns them into a two-dimensional table: x becomes column zero and prediction becomes column one.",
         "A slope measures how much one quantity changes when another changes. A derivative is the slope at a particular input. The notation dy/dx means the derivative of output y with respect to input x. This lesson uses two derivative rules: if y = u squared, then dy/du = 2u; if u = 2x + 1, then du/dx = 2. When one calculation feeds another, the chain rule multiplies those adjacent local derivatives. Probability supplies a different trace: a base rate is an observed fraction, and a majority-class baseline is the accuracy obtained by always predicting the most frequent target category.",
       ],
       vocabulary: [
@@ -182,7 +182,7 @@ export const foundationLessons: Lesson[] = [
           {
             label: "Map the plot columns",
             explanation:
-              "A 3 by 2 plotting table contains three rows and two values per row. Column zero supplies three x coordinates; column one supplies the matching three y coordinates.",
+              "A 3 by 2 plotting table contains three rows and two values per row. NumPy's column_stack((x, prediction)) constructs that layout from two one-dimensional arrays: column zero supplies three x coordinates and column one supplies the matching three y coordinates.",
           },
           {
             label: "Evaluate the composed function",
@@ -252,7 +252,7 @@ export const foundationLessons: Lesson[] = [
         body: [
           "A batch X with shape 4 by 3 contains four examples and three features per example. Multiplying X by a weight vector with three entries combines the feature axis and leaves one score per example, so the result has shape 4.",
           "The operation is valid because the three feature positions align with the three weights. The batch axis is not summed away.",
-          "In NumPy, shape reports axis lengths in order. A plotting table with shape 3 by 2 can store three observations as rows: column zero supplies x coordinates and column one supplies y coordinates. Transposing it to 2 by 3 swaps the meaning of rows and columns.",
+          "In NumPy, shape reports axis lengths in order. Given one-dimensional x and prediction arrays, np.column_stack((x, prediction)) makes each input a column, producing one (x, prediction) row per observation. A plotting table with shape 3 by 2 therefore has three points; transposing it to 2 by 3 swaps the meaning of rows and columns.",
         ],
         conceptIds: ["python-state", "numpy-array", "plot-axes", "array-shape"],
         tags: [
@@ -403,13 +403,20 @@ export const foundationLessons: Lesson[] = [
         "00-python-numpy-plot",
         ["python-state", "numpy-array", "plot-axes", "array-shape"],
         "array_plot_trace.py",
-        "Predict the centered list, the NumPy input shape, and the three plotted points before running. Run the working Python function and inspect the malformed 2 by 3 plotting table. Investigate which axis now holds observations. Modify only line_points so it stacks x and prediction as columns, then check the repaired 3 by 2 table.",
+        "Predict the centered list, the NumPy input shape, and the three plotted points before running. First inspect the working COLUMN_STACK_EXAMPLE: each one-dimensional input becomes one column. Then inspect the malformed 2 by 3 plotting table, identify which axis holds observations, and modify only line_points to apply the demonstrated operation. Check the repaired 3 by 2 table.",
         `import numpy as np
 
 
 def center(values):
     average = sum(values) / len(values)
     return [value - average for value in values]
+
+
+# Two one-dimensional arrays become two columns and one row per position.
+COLUMN_STACK_EXAMPLE = np.column_stack((
+    np.array([0.0, 1.0]),
+    np.array([10.0, 11.0]),
+))
 
 
 def line_points(inputs, weight, bias):
@@ -423,6 +430,7 @@ INPUTS = np.array([0.0, 1.0, 2.0])
 PLOT_POINTS = line_points(INPUTS, weight=2.0, bias=1.0)
 
 print("centered:", center([1.0, 2.0, 3.0]))
+print("column-stack example:", COLUMN_STACK_EXAMPLE.tolist())
 print("input shape:", INPUTS.shape)
 print("plot table shape:", PLOT_POINTS.shape)
 print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
@@ -430,7 +438,7 @@ print("rows interpreted as (x, y):", PLOT_POINTS.tolist())
         [
           {
             id: "00-code-python-state",
-            label: "The Python function exposes its intermediate mean",
+            label: "The function centers every value around the shared mean",
             expression: "str(center([1.0, 2.0, 3.0]))",
             expected: "[-1.0, 0.0, 1.0]",
             conceptIds: ["python-state"],
@@ -1635,17 +1643,17 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
       workedExample: {
         title: "Follow two gradient updates from the same starting weight",
         setup:
-          "The model predicts y_hat = 1 + wx for rows (1, 3), (2, 5), and (3, 7). It starts at weight w = 0 with gradient -18.666667 and uses learning rate 0.05.",
+          "The model predicts y_hat = 1 + wx for rows (1, 3), (2, 5), and (3, 7). Its loss is the mean squared residual. It starts at weight w = 0 and uses learning rate 0.05.",
         steps: [
           {
-            label: "Read the first direction",
+            label: "Derive and average the row gradients",
             explanation:
-              "The gradient is negative, so increasing the weight is locally downhill. The update equation will subtract this negative value.",
+              "For one row, residual r = 1 + wx - y and dr/dw = x, so the chain rule gives d(r squared)/dw = 2r times x. At w = 0 the three contributions are 2(-2)(1) = -4, 2(-4)(2) = -16, and 2(-6)(3) = -36. Their mean is -56/3 = -18.666667.",
           },
           {
-            label: "Scale the first gradient",
+            label: "Read and scale the first direction",
             explanation:
-              "Multiply learning rate by gradient: 0.05(-18.666667) = -0.933333.",
+              "The gradient is negative, so increasing the weight is locally downhill. Scale it by the learning rate: 0.05(-18.666667) = -0.933333.",
           },
           {
             label: "Apply the first update",
@@ -1714,6 +1722,7 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
         heading: "Subtract the measured slope",
         sourceIds: ["S56", "S69"],
         body: [
+          "For one row with prediction 1 + wx, target y, and squared residual r squared, r = 1 + wx - y and dr/dw = x. The chain rule gives d(r squared)/dw = 2r x. Mean squared error averages that contribution over all rows.",
           "Gradient descent applies parameter_new = parameter_old - learning_rate times gradient. The minus sign reverses the uphill direction reported by the gradient.",
           "The learning rate scales the move without changing the measured gradient itself.",
         ],
@@ -1856,7 +1865,7 @@ print("mse:", mean_squared_error(POINTS, trial_weight, bias))
         "04-python-descent",
         ["gradient-direction", "gradient-descent", "learning-rate"],
         "descent_trace.py",
-        "Predict: determine the first weight update and whether learning_rate = 0.5 will be stable. Run the working specimen and inspect its loss trace. Investigate the gradient at each position. Modify only learning_rate to 0.05 and rerun; the checks verify the gradient and the actual displayed trace driven by that learning rate.",
+        "Predict: derive 2 * residual * x for one row, average the three row contributions at weight zero, determine the first update, and decide whether learning_rate = 0.5 will be stable. Run the working specimen and inspect its loss trace. Investigate the gradient at each position. Modify only learning_rate to 0.05 and rerun; the checks verify the gradient and the actual displayed trace driven by that learning rate.",
         `ROWS = [
     (1.0, 3.0),
     (2.0, 5.0),
@@ -1873,6 +1882,9 @@ def mean_squared_error(rows, weight):
 
 
 def weight_gradient(rows, weight):
+    # For one row: d((prediction - target)^2)/dw
+    # = 2 * (prediction - target) * d(prediction)/dw
+    # = 2 * residual * x. MSE averages those row derivatives.
     return sum(
         2 * (predict(x, weight) - target) * x
         for x, target in rows

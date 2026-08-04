@@ -392,7 +392,7 @@ def predict_probability(features, weights, bias):
 print("p(z=0):", sigmoid(0.0))
 print("p(z=ln(3)):", sigmoid(math.log(3.0)))
 print("loss(p=.8, y=1):", log_loss(0.8, 1))
-print("loss(p=.2, y=0):", log_loss(0.2, 0))
+print("loss(p=.8, y=0):", log_loss(0.8, 0))
 `,
         [
           {
@@ -428,9 +428,10 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
           },
           {
             id: "logistic-negative-loss-check",
-            label: "Target-zero loss reads one minus p",
-            expression: "round(log_loss(0.2, 0), 6)",
-            expected: 0.223144,
+            label:
+              "Target-zero loss reads one minus p on a held-out probability",
+            expression: "round(log_loss(0.8, 0), 6)",
+            expected: 1.609438,
             conceptIds: ["log-loss"],
           },
         ],
@@ -832,7 +833,7 @@ print("loss(p=.2, y=0):", log_loss(0.2, 0))
         "decision-python-lab",
         ["decision-threshold", "confusion-matrix", "decision-cost"],
         "decision_costs.py",
-        "Predict the confusion counts, undefined-precision result, and cheapest candidate threshold. Run the specimen, investigate why it chooses the most expensive threshold, then modify choose_threshold to minimize validation cost.",
+        "Predict the confusion counts, undefined-precision result, and cheapest candidate threshold in both validation tables. Run the specimen, investigate why it chooses the most expensive threshold, then modify choose_threshold to minimize validation cost. The two tables deliberately have different winning thresholds.",
         `import math
 
 
@@ -874,10 +875,13 @@ def choose_threshold(scores, targets, candidates, fp_cost, fn_cost):
 
 SCORES = [0.9, 0.7, 0.6, 0.4, 0.2]
 TARGETS = [1, 0, 1, 0, 1]
+ALTERNATE_SCORES = [0.9, 0.7, 0.4, 0.2]
+ALTERNATE_TARGETS = [1, 0, 0, 0]
 print("counts:", confusion_counts(SCORES, TARGETS, 0.5))
 print("precision, recall:", precision_recall(confusion_counts(SCORES, TARGETS, 0.5)))
 print("no-positive precision:", precision_recall((0, 0, 3, 2))[0])
 print("chosen:", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))
+print("alternate chosen:", choose_threshold(ALTERNATE_SCORES, ALTERNATE_TARGETS, [0.3, 0.5, 0.8], 5, 1))
 `,
         [
           {
@@ -906,10 +910,11 @@ print("chosen:", choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5))
           },
           {
             id: "decision-threshold-check",
-            label: "Validation selects the least-cost candidate threshold",
+            label:
+              "Validation selects the least-cost threshold in two different cost tables",
             expression:
-              "choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5)",
-            expected: 0.5,
+              "str((choose_threshold(SCORES, TARGETS, [0.3, 0.5, 0.8], 1, 5), choose_threshold(ALTERNATE_SCORES, ALTERNATE_TARGETS, [0.3, 0.5, 0.8], 5, 1)))",
+            expected: "(0.5, 0.8)",
             conceptIds: ["decision-threshold", "decision-cost"],
           },
         ],
@@ -2256,7 +2261,7 @@ FOLD_LOSSES = {
 ALTERNATE_FOLD_LOSSES = {
     0.0: [0.10, 0.90, 0.80],
     0.5: [0.30, 0.35, 0.40],
-    2.0: [0.40, 0.45, 0.50],
+    2.0: [0.50, 0.20, 0.15],
 }
 print("ridge lambda 0:", ridge_weight([1.0, 2.0], [2.0, 4.0], 0.0))
 print("ridge lambda 5:", ridge_weight([1.0, 2.0], [2.0, 4.0], 5.0))
@@ -2304,9 +2309,10 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
           },
           {
             id: "regularization-cv-aggregation-check",
-            label: "Selection aggregates all folds instead of choosing by the first fold",
+            label:
+              "Selection aggregates all folds and can choose a different lambda",
             expression: "choose_lambda(ALTERNATE_FOLD_LOSSES)",
-            expected: 0.5,
+            expected: 2,
             conceptIds: ["cross-validation", "hyperparameter-selection"],
           },
         ],
@@ -2355,7 +2361,7 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
       introduction: [
         "An ensemble combines predictions from multiple base learners. The combination helps only when the learners contribute meaningfully different errors or corrections. Repeating one deterministic model with identical data and settings merely repeats the same output. The design question is therefore not just how many models to train, but how they differ and how their outputs are combined.",
         "Bagging creates parallel learners by fitting each one on a bootstrap sample: a same-sized sample drawn from training rows with replacement. Regression outputs are averaged and class outputs can be voted. This is especially useful for unstable learners such as deep trees, whose fitted structure can change when training rows change. A random forest adds random feature subsets at candidate splits to reduce similarity among its trees.",
-        "Boosting uses a different timeline. It builds learners sequentially, with each new stage aimed at error left by the current ensemble. Under squared error, that remaining error can be written as the residual target minus current prediction. A learning rate scales how much of the new correction is added. Bagging and forests primarily target sample-driven instability, while boosting can reduce systematic underfit; validation is still required for either choice.",
+        "Boosting uses a different timeline. It builds learners sequentially, with each new stage aimed at error left by the current ensemble. Under squared error, training first computes residual targets as target minus current prediction, then fits a small learner g(x) to those residuals. The update adds learning_rate times g(x), not each row's raw target or residual. Once fitted, g predicts from features at inference time without receiving the unknown target. Bagging and forests primarily target sample-driven instability, while boosting can reduce systematic underfit; validation is still required for either choice.",
       ],
       vocabulary: [
         {
@@ -2412,12 +2418,17 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
           {
             label: "Compute the boosting residual",
             explanation:
-              "For the second case, residual target = target - current prediction = 4 - 2 = 2. The next base learner g is fitted across the training rows to predict residual targets; assume its fitted prediction for this case is g(x) = 2.",
+              "For the second case, residual target = target - current prediction = 4 - 2 = 2. During training, the next base learner g is fitted across all training rows to approximate their residual targets from features.",
           },
           {
-            label: "Scale and add the correction",
+            label: "Use the fitted learner's prediction",
             explanation:
-              "The ensemble update is F_new(x) = F(x) + learning_rate * g(x) = 2 + 0.5(2) = 3. The fitted learner's prediction, not the raw residual copied directly, supplies the correction.",
+              "Assume the fitted learner predicts g(x) = 1.5 for this case. The ensemble update is F_new(x) = F(x) + learning_rate * g(x) = 2 + 0.5(1.5) = 2.75. The correction can miss the raw residual because g is a constrained learner shared across rows.",
+          },
+          {
+            label: "Separate training from inference",
+            explanation:
+              "Targets are used to create residual training targets and fit g. For a new case, the saved ensemble evaluates its already fitted learners from the new features; the unknown target is not an input to prediction.",
           },
         ],
         takeaway:
@@ -2435,9 +2446,10 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
             "It aggregates many trees and deliberately varies both sampled rows and candidate features to reduce tree correlation.",
         },
         {
-          misconception: "Boosting trains all learners independently and then votes.",
+          misconception:
+            "Boosting trains learners independently or copies each new case's target residual.",
           correction:
-            "Boosting is sequential: each stage depends on error left by the current ensemble, and its contribution is scaled before being added.",
+            "Boosting is sequential: training targets define residuals for fitting the next stage, but at inference each fitted stage predicts its scaled correction from features without the unknown target.",
         },
       ],
       summary: [
@@ -2527,8 +2539,8 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
         heading: "Boosting trains in sequence",
         sourceIds: ["S84"],
         body: [
-          "Boosting adds a small learner that focuses on what the current ensemble still gets wrong. For squared error, one simple view fits the next learner to residuals target minus current prediction.",
-          "If the current prediction is 2 for a target of 4, the residual is 2. Adding half of that correction moves the prediction to 3. The learning rate controls how much of each stage is accepted.",
+          "Boosting adds a small learner that focuses on what the current ensemble still gets wrong. For squared error, training computes residual targets as target minus current prediction, then fits the next learner g(x) to approximate those residuals from features.",
+          "The updated ensemble is F_new(x) = F(x) + learning_rate times g(x). The fitted correction can differ from an individual row's raw residual because one constrained learner must serve multiple rows. At inference, the saved g(x) reads features, not the unknown target.",
         ],
         conceptIds: ["boosting"],
         tags: ["sequential", "residual", "correction", "learning rate"],
@@ -2693,7 +2705,7 @@ print("chosen lambda:", choose_lambda(FOLD_LOSSES))
         "ensemble-python-lab",
         ["bagging", "random-forest", "boosting"],
         "ensemble_votes.py",
-        "Predict the vote, average, and one residual correction before running. Run the specimen, investigate the boosting sign error, then modify boost_step so it moves predictions toward targets.",
+        "Predict the vote and average, then compute residual targets for the four training rows. Fit the one-split residual stump by averaging residuals on each side, and predict its shared corrections before running. Investigate the boosting sign error, then modify only the update direction so the fitted stump moves the ensemble toward the targets.",
         `def majority_vote(predictions):
     return int(sum(predictions) * 2 >= len(predictions))
 
@@ -2707,9 +2719,41 @@ def residuals(predictions, targets):
     return [target - prediction for prediction, target in zip(predictions, targets)]
 
 
-def boost_step(predictions, targets, learning_rate):
-    corrections = residuals(predictions, targets)
-    # BUG TO REPAIR: add the residual correction instead of moving away from it.
+def fit_residual_stump(features, residual_targets, threshold):
+    left = [
+        residual
+        for feature, residual in zip(features, residual_targets)
+        if feature < threshold
+    ]
+    right = [
+        residual
+        for feature, residual in zip(features, residual_targets)
+        if feature >= threshold
+    ]
+    return sum(left) / len(left), sum(right) / len(right)
+
+
+def stump_predictions(features, threshold, left_value, right_value):
+    return [
+        left_value if feature < threshold else right_value
+        for feature in features
+    ]
+
+
+def boost_step(features, predictions, targets, threshold, learning_rate):
+    stage_targets = residuals(predictions, targets)
+    left_value, right_value = fit_residual_stump(
+        features,
+        stage_targets,
+        threshold,
+    )
+    corrections = stump_predictions(
+        features,
+        threshold,
+        left_value,
+        right_value,
+    )
+    # BUG TO REPAIR: add the fitted learner's correction instead of moving away.
     return [
         prediction - learning_rate * correction
         for prediction, correction in zip(predictions, corrections)
@@ -2720,9 +2764,15 @@ def mse(predictions, targets):
     return sum((prediction - target) ** 2 for prediction, target in zip(predictions, targets)) / len(targets)
 
 
+FEATURES = [0.0, 1.0, 2.0, 3.0]
+BASE_PREDICTIONS = [2.0, 2.0, 5.0, 5.0]
+TARGETS = [4.0, 2.0, 1.0, 3.0]
+STUMP_THRESHOLD = 2.0
+
 print("vote:", majority_vote([1, 0, 1]))
 print("average:", average_predictions([[1.0, 3.0], [3.0, 5.0], [5.0, 7.0]]))
-print("boosted:", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))
+print("residuals:", residuals(BASE_PREDICTIONS, TARGETS))
+print("boosted:", boost_step(FEATURES, BASE_PREDICTIONS, TARGETS, STUMP_THRESHOLD, 0.5))
 `,
         [
           {
@@ -2741,27 +2791,29 @@ print("boosted:", boost_step([2.0, 5.0], [4.0, 1.0], 0.5))
             conceptIds: ["bagging"],
           },
           {
-            id: "ensemble-boost-step-check",
-            label: "A boosting step moves predictions toward targets",
+            id: "ensemble-boost-stump-check",
+            label:
+              "The weak learner fits one shared residual value per region",
             expression:
-              "str(boost_step([2.0, 5.0], [4.0, 1.0], 0.5))",
-            expected: "[3.0, 3.0]",
+              "str(fit_residual_stump(FEATURES, residuals(BASE_PREDICTIONS, TARGETS), STUMP_THRESHOLD))",
+            expected: "(1.0, -3.0)",
             conceptIds: ["boosting"],
           },
           {
-            id: "ensemble-boost-loss-check",
-            label: "The authored residual step reduces squared error fourfold",
+            id: "ensemble-boost-step-check",
+            label:
+              "The fitted residual learner updates the ensemble and lowers loss",
             expression:
-              "round(mse(boost_step([2.0, 5.0], [4.0, 1.0], 0.5), [4.0, 1.0]), 6)",
-            expected: 2.5,
+              "str((boost_step(FEATURES, BASE_PREDICTIONS, TARGETS, STUMP_THRESHOLD, 0.5), round(mse(boost_step(FEATURES, BASE_PREDICTIONS, TARGETS, STUMP_THRESHOLD, 0.5), TARGETS), 6)))",
+            expected: "([2.5, 2.5, 3.5, 3.5], 2.25)",
             conceptIds: ["boosting"],
           },
           {
             id: "ensemble-boost-rate-check",
-            label: "Learning rate scales the residual contribution",
+            label: "Learning rate scales the fitted learner's contribution",
             expression:
-              "str(boost_step([2.0, 5.0], [4.0, 1.0], 0.25))",
-            expected: "[2.5, 4.0]",
+              "str(boost_step(FEATURES, BASE_PREDICTIONS, TARGETS, STUMP_THRESHOLD, 0.25))",
+            expected: "[2.25, 2.25, 4.25, 4.25]",
             conceptIds: ["boosting"],
           },
         ],

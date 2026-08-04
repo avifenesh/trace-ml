@@ -1838,7 +1838,7 @@ START = [(0.0, 0.0), (10.0, 10.0)]
         "convolution-python-lab",
         ["convolution", "weight-sharing", "receptive-field", "residual-path"],
         "convolution_trace.py",
-        "PRIMM: Predict the four output cells before running. Run the receptive-field and residual specimens, investigate their arithmetic, then complete the shared-kernel accumulation. Modify one image cell and identify exactly which outputs can change.",
+        "PRIMM: Predict the four output cells before running. Run the receptive-field and residual specimens, investigate their arithmetic, then complete the shared-kernel accumulation. The check also applies your function to a different rectangular image so the operation, not one memorized grid, must transfer. Modify one image cell and identify exactly which outputs can change.",
         `# This is the unflipped cross-correlation convention that deep-learning
 # libraries commonly call convolution.
 def conv2d_valid(image, kernel):
@@ -1880,9 +1880,12 @@ KERNEL = [
         [
           {
             id: "convolution-manual-output",
-            label: "The shared kernel produces the verified output grid",
-            expression: "str(conv2d_valid(IMAGE, KERNEL))",
-            expected: "[[0.0, -1.0], [-1.0, 1.0]]",
+            label:
+              "The shared accumulation transfers to a second image and kernel",
+            expression:
+              "str((conv2d_valid(IMAGE, KERNEL), conv2d_valid([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], [[0.0, 1.0], [1.0, 0.0]])))",
+            expected:
+              "([[0.0, -1.0], [-1.0, 1.0]], [[6.0, 8.0]])",
             conceptIds: ["convolution", "weight-sharing"],
           },
           {
@@ -2284,7 +2287,7 @@ KERNEL = [
         "attention-python-lab",
         ["attention", "qkv", "transformer", "training-versus-inference"],
         "attention_inference.py",
-        "PRIMM: Predict the equal-score mixture before running. Run the working softmax and causal mask, investigate the weights, then complete the value-weighted sum. Modify one key score and trace the output change. This isolated inference pass assumes position information was already supplied; it performs no training update.",
+        "PRIMM: Predict the equal-score mixture before running. Run the working softmax and causal mask, investigate the weights, then complete the value-weighted sum. The check routes two different value sets so one memorized output cannot pass. Modify one key score and trace the output change. This isolated inference pass assumes position information was already supplied; it performs no training update.",
         `from math import exp, log
 
 
@@ -2323,10 +2326,11 @@ LOG_THREE = log(3.0)
           },
           {
             id: "attention-weighted-output",
-            label: "Q-K scores route the paired values",
+            label: "Q-K scores route two different sets of paired values",
             expression:
-              "str((lambda result: ([round(value, 6) for value in result[0]], round(result[1], 6)))(scalar_attention(1.0, [0.0, LOG_THREE], [2.0, 10.0])))",
-            expected: "([0.25, 0.75], 8.0)",
+              "str(((lambda result: ([round(value, 6) for value in result[0]], round(result[1], 6)))(scalar_attention(1.0, [0.0, LOG_THREE], [2.0, 10.0])), (lambda result: ([round(value, 6) for value in result[0]], round(result[1], 6)))(scalar_attention(2.0, [0.0, 0.0], [3.0, -1.0]))))",
+            expected:
+              "(([0.25, 0.75], 8.0), ([0.5, 0.5], 1.0))",
             conceptIds: ["qkv"],
           },
           {

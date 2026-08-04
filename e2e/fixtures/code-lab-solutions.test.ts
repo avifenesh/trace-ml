@@ -64,6 +64,30 @@ describe("authored code-lab solution fixtures", () => {
     });
   });
 
+  it.each([
+    [
+      "logistic-loss-returns-authored-constant",
+      "logistic-negative-loss-check",
+    ],
+    [
+      "threshold-selector-hardcodes-one-candidate",
+      "decision-threshold-check",
+    ],
+    [
+      "regularization-selector-hardcodes-one-lambda",
+      "regularization-cv-aggregation-check",
+    ],
+    ["boosting-copies-raw-training-residuals", "ensemble-boost-step-check"],
+    ["convolution-returns-authored-grid", "convolution-manual-output"],
+    ["attention-returns-authored-output", "attention-weighted-output"],
+  ])("pins semantic bypass %s", (probeId, rejectedCheckId) => {
+    expect(
+      CODE_LAB_BYPASS_PROBES.find((probe) => probe.id === probeId),
+    ).toMatchObject({
+      rejectedBy: [rejectedCheckId],
+    });
+  });
+
   it("pins the Q-learning hard-coded discount bypass", () => {
     expect(
       CODE_LAB_BYPASS_PROBES.find(

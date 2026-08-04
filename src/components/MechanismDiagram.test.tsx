@@ -156,6 +156,47 @@ describe("MechanismDiagram", () => {
     expect(renderedRise(-2)).toBeGreaterThan(renderedRise(-0.5));
   });
 
+  it("keeps every kNN training point fixed while only the query moves", () => {
+    const positionsFor = (query: number) => {
+      const rendered = render(
+        <MechanismDiagram
+          labId="knn-versus-tree"
+          observation={observationFor("knn-versus-tree", query)}
+        />,
+      );
+      const positions = Array.from(
+        rendered.container.querySelectorAll("[data-knn-training-point]"),
+        (point) => ({
+          value: Number(point.getAttribute("data-knn-training-point")),
+          label: Number(point.getAttribute("data-knn-label")),
+          selected: point.getAttribute("data-knn-selected"),
+          x: Number(point.querySelector("circle:last-of-type")?.getAttribute("cx")),
+        }),
+      );
+      const queryX = Number(
+        screen.getByTestId("knn-query-marker").getAttribute("cx"),
+      );
+      rendered.unmount();
+      return { positions, queryX };
+    };
+
+    const left = positionsFor(1);
+    const right = positionsFor(5);
+    expect(left.positions).toHaveLength(4);
+    expect(left.positions.map(({ value, label }) => [value, label])).toEqual([
+      [1, 0],
+      [2, 0],
+      [4, 1],
+      [5, 1],
+    ]);
+    expect(right.positions.map(({ value, label, x }) => [value, label, x])).toEqual(
+      left.positions.map(({ value, label, x }) => [value, label, x]),
+    );
+    expect(right.queryX).toBeGreaterThan(left.queryX);
+    expect(left.positions.filter(({ selected }) => selected === "true")).toHaveLength(3);
+    expect(right.positions.filter(({ selected }) => selected === "true")).toHaveLength(3);
+  });
+
   it("renders one fixed loss curve, a moving point, and absolute square heights", () => {
     const renderedGeometry = (weight: number) => {
       const rendered = render(

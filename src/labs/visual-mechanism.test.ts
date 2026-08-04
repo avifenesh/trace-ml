@@ -284,6 +284,8 @@ describe("visual mechanism observations", () => {
 
   it("moves one query through fixed kNN points and a fixed tree split", () => {
     const result = observe("knn-versus-tree", 3.6);
+    expect(arrayMetric(result, "trainingPoints")).toEqual([1, 2, 4, 5]);
+    expect(arrayMetric(result, "trainingLabels")).toEqual([0, 0, 1, 1]);
     expect(arrayMetric(result, "neighbors")).toEqual([4, 5, 2]);
     expect(numberMetric(result, "knnLabel")).toBe(1);
     expect(numberMetric(result, "treeThreshold")).toBe(3);

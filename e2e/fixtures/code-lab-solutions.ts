@@ -149,6 +149,29 @@ export const CODE_LAB_BYPASS_PROBES: BypassProbe[] = [
     rejectedBy: ["00-code-held-out-coordinates"],
   },
   {
+    id: "logistic-loss-returns-authored-constant",
+    activityId: "logistic-python-lab",
+    replacements: [
+      {
+        before:
+          "return -math.log(probability if target == 1 else 1.0 - probability)",
+        after: "return 0.2231435513",
+      },
+    ],
+    rejectedBy: ["logistic-negative-loss-check"],
+  },
+  {
+    id: "threshold-selector-hardcodes-one-candidate",
+    activityId: "decision-python-lab",
+    replacements: [
+      {
+        before: "return min(scored)[1]",
+        after: "return 0.5",
+      },
+    ],
+    rejectedBy: ["decision-threshold-check"],
+  },
+  {
     id: "displayed-descent-trace-ignores-rate",
     activityId: "04-python-descent",
     replacements: [
@@ -174,6 +197,17 @@ export const CODE_LAB_BYPASS_PROBES: BypassProbe[] = [
     rejectedBy: ["regularization-cv-aggregation-check"],
   },
   {
+    id: "regularization-selector-hardcodes-one-lambda",
+    activityId: "regularization-python-lab",
+    replacements: [
+      {
+        before: "return min(scored)[1]",
+        after: "return 0.5",
+      },
+    ],
+    rejectedBy: ["regularization-cv-aggregation-check"],
+  },
+  {
     id: "boosting-hardcodes-half-residual",
     activityId: "ensemble-python-lab",
     replacements: [
@@ -183,6 +217,22 @@ export const CODE_LAB_BYPASS_PROBES: BypassProbe[] = [
       },
     ],
     rejectedBy: ["ensemble-boost-rate-check"],
+  },
+  {
+    id: "boosting-copies-raw-training-residuals",
+    activityId: "ensemble-python-lab",
+    replacements: [
+      {
+        before: `corrections = stump_predictions(
+        features,
+        threshold,
+        left_value,
+        right_value,
+    )`,
+        after: "corrections = stage_targets",
+      },
+    ],
+    rejectedBy: ["ensemble-boost-step-check"],
   },
   {
     id: "backprop-swaps-route-contributions",
@@ -229,6 +279,23 @@ export const CODE_LAB_BYPASS_PROBES: BypassProbe[] = [
     rejectedBy: ["cluster-alternate-assignments"],
   },
   {
+    id: "convolution-returns-authored-grid",
+    activityId: "convolution-python-lab",
+    replacements: [
+      {
+        before: `value = sum(
+                image[row + kernel_row][column + kernel_column]
+                * kernel[kernel_row][kernel_column]
+                for kernel_row in range(len(kernel))
+                for kernel_column in range(len(kernel[0]))
+            )`,
+        after:
+          "value = [[0.0, -1.0], [-1.0, 1.0]][row][column]",
+      },
+    ],
+    rejectedBy: ["convolution-manual-output"],
+  },
+  {
     id: "attention-leaves-output-incomplete",
     activityId: "attention-python-lab",
     replacements: [
@@ -239,6 +306,18 @@ export const CODE_LAB_BYPASS_PROBES: BypassProbe[] = [
       },
     ],
     rejectedBy: ["attention-no-training"],
+  },
+  {
+    id: "attention-returns-authored-output",
+    activityId: "attention-python-lab",
+    replacements: [
+      {
+        before:
+          "output = sum(weight * value for weight, value in zip(weights, values))",
+        after: "output = 8.0",
+      },
+    ],
+    rejectedBy: ["attention-weighted-output"],
   },
   {
     id: "q-table-does-not-mutate",

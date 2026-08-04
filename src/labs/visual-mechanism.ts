@@ -867,6 +867,10 @@ export function visualMechanismObservation(
         metrics: {
           query: boundedValue,
           k: 3,
+          axisMinimum: control.min,
+          axisMaximum: control.max,
+          trainingPoints: KNN_POINTS.map(([x]) => x),
+          trainingLabels: KNN_POINTS.map(([, label]) => label),
           neighbors: state.neighbors,
           knnLabel: state.knnLabel,
           treeThreshold: 3,

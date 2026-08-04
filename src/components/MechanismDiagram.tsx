@@ -995,17 +995,20 @@ function FeaturePipelineView({ observation }: ObservationViewProps) {
 function KnnTreeView({ observation }: ObservationViewProps) {
   const query = numberMetric(observation, "query");
   const k = numberMetric(observation, "k");
+  const axisMinimum = numberMetric(observation, "axisMinimum");
+  const axisMaximum = numberMetric(observation, "axisMaximum");
+  const trainingPoints = numberArrayMetric(observation, "trainingPoints");
+  const trainingLabels = numberArrayMetric(observation, "trainingLabels");
   const neighbors = numberArrayMetric(observation, "neighbors");
   const knnLabel = numberMetric(observation, "knnLabel");
   const threshold = numberMetric(observation, "treeThreshold");
   const treeLabel = numberMetric(observation, "treeLabel");
-  const [minimum, maximum] = paddedBounds([
-    query,
-    threshold,
-    ...neighbors,
-  ]);
+  if (trainingPoints.length !== trainingLabels.length) {
+    throw new Error("kNN training points and labels must have matching lengths.");
+  }
+  const selectedNeighbors = new Set(neighbors);
   const xFor = (value: number) =>
-    scale(value, minimum, maximum, 70, 578);
+    scale(value, axisMinimum, axisMaximum, 70, 578);
 
   return (
     <>
@@ -1013,21 +1016,56 @@ function KnnTreeView({ observation }: ObservationViewProps) {
         same query, two fitted rules
       </text>
       <path d="M70 112H578" stroke={GRID} strokeWidth="3" />
-      {neighbors.map((neighbor, index) => (
-        <g key={`${neighbor}-${index}`}>
+      <text x="66" y="132" fill={MUTED} fontSize="9">
+        {formatNumber(axisMinimum)}
+      </text>
+      <text x="574" y="132" fill={MUTED} fontSize="9">
+        {formatNumber(axisMaximum)}
+      </text>
+      {trainingPoints.map((point, index) => {
+        const label = trainingLabels[index] ?? 0;
+        const selected = selectedNeighbors.has(point);
+        return (
+          <g
+            key={point}
+            data-knn-training-point={point}
+            data-knn-label={label}
+            data-knn-selected={selected ? "true" : "false"}
+          >
+            <title>
+              Training point x={formatNumber(point)}, class {label},{" "}
+              {selected ? "selected neighbor" : "not selected"}
+            </title>
+            {selected && (
+              <circle
+                cx={xFor(point)}
+                cy="112"
+                r="15"
+                fill="none"
+                stroke={GREEN}
+                strokeWidth="2"
+              />
+            )}
           <circle
-            cx={xFor(neighbor)}
+            cx={xFor(point)}
             cy="112"
-            r={18 - index * 3}
-            fill="none"
-            stroke={GREEN}
+            r="7"
+            fill={label === 1 ? GREEN : BLUE}
+            stroke={PANEL}
             strokeWidth="2"
           />
-          <text x={xFor(neighbor) - 8} y="146" fill={GREEN} fontSize="10">
-            {formatNumber(neighbor)}
+          <text
+            x={xFor(point)}
+            y="153"
+            fill={selected ? GREEN : MUTED}
+            fontSize="9"
+            textAnchor="middle"
+          >
+            x {formatNumber(point)} / c{label}
           </text>
-        </g>
-      ))}
+          </g>
+        );
+      })}
       <path
         d={`M${xFor(threshold)} 65V176`}
         stroke={YELLOW}
@@ -1037,9 +1075,22 @@ function KnnTreeView({ observation }: ObservationViewProps) {
       <text x={xFor(threshold) + 7} y="72" fill={YELLOW} fontSize="10">
         tree split {formatNumber(threshold)}
       </text>
-      <path d={`M${xFor(query)} 77V112`} stroke={CORAL} strokeWidth="4" />
-      <circle cx={xFor(query)} cy="112" r="7" fill={CORAL} />
-      <text x={xFor(query) - 27} y="64" fill={CORAL} fontSize="10">
+      <path d={`M${xFor(query)} 82V102`} stroke={CORAL} strokeWidth="4" />
+      <circle
+        data-testid="knn-query-marker"
+        data-query={query}
+        cx={xFor(query)}
+        cy="82"
+        r="7"
+        fill={CORAL}
+      />
+      <text
+        x={xFor(query)}
+        y="64"
+        fill={CORAL}
+        fontSize="10"
+        textAnchor="middle"
+      >
         query {formatNumber(query)}
       </text>
       <rect x="70" y="190" width="238" height="43" rx="4" fill={PANEL} />
