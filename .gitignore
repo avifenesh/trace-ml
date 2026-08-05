@@ -11,8 +11,13 @@ node_modules
 dist
 dist-ssr
 public/pyodide
-outputs/playwright/
+outputs/
 *.local
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
