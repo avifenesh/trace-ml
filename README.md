@@ -244,6 +244,53 @@ If browser storage is unavailable, activity continues in memory for that
 session and the compact toolbar displays **Session only**. That warning means
 the current evidence will not survive a reload.
 
+## Phone access over Tailscale
+
+On a Linux host connected to Tailscale, install the production web build as a
+user service and expose it only inside the same tailnet:
+
+```bash
+make tailnet-install
+```
+
+The command builds `dist/`, installs and starts `trace-ml-web.service`, and
+creates a dedicated Tailscale Serve endpoint on HTTPS port `9443`. The server
+listens only on `127.0.0.1:5600`; Tailscale supplies the private HTTPS
+connection. It does not use Funnel and is not public on the internet. The
+installer refuses to replace any existing Serve handler on the selected port.
+
+The command prints the exact URL, in this form:
+
+```text
+https://<machine>.<tailnet>.ts.net:9443/
+```
+
+Open that URL in Chrome on an Android phone signed into the same tailnet. Use
+**Add to Home screen** for the Trace icon and a standalone course window.
+Progress remains local to that phone's browser profile; it does not sync with
+the desktop app.
+
+The service uses systemd's user manager. User lingering keeps it available
+after logout and before the next login; the installer reports when lingering
+is disabled. Tailscale Serve runs in background mode, which
+[resumes sharing after a reboot](https://tailscale.com/docs/reference/tailscale-cli/serve).
+
+Use the lifecycle commands after installation:
+
+```bash
+make tailnet-status
+make tailnet-restart  # rebuild after pulling new course changes
+make tailnet-stop
+make tailnet-start
+make tailnet-uninstall
+```
+
+`tailnet-stop` and `tailnet-uninstall` remove only Trace ML's dedicated Serve
+route. They preserve every unrelated Tailscale Serve or Funnel route. Override
+the defaults with `TRACE_ML_WEB_PORT` and
+`TRACE_ML_TAILNET_HTTPS_PORT` when another local service already owns either
+port.
+
 ## Development
 
 The desktop build requires Node `^22.22.2`, `^24.15.0`, or `>=26.0.0`, npm,
@@ -266,6 +313,10 @@ The portable Make targets are:
 | `make smoke` | Exercise the exact installed app and process |
 | `make start` | Open the installed native app |
 | `make dmg` | Build a macOS DMG on a Mac |
+| `make tailnet-install` | Build and install private phone access on Linux |
+| `make tailnet-restart` | Rebuild and restart the installed phone service |
+| `make tailnet-status` | Check local and tailnet phone access |
+| `make tailnet-stop` | Stop phone access and remove its dedicated route |
 
 The equivalent npm-only browser setup remains:
 
@@ -286,6 +337,7 @@ automatically synchronizes the local Pyodide assets.
 | `npm test` | Run the Vitest unit suite |
 | `npm run build` | Sync Pyodide, typecheck, and build the Vite app |
 | `npm run preview` | Serve the production Vite build locally |
+| `npm run serve:production` | Serve a built `dist/` on loopback with runtime headers |
 
 ## End-to-End Tests
 

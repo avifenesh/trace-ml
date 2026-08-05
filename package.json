@@ -39,6 +39,7 @@
     "desktop:install-artifact": "bash scripts/install-linux-desktop.sh",
     "desktop:smoke": "bash scripts/smoke-installed-desktop.sh",
     "desktop:start": "bash scripts/start-desktop.sh",
+    "serve:production": "node scripts/serve-production.mjs",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },
