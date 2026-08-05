@@ -1,9 +1,9 @@
 # Trace ML Course Research Guide
 
-**Research date:** 2026-08-02, with claim-specific corrections validated 2026-08-03  
-**Depth:** Deep  
-**Sources:** 109 live-validated resources
-**Product:** Fixed, authored 21-lesson machine-learning course  
+**Research date:** 2026-08-02, with claim-specific corrections validated 2026-08-05<br>
+**Depth:** Deep<br>
+**Sources:** 109 live-validated resources<br>
+**Product:** Fixed, authored 21-lesson machine-learning course
 **Source registry:** `resources/ml-course-research-sources.json`
 
 ## Status And Claim Labels
@@ -350,7 +350,7 @@ request is cancellable and rate-limited. Results remain revision-scoped
 formative activity state and never become concept evidence. The request sets
 `store: false`, but remote retention and provider sharing remain governed by
 the effective AWS account/project policy. The configured account reported
-`provider_data_share` during the 2026-08-03 verification, so zero data
+`provider_data_share` during the 2026-08-05 verification, so zero data
 retention is not established. The browser fallback reports structure only.
 This separation preserves semantic feedback without turning course governance
 over to an LLM.

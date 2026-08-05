@@ -44,6 +44,9 @@ Four independent lanes were live-checked on 2026-08-03:
 3. Structured output, prompt injection, least privilege, and validation.
 4. Direct Bedrock deployment, credential boundaries, retention, and Tauri.
 
+The provider documentation and live account/model retention metadata were
+rechecked on 2026-08-05.
+
 The source set contains peer-reviewed NLP and education research, primary
 standards, official OpenAI/AWS/Tauri documentation, OWASP guidance, and one
 calibration preprint. Quality scores use the `/learn` weighting:
@@ -152,7 +155,9 @@ Bedrock Mantle accepts direct bearer-authenticated Responses requests.
 that this alone does not guarantee zero retention under the default mode.
 Guaranteed ZDR requires an effective account or project
 `data_retention_mode: none`. Standard Bedrock model-invocation logging currently
-does not capture Mantle Responses calls. `[PA31-PA38]`
+does not capture Mantle Responses calls. Classifier-flagged GPT-5.6 Sol traffic
+may still be retained by AWS for up to 30 days for automated offline abuse
+detection. `[PA21, PA31-PA38, PA41]`
 
 Trace ML implication:
 
@@ -162,7 +167,7 @@ Trace ML implication:
   the HTTPS authorization header.
 - Never return credentials to the webview, learner state, or diagnostics.
 - State plainly that AWS policy controls retention and provider sharing. The
-  configured account reported `provider_data_share` on 2026-08-03, so this
+  configured account reported `provider_data_share` on 2026-08-05, so this
   installation does not establish ZDR.
 - Do not silently fall back to a different provider.
 
@@ -225,7 +230,7 @@ Before changing the prompt, model, or rubric format, test:
   instruction-attack cases, not every lesson or misconception.
 - No repeated-run reliability, subgroup fairness, multilingual, or calibration
   study has been completed for `openai.gpt-5.6-sol`.
-- The configured account reported `provider_data_share` on 2026-08-03. Moving
+- The configured account reported `provider_data_share` on 2026-08-05. Moving
   to guaranteed ZDR would require a deliberate AWS account/project policy
   change and confirmation that the selected model permits mode `none`.
 - Retention configuration can drift and must be rechecked operationally.
@@ -243,6 +248,7 @@ Before changing the prompt, model, or rubric format, test:
 | [OpenAI evaluation best practices](https://developers.openai.com/api/docs/guides/evaluation-best-practices) | Fixed criteria and continuous evaluation |
 | [OWASP prompt injection prevention](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html) | Instruction/data separation and least privilege |
 | [Bedrock data retention](https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html) | Remote retention controls and limits |
+| [Bedrock abuse detection](https://docs.aws.amazon.com/bedrock/latest/userguide/abuse-detection.html) | Model-specific safety retention |
 | [GPT-5.6 Sol on Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-sol.html) | Exact model, region, and special Mantle endpoint |
 
 ## Self-Evaluation

@@ -444,7 +444,7 @@
         "Bedrock API keys can authenticate direct HTTPS requests through an Authorization Bearer header.",
         "The bearer token must stay out of arguments, logs, webview state, and persisted learner records."
       ],
-      "verifiedAt": "2026-08-03"
+      "verifiedAt": "2026-08-05"
     },
     {
       "id": "PA22",
@@ -654,7 +654,7 @@
         "Bedrock Mantle exposes OpenAI-compatible Models and Responses APIs over regional HTTPS endpoints.",
         "Responses storage defaults on, so callers that do not need retrievable state must explicitly send store=false."
       ],
-      "verifiedAt": "2026-08-03"
+      "verifiedAt": "2026-08-05"
     },
     {
       "id": "PA32",
@@ -696,7 +696,7 @@
         "Account or project data_retention_mode controls durable request and response handling.",
         "store=false does not independently guarantee zero retention; guaranteed ZDR requires effective mode none."
       ],
-      "verifiedAt": "2026-08-03"
+      "verifiedAt": "2026-08-05"
     },
     {
       "id": "PA34",
@@ -738,7 +738,7 @@
         "GPT-5.6 Sol is Responses-only on Bedrock Mantle and uses the special /openai/v1 path.",
         "The exact model ID openai.gpt-5.6-sol is available in us-east-1 and us-east-2."
       ],
-      "verifiedAt": "2026-08-03"
+      "verifiedAt": "2026-08-05"
     },
     {
       "id": "PA36",
@@ -844,11 +844,32 @@
         "A dedicated backend command is safer than exposing arbitrary shell arguments to the webview."
       ],
       "verifiedAt": "2026-08-03"
+    },
+    {
+      "id": "PA41",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/abuse-detection.html",
+      "title": "Amazon Bedrock Abuse Detection",
+      "publisher": "Amazon Web Services",
+      "published": null,
+      "type": "official-documentation",
+      "qualityScore": 94,
+      "scores": {
+        "authority": 10,
+        "recency": 10,
+        "depth": 8,
+        "examples": 7,
+        "uniqueness": 10
+      },
+      "keyInsights": [
+        "Bedrock uses zero data retention by default but documents model-specific exceptions for abuse detection.",
+        "Classifier-flagged GPT-5.6 Sol traffic can be retained by AWS for up to 30 days for automated offline abuse detection."
+      ],
+      "verifiedAt": "2026-08-05"
     }
   ],
   "sourceBreakdown": {
     "peerReviewedOrMetaAnalysis": 19,
-    "officialDocumentationOrGuidance": 17,
+    "officialDocumentationOrGuidance": 18,
     "standardsAndSecurityGuidance": 2,
     "preprints": 2
   },
