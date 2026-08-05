@@ -181,6 +181,7 @@ jobs:
             librsvg2-dev \
             libssl-dev \
             libwebkit2gtk-4.1-dev \
+            openbox \
             patchelf \
             pkg-config \
             x11-utils \
@@ -212,11 +213,41 @@ jobs:
           runtime_dir="$RUNNER_TEMP/trace-ml-runtime"
           mkdir -p "$runtime_dir"
           chmod 700 "$runtime_dir"
-          dbus-run-session -- \
-            xvfb-run -a \
+          xvfb-run -a \
             env XDG_RUNTIME_DIR="$runtime_dir" \
-            bash scripts/install-linux-desktop.sh \
-              --binary src-tauri/target/release/trace-ml \
-              --smoke
+            dbus-run-session -- \
+            bash -s <<'EOF'
+          set -euo pipefail
+          openbox >"$XDG_RUNTIME_DIR/openbox.log" 2>&1 &
+          window_manager_pid=$!
+          cleanup_window_manager() {
+            kill "$window_manager_pid" 2>/dev/null || true
+            wait "$window_manager_pid" 2>/dev/null || true
+          }
+          trap cleanup_window_manager EXIT
+
+          window_manager_ready=false
+          for _ in {1..100}; do
+            if ! kill -0 "$window_manager_pid" 2>/dev/null; then
+              break
+            fi
+            if xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null |
+              grep -Eq \
+                '^_NET_SUPPORTING_WM_CHECK\(WINDOW\): window id # 0x[[:xdigit:]]+$'; then
+              window_manager_ready=true
+              break
+            fi
+            sleep 0.05
+          done
+          if [[ "$window_manager_ready" != true ]]; then
+            cat "$XDG_RUNTIME_DIR/openbox.log" >&2
+            printf '%s\n' 'error: Openbox did not become ready under Xvfb' >&2
+            exit 1
+          fi
+
+          bash scripts/install-linux-desktop.sh \
+            --binary src-tauri/target/release/trace-ml \
+            --smoke
+          EOF
           test -f "$HOME/.local/share/trace-ml/LICENSE"
           test -f "$HOME/.local/share/trace-ml/THIRD_PARTY_NOTICES.md"
