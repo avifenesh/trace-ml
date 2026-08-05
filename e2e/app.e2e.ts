@@ -848,6 +848,18 @@ test("mobile course map and Q&A are mutually exclusive drawers", async ({
   await expect(map).toHaveClass(/mobile-open/);
   await expect(helper).not.toHaveClass(/mobile-open/);
   await expect(openDrawers).toHaveCount(1);
+  await expect
+    .poll(() =>
+      map.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          left: Math.round(box.left),
+          right: Math.round(box.right),
+          width: Math.round(box.width),
+        };
+      }),
+    )
+    .toEqual({ left: 0, right: 390, width: 390 });
   await expect(map.getByRole("button", { name: "Close course map" }))
     .toBeFocused();
 
@@ -864,12 +876,42 @@ test("mobile course map and Q&A are mutually exclusive drawers", async ({
   await expect(helper).toHaveClass(/mobile-open/);
   await expect(map).not.toHaveClass(/mobile-open/);
   await expect(openDrawers).toHaveCount(1);
+  await expect
+    .poll(() =>
+      helper.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          left: Math.round(box.left),
+          right: Math.round(box.right),
+          width: Math.round(box.width),
+        };
+      }),
+    )
+    .toEqual({ left: 0, right: 390, width: 390 });
   await expect(helper.getByText("grounded in Lesson 20")).toBeVisible();
   await expect(helper).toContainText("Diagnose the deployed system");
   await expect(helper.locator("#lesson-helper-title")).toBeFocused();
+  await expect
+    .poll(() =>
+      helper
+        .getByRole("textbox", { name: "Ask about this lesson" })
+        .evaluate((element) =>
+          Number.parseFloat(getComputedStyle(element).fontSize),
+        ),
+    )
+    .toBeGreaterThanOrEqual(16);
 
   await helper.getByRole("button", { name: "Close tutor" }).click();
   await expect(openDrawers).toHaveCount(0);
+  const editableFontSizes = await page
+    .locator(".self-explanation textarea, .code-editor textarea")
+    .evaluateAll((elements) =>
+      elements.map((element) =>
+        Number.parseFloat(getComputedStyle(element).fontSize),
+      ),
+    );
+  expect(editableFontSizes.length).toBeGreaterThan(0);
+  expect(editableFontSizes.every((fontSize) => fontSize >= 16)).toBe(true);
 });
 
 test("a restored deep lesson is visible when the mobile map opens", async ({
