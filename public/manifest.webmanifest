@@ -2,6 +2,7 @@
   "name": "Trace ML",
   "short_name": "Trace ML",
   "description": "A fixed, authored machine learning course with inspectable mechanisms.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -17,6 +18,12 @@
       "src": "/trace-ml-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/trace-ml-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

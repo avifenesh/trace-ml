@@ -49,13 +49,13 @@ export function TutorPanel({
 }: TutorPanelProps) {
   const [draft, setDraft] = useState("");
   const [showHistory, setShowHistory] = useState(false);
-  const transcriptRef = useRef<HTMLDivElement>(null);
+  const conversationRef = useRef<HTMLDivElement>(null);
   const threadButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const focusAfterDeleteRef = useRef<string | null>(null);
 
   useEffect(() => {
-    transcriptRef.current?.scrollTo({
-      top: transcriptRef.current.scrollHeight,
+    conversationRef.current?.scrollTo({
+      top: conversationRef.current.scrollHeight,
       behavior: "auto",
     });
   }, [tutor.activeThread.messages]);
@@ -306,120 +306,121 @@ export function TutorPanel({
             </span>
           </div>
 
-          <div
-            className="tutor-transcript"
-            ref={transcriptRef}
-            role="log"
-            aria-label="Conversation messages"
-            aria-live="polite"
-            aria-relevant="additions text"
-          >
-            {tutor.activeThread.messages.map((message) => {
-              const sources = message.sourceChunkIds
-                .map(sourceFromChunk)
-                .filter((source) => source !== null);
-              const claims = message.claims ?? [];
-              return (
-                <article
-                  className={`tutor-message ${message.role}`}
-                  key={message.id}
-                >
-                  <span>{message.role === "tutor" ? "HELPER" : "YOU"}</span>
-                  {claims.length > 0 ? (
-                    <div className="message-claims">
-                      {claims.map((claim, index) => {
-                        const source = sourceFromChunk(claim.sourceChunkId);
-                        return (
-                          <div key={`${claim.sourceChunkId}:${index}`}>
-                            <p>{claim.text}</p>
-                            {source && (
-                              <a
-                                href={`#${source.anchorId}`}
-                                title={`Exact support: ${claim.quote}`}
-                                aria-label={`${source.label}. Exact support: ${claim.quote}`}
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  onNavigateToBlock(source.anchorId);
-                                }}
-                              >
-                                <BookOpenText size={12} aria-hidden="true" />
-                                {source.label}
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p>{message.text}</p>
-                  )}
-                  {claims.length === 0 && sources.length > 0 && (
-                    <div className="message-sources">
-                      {sources.map((source) => (
-                        <a
-                          href={`#${source.anchorId}`}
-                          key={source.id}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            onNavigateToBlock(source.anchorId);
-                          }}
-                        >
-                          <BookOpenText size={12} aria-hidden="true" />
-                          {source.label}
-                        </a>
-                      ))}
-                    </div>
-                  )}
+          <div className="tutor-conversation" ref={conversationRef}>
+            <div
+              className="tutor-transcript"
+              role="log"
+              aria-label="Conversation messages"
+              aria-live="polite"
+              aria-relevant="additions text"
+            >
+              {tutor.activeThread.messages.map((message) => {
+                const sources = message.sourceChunkIds
+                  .map(sourceFromChunk)
+                  .filter((source) => source !== null);
+                const claims = message.claims ?? [];
+                return (
+                  <article
+                    className={`tutor-message ${message.role}`}
+                    key={message.id}
+                  >
+                    <span>{message.role === "tutor" ? "HELPER" : "YOU"}</span>
+                    {claims.length > 0 ? (
+                      <div className="message-claims">
+                        {claims.map((claim, index) => {
+                          const source = sourceFromChunk(claim.sourceChunkId);
+                          return (
+                            <div key={`${claim.sourceChunkId}:${index}`}>
+                              <p>{claim.text}</p>
+                              {source && (
+                                <a
+                                  href={`#${source.anchorId}`}
+                                  title={`Exact support: ${claim.quote}`}
+                                  aria-label={`${source.label}. Exact support: ${claim.quote}`}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    onNavigateToBlock(source.anchorId);
+                                  }}
+                                >
+                                  <BookOpenText size={12} aria-hidden="true" />
+                                  {source.label}
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p>{message.text}</p>
+                    )}
+                    {claims.length === 0 && sources.length > 0 && (
+                      <div className="message-sources">
+                        {sources.map((source) => (
+                          <a
+                            href={`#${source.anchorId}`}
+                            key={source.id}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              onNavigateToBlock(source.anchorId);
+                            }}
+                          >
+                            <BookOpenText size={12} aria-hidden="true" />
+                            {source.label}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+              {tutor.pendingAnswer && (
+                <article className="tutor-message tutor pending">
+                  <span>HELPER</span>
+                  <div>
+                    <LoaderCircle
+                      className="assessment-spinner"
+                      size={15}
+                      aria-hidden="true"
+                    />
+                    <p>
+                      {tutor.pendingAnswer.cancelling
+                        ? "Cancelling..."
+                        : "Reading this page..."}
+                    </p>
+                    <button
+                      type="button"
+                      className="cancel-helper"
+                      disabled={tutor.pendingAnswer.cancelling}
+                      onClick={tutor.cancelAnswer}
+                      title="Cancel answer"
+                      aria-label="Cancel answer"
+                    >
+                      <CircleStop size={16} />
+                    </button>
+                  </div>
                 </article>
-              );
-            })}
-            {tutor.pendingAnswer && (
-              <article className="tutor-message tutor pending">
-                <span>HELPER</span>
-                <div>
-                  <LoaderCircle
-                    className="assessment-spinner"
-                    size={15}
-                    aria-hidden="true"
-                  />
-                  <p>
-                    {tutor.pendingAnswer.cancelling
-                      ? "Cancelling..."
-                      : "Reading this page..."}
-                  </p>
+              )}
+            </div>
+
+            {tutor.activeThread.messages.length === 1 && (
+              <div className="starter-questions">
+                <span>ASK FROM THIS PAGE</span>
+                {(lesson.starterQuestions ?? []).map((question) => (
                   <button
                     type="button"
-                    className="cancel-helper"
-                    disabled={tutor.pendingAnswer.cancelling}
-                    onClick={tutor.cancelAnswer}
-                    title="Cancel answer"
-                    aria-label="Cancel answer"
+                    key={question}
+                    disabled={
+                      tutor.pendingAnswer !== null ||
+                      tutor.helperMode === "checking"
+                    }
+                    onClick={() => tutor.send(question)}
                   >
-                    <CircleStop size={16} />
+                    {question}
                   </button>
-                </div>
-              </article>
+                ))}
+              </div>
             )}
           </div>
-
-          {tutor.activeThread.messages.length === 1 && (
-            <div className="starter-questions">
-              <span>ASK FROM THIS PAGE</span>
-              {(lesson.starterQuestions ?? []).map((question) => (
-                <button
-                  type="button"
-                  key={question}
-                  disabled={
-                    tutor.pendingAnswer !== null ||
-                    tutor.helperMode === "checking"
-                  }
-                  onClick={() => tutor.send(question)}
-                >
-                  {question}
-                </button>
-              ))}
-            </div>
-          )}
 
           <form
             className="tutor-composer"

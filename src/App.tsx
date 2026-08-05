@@ -99,13 +99,13 @@ function useModalDrawer({
     if (!active) return;
     const panel = panelRef.current;
     if (!panel) return;
+    const requestedInitialFocus = initialFocusSelector
+      ? panel.querySelector<HTMLElement>(initialFocusSelector)
+      : null;
 
     const focusInitial = () => {
-      const requested = initialFocusSelector
-        ? panel.querySelector<HTMLElement>(initialFocusSelector)
-        : null;
       const target =
-        requested ?? focusableElements(panel)[0] ?? panel;
+        requestedInitialFocus ?? focusableElements(panel)[0] ?? panel;
       target.focus({ preventScroll: true });
       if (!panel.contains(document.activeElement)) {
         panel.focus({ preventScroll: true });
@@ -136,7 +136,14 @@ function useModalDrawer({
       const current = document.activeElement;
       if (
         !panel.contains(current) ||
-        (event.shiftKey && current === first) ||
+        (
+          event.shiftKey &&
+          (
+            current === first ||
+            current === requestedInitialFocus ||
+            current === panel
+          )
+        ) ||
         (!event.shiftKey && current === last)
       ) {
         event.preventDefault();

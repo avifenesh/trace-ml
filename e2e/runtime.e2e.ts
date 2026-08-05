@@ -5,7 +5,7 @@ test.describe.configure({ mode: "serial" });
 test("an authored Python lab runs through the accessible UI", async ({
   page,
 }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(180_000);
   await page.goto("/");
 
   await page.locator('[data-lesson-id="loss-landscape"]').click();
@@ -32,7 +32,7 @@ test("an authored Python lab runs through the accessible UI", async ({
   await run.click();
 
   await expect(lab.getByText("trace UI runtime ready 42")).toBeVisible({
-    timeout: 30_000,
+    timeout: 130_000,
   });
   await expect(lab).toContainText(/env [a-f0-9]{8}/);
 

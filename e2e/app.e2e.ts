@@ -30,6 +30,7 @@ const PREREQUISITE_PREDICTION =
   "For y = (3x - 2)^2, what is dy/dx at x = 2?";
 const RESPONSIVE_VIEWPORTS = [
   ["phone", 390, 844],
+  ["landscape phone", 844, 390],
   ["compact breakpoint", 720, 900],
   ["desktop minimum", 1024, 680],
   ["helper drawer edge", 1399, 800],
@@ -891,6 +892,31 @@ test("mobile course map and Q&A are mutually exclusive drawers", async ({
   await expect(helper.getByText("grounded in Lesson 20")).toBeVisible();
   await expect(helper).toContainText("Diagnose the deployed system");
   await expect(helper.locator("#lesson-helper-title")).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  const wrappedFocus = await helper.evaluate((panel) => {
+    const selector = [
+      "a[href]",
+      "button:not([disabled])",
+      "textarea:not([disabled])",
+      "input:not([disabled])",
+      "select:not([disabled])",
+      "[contenteditable='true']",
+      "[tabindex]:not([tabindex='-1'])",
+    ].join(",");
+    const focusable = [...panel.querySelectorAll<HTMLElement>(selector)].filter(
+      (element) =>
+        element.getClientRects().length > 0 &&
+        getComputedStyle(element).visibility !== "hidden",
+    );
+    return {
+      activeInside: panel.contains(document.activeElement),
+      wrappedToLast: document.activeElement === focusable.at(-1),
+    };
+  });
+  expect(wrappedFocus).toEqual({
+    activeInside: true,
+    wrappedToLast: true,
+  });
   await expect
     .poll(() =>
       helper
@@ -912,7 +938,198 @@ test("mobile course map and Q&A are mutually exclusive drawers", async ({
     );
   expect(editableFontSizes.length).toBeGreaterThan(0);
   expect(editableFontSizes.every((fontSize) => fontSize >= 16)).toBe(true);
+  await expect
+    .poll(() =>
+      page
+        .locator('.visual-lab-control input[type="range"]')
+        .first()
+        .evaluate((element) => element.getBoundingClientRect().height)
+    )
+    .toBeGreaterThanOrEqual(44);
 });
+
+test("phone install metadata uses the maskable Trace icon", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+
+  const metadata = await page.evaluate(async () => {
+    const viewport = document.querySelector<HTMLMetaElement>(
+      'meta[name="viewport"]',
+    );
+    const manifestLink = document.querySelector<HTMLLinkElement>(
+      'link[rel="manifest"]',
+    );
+    if (!manifestLink) throw new Error("Missing web app manifest link.");
+    const manifest = await fetch(manifestLink.href, { cache: "reload" }).then(
+      (response) => response.json(),
+    );
+    const icons = await Promise.all(
+      manifest.icons.map(
+        async (icon: { sizes: string; src: string; type: string }) => {
+          const response = await fetch(icon.src, { cache: "reload" });
+          const bytes = await response.arrayBuffer();
+          const view = new DataView(bytes);
+          return {
+            declaredSizes: icon.sizes,
+            height: view.getUint32(20),
+            src: icon.src,
+            status: response.status,
+            type: response.headers.get("content-type"),
+            width: view.getUint32(16),
+          };
+        },
+      ),
+    );
+    return {
+      icons,
+      manifestHref: manifestLink.getAttribute("href"),
+      manifestId: manifest.id,
+      maskableIcons: manifest.icons.filter(
+        (icon: { purpose?: string }) => icon.purpose === "maskable",
+      ),
+      viewport: viewport?.content,
+    };
+  });
+
+  expect(metadata.manifestHref).toBe("/manifest.webmanifest?v=2");
+  expect(metadata.manifestId).toBe("/");
+  expect(metadata.maskableIcons).toEqual([
+    expect.objectContaining({
+      sizes: "512x512",
+      src: "/trace-ml-maskable-512.png",
+      type: "image/png",
+    }),
+  ]);
+  expect(metadata.icons).toEqual([
+    {
+      declaredSizes: "192x192",
+      height: 192,
+      src: "/trace-ml-192.png",
+      status: 200,
+      type: "image/png",
+      width: 192,
+    },
+    {
+      declaredSizes: "512x512",
+      height: 512,
+      src: "/trace-ml-512.png",
+      status: 200,
+      type: "image/png",
+      width: 512,
+    },
+    {
+      declaredSizes: "512x512",
+      height: 512,
+      src: "/trace-ml-maskable-512.png",
+      status: 200,
+      type: "image/png",
+      width: 512,
+    },
+  ]);
+  expect(metadata.viewport).toContain("interactive-widget=resizes-content");
+});
+
+test("landscape phone keeps the helper composer inside the viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.reload();
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
+
+  const helper = page.locator("#lesson-helper-panel");
+  const layout = await helper.evaluate((panel) => {
+    const box = (selector: string) => {
+      const element = panel.querySelector(selector);
+      if (!element) throw new Error(`Missing helper element: ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const header = box(".tutor-header");
+    const context = box(".thread-context");
+    const conversation = box(".tutor-conversation");
+    const composer = box(".tutor-composer");
+    const textarea = panel.querySelector("textarea");
+    if (!textarea) throw new Error("Missing helper textarea.");
+    return {
+      composerBottom: composer.bottom,
+      contextAfterHeader: context.top >= header.bottom - 0.5,
+      conversationAfterContext: conversation.top >= context.bottom - 0.5,
+      conversationBeforeComposer:
+        conversation.bottom <= composer.top + 0.5,
+      conversationHeight: conversation.height,
+      panelClientHeight: panel.clientHeight,
+      panelScrollHeight: panel.scrollHeight,
+      textareaFontSize: Number.parseFloat(
+        getComputedStyle(textarea).fontSize,
+      ),
+    };
+  });
+
+  expect(layout.composerBottom).toBeLessThanOrEqual(390.5);
+  expect(layout.contextAfterHeader).toBe(true);
+  expect(layout.conversationAfterContext).toBe(true);
+  expect(layout.conversationBeforeComposer).toBe(true);
+  expect(layout.conversationHeight).toBeGreaterThan(0);
+  expect(layout.panelScrollHeight).toBeLessThanOrEqual(
+    layout.panelClientHeight + 1,
+  );
+  expect(layout.textareaFontSize).toBeGreaterThanOrEqual(16);
+
+  await helper.getByRole("button", { name: "Close tutor" }).click();
+  await expect
+    .poll(() =>
+      page
+        .locator('.visual-lab-control input[type="range"]')
+        .first()
+        .evaluate((element) => element.getBoundingClientRect().height)
+    )
+    .toBeGreaterThanOrEqual(44);
+});
+
+for (const [viewportName, width, height] of [
+  ["minimum phone", 320, 680],
+  ["full-screen drawer breakpoint", 480, 800],
+] as const) {
+  test(`mobile drawers fill the ${viewportName} viewport`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.reload();
+
+    const drawerBounds = async (drawer: Locator) =>
+      drawer.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          left: Math.round(box.left),
+          right: Math.round(box.right),
+          width: Math.round(box.width),
+        };
+      });
+
+    const map = courseMap(page);
+    await page.getByRole("button", { name: "Open course map" }).click();
+    await expect(map).toHaveClass(/mobile-open/);
+    await expect.poll(() => drawerBounds(map)).toEqual({
+      left: 0,
+      right: width,
+      width,
+    });
+    await map.getByRole("button", { name: "Close course map" }).click();
+
+    const helper = page.locator("#lesson-helper-panel");
+    await page.getByRole("button", { name: "Ask", exact: true }).click();
+    await expect(helper).toHaveClass(/mobile-open/);
+    await expect.poll(() => drawerBounds(helper)).toEqual({
+      left: 0,
+      right: width,
+      width,
+    });
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
+  });
+}
 
 test("a restored deep lesson is visible when the mobile map opens", async ({
   page,
