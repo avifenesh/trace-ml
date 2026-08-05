@@ -33,6 +33,25 @@ const SECURITY_HEADERS = Object.freeze({
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Content-Type-Options": "nosniff",
 });
+const BROTLI_EXTENSIONS = new Set([
+  ".css",
+  ".html",
+  ".js",
+  ".json",
+  ".mjs",
+  ".svg",
+  ".wasm",
+  ".webmanifest",
+]);
+const FIXED_ASSET_PATHS = new Set([
+  "/favicon.svg",
+  "/icons.svg",
+  "/manifest.webmanifest",
+  "/trace-ml-180.png",
+  "/trace-ml-192.png",
+  "/trace-ml-512.png",
+  "/trace-ml-maskable-512.png",
+]);
 
 function isWithin(root, candidate) {
   return candidate === root || candidate.startsWith(`${root}${sep}`);
@@ -40,6 +59,9 @@ function isWithin(root, candidate) {
 
 function cacheControl(pathname) {
   if (pathname === "/" || pathname.endsWith(".html")) return "no-cache";
+  if (pathname.startsWith("/pyodide/") || FIXED_ASSET_PATHS.has(pathname)) {
+    return "no-cache";
+  }
   if (pathname.startsWith("/assets/")) {
     return "public, max-age=31536000, immutable";
   }
@@ -101,30 +123,259 @@ async function locateFile(root, rootReal, pathname, acceptsHtml) {
       candidateReal === resolve(rootReal, "index.html")
         ? "/index.html"
         : decodedPath,
+    rootReal,
     stats: candidateStats,
     status: 200,
   };
 }
 
+function encodingQuality(value, encoding) {
+  if (!value) return encoding === "identity" ? 1 : 0;
+  let wildcardQuality = null;
+  for (const item of value.split(",")) {
+    const [name, ...parameters] = item.trim().toLowerCase().split(";");
+    const qualityParameter = parameters
+      .map((parameter) => parameter.trim())
+      .find((parameter) => parameter.startsWith("q="));
+    const parsedQuality = qualityParameter
+      ? Number.parseFloat(qualityParameter.slice(2))
+      : 1;
+    const quality =
+      Number.isFinite(parsedQuality) &&
+      parsedQuality >= 0 &&
+      parsedQuality <= 1
+        ? parsedQuality
+        : 0;
+    if (name === encoding) return quality;
+    if (name === "*") wildcardQuality = quality;
+  }
+  if (encoding === "identity") return wildcardQuality === 0 ? 0 : 1;
+  return wildcardQuality ?? 0;
+}
+
+function opaqueEtag(value) {
+  return /^(?:W\/)?("[\u0021\u0023-\u007e\u0080-\u00ff]*")$/.exec(value)?.[1] ??
+    null;
+}
+
+function matchesEtag(value, etag) {
+  const expected = opaqueEtag(etag);
+  return (
+    value
+      ?.split(",")
+      .map((candidate) => candidate.trim())
+      .some(
+        (candidate) =>
+          candidate === "*" ||
+          (expected !== null && opaqueEtag(candidate) === expected),
+      ) ?? false
+  );
+}
+
+function ifRangeMatches(value, etag, modifiedAt) {
+  if (!value) return true;
+  const validator = value.trim();
+  if (validator.startsWith('"') || validator.startsWith('W/"')) {
+    return (
+      !validator.startsWith("W/") &&
+      !etag.startsWith("W/") &&
+      validator === etag
+    );
+  }
+  const requestedDate = Date.parse(validator);
+  return (
+    Number.isFinite(requestedDate) &&
+    Math.trunc(modifiedAt.getTime() / 1000) ===
+      Math.trunc(requestedDate / 1000)
+  );
+}
+
+function ifModifiedSinceMatches(value, modifiedAt) {
+  if (!value) return false;
+  const requestedDate = Date.parse(value);
+  return (
+    Number.isFinite(requestedDate) &&
+    Math.trunc(modifiedAt.getTime() / 1000) <=
+      Math.trunc(requestedDate / 1000)
+  );
+}
+
+function parseByteRange(value, size) {
+  const unit = /^bytes=(.*)$/i.exec(value);
+  if (!unit) return null;
+  const specification = unit[1];
+  if (specification.includes(",")) return null;
+  const match = /^([0-9]*)-([0-9]*)$/.exec(specification);
+  if (!match || (!match[1] && !match[2])) return { invalid: true };
+
+  if (!match[1]) {
+    const suffixLength = Number(match[2]);
+    if (
+      size === 0 ||
+      !Number.isSafeInteger(suffixLength) ||
+      suffixLength < 1
+    ) {
+      return { invalid: true };
+    }
+    return {
+      end: size - 1,
+      start: Math.max(0, size - suffixLength),
+    };
+  }
+
+  const start = Number(match[1]);
+  const requestedEnd = match[2] ? Number(match[2]) : size - 1;
+  if (
+    !Number.isSafeInteger(start) ||
+    !Number.isSafeInteger(requestedEnd) ||
+    start >= size ||
+    requestedEnd < start
+  ) {
+    return { invalid: true };
+  }
+  return { end: Math.min(requestedEnd, size - 1), start };
+}
+
+async function brotliRepresentation(located) {
+  if (
+    !BROTLI_EXTENSIONS.has(extname(located.filePath).toLowerCase())
+  ) {
+    return null;
+  }
+  try {
+    const compressedReal = await realpath(`${located.filePath}.br`);
+    if (!isWithin(located.rootReal, compressedReal)) return null;
+    const compressedStats = await stat(compressedReal);
+    if (!compressedStats.isFile() || compressedStats.size >= located.stats.size) {
+      return null;
+    }
+    return { filePath: compressedReal, stats: compressedStats };
+  } catch (error) {
+    if (error?.code === "ENOENT" || error?.code === "ENOTDIR") return null;
+    throw error;
+  }
+}
+
 async function serveFile(request, response, located) {
-  const etag = `W/"${located.stats.size.toString(16)}-${Math.trunc(
+  const rawEtag = `W/"${located.stats.size.toString(16)}-${Math.trunc(
     located.stats.mtimeMs,
   ).toString(16)}"`;
-  if (request.headers["if-none-match"] === etag) {
-    response.writeHead(304, baseHeaders({ ETag: etag }));
+  const modifiedAt = located.stats.mtime;
+  const rangeHeader =
+    request.method === "GET" && typeof request.headers.range === "string"
+      ? request.headers.range
+      : null;
+  const parsedRange = rangeHeader
+    ? parseByteRange(rangeHeader, located.stats.size)
+    : null;
+  const requestedRange =
+    parsedRange &&
+    ifRangeMatches(request.headers["if-range"], rawEtag, modifiedAt)
+      ? parsedRange
+      : null;
+  const encodingHeader = request.headers["accept-encoding"];
+  const identityQuality = encodingQuality(encodingHeader, "identity");
+  const brotliQuality = encodingQuality(encodingHeader, "br");
+  const shouldUseBrotli =
+    brotliQuality > 0 &&
+    (
+      requestedRange
+        ? identityQuality === 0
+        : brotliQuality >= identityQuality
+    );
+  const compressed = shouldUseBrotli
+    ? await brotliRepresentation(located)
+    : null;
+  if (!compressed && identityQuality === 0) {
+    response.setHeader("Vary", "Accept-Encoding");
+    sendText(response, 406, "No acceptable representation");
+    return;
+  }
+  const representation = compressed ?? {
+    filePath: located.filePath,
+    stats: located.stats,
+  };
+  const etag = compressed
+    ? `W/"${representation.stats.size.toString(16)}-${Math.trunc(
+      representation.stats.mtimeMs,
+    ).toString(16)}-br"`
+    : rawEtag;
+  const headers = {
+    "Accept-Ranges": "bytes",
+    "Cache-Control": cacheControl(located.pathname),
+    "Content-Type":
+      MIME_TYPES.get(extname(located.filePath).toLowerCase()) ??
+      "application/octet-stream",
+    ETag: etag,
+    "Last-Modified": modifiedAt.toUTCString(),
+  };
+  if (BROTLI_EXTENSIONS.has(extname(located.filePath).toLowerCase())) {
+    headers.Vary = "Accept-Encoding";
+  }
+  if (compressed) headers["Content-Encoding"] = "br";
+
+  if (matchesEtag(request.headers["if-none-match"], etag)) {
+    response.writeHead(304, baseHeaders(headers));
     response.end();
     return;
+  }
+  if (
+    request.headers["if-none-match"] === undefined &&
+    ifModifiedSinceMatches(request.headers["if-modified-since"], modifiedAt)
+  ) {
+    response.writeHead(304, baseHeaders(headers));
+    response.end();
+    return;
+  }
+
+  if (requestedRange && identityQuality > 0) {
+    const range = requestedRange;
+    if (range?.invalid) {
+      response.writeHead(
+        416,
+        baseHeaders({
+          ...headers,
+          "Content-Length": 0,
+          "Content-Range": `bytes */${located.stats.size}`,
+        }),
+      );
+      response.end();
+      return;
+    }
+    if (range) {
+      const length = range.end - range.start + 1;
+      response.writeHead(
+        206,
+        baseHeaders({
+          ...headers,
+          "Content-Length": length,
+          "Content-Range": `bytes ${range.start}-${range.end}/${located.stats.size}`,
+        }),
+      );
+      if (request.method === "HEAD") {
+        response.end();
+        return;
+      }
+      try {
+        await pipeline(
+          createReadStream(located.filePath, {
+            end: range.end,
+            start: range.start,
+          }),
+          response,
+        );
+      } catch (error) {
+        if (error?.code !== "ERR_STREAM_PREMATURE_CLOSE") throw error;
+      }
+      return;
+    }
   }
 
   response.writeHead(
     200,
     baseHeaders({
-      "Cache-Control": cacheControl(located.pathname),
-      "Content-Length": located.stats.size,
-      "Content-Type":
-        MIME_TYPES.get(extname(located.filePath).toLowerCase()) ??
-        "application/octet-stream",
-      ETag: etag,
+      ...headers,
+      "Content-Length": representation.stats.size,
     }),
   );
   if (request.method === "HEAD") {
@@ -132,7 +383,7 @@ async function serveFile(request, response, located) {
     return;
   }
   try {
-    await pipeline(createReadStream(located.filePath), response);
+    await pipeline(createReadStream(representation.filePath), response);
   } catch (error) {
     if (error?.code !== "ERR_STREAM_PREMATURE_CLOSE") throw error;
   }
@@ -152,7 +403,7 @@ export function createTraceServer({ root = DEFAULT_ROOT, logger = console } = {}
 
       const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
       if (requestUrl.pathname === "/_trace/health") {
-        const body = '{"status":"ok"}\n';
+        const body = '{"service":"trace-ml","status":"ok"}\n';
         response.writeHead(
           200,
           baseHeaders({
@@ -164,6 +415,10 @@ export function createTraceServer({ root = DEFAULT_ROOT, logger = console } = {}
         response.end(request.method === "HEAD" ? undefined : body);
         return;
       }
+      if (requestUrl.pathname.toLowerCase().endsWith(".br")) {
+        sendText(response, 404, "Not found");
+        return;
+      }
 
       const rootReal = await rootRealPromise;
       const located = await locateFile(
@@ -173,10 +428,16 @@ export function createTraceServer({ root = DEFAULT_ROOT, logger = console } = {}
         request.headers.accept?.includes("text/html") ?? false,
       );
       if (located.status !== 200) {
+        const message =
+          located.status === 400
+            ? "Bad request"
+            : located.status === 403
+              ? "Forbidden"
+              : "Not found";
         sendText(
           response,
           located.status,
-          located.status === 403 ? "Forbidden" : "Not found",
+          message,
         );
         return;
       }
@@ -192,8 +453,8 @@ export function createTraceServer({ root = DEFAULT_ROOT, logger = console } = {}
   });
 }
 
-function parsePort(value) {
-  if (!/^[0-9]{1,5}$/.test(value)) {
+export function parsePort(value) {
+  if (!/^[1-9][0-9]{0,4}$/.test(value)) {
     throw new Error(`Invalid port: ${value}`);
   }
   const port = Number(value);

@@ -247,17 +247,28 @@ the current evidence will not survive a reload.
 ## Phone access over Tailscale
 
 On a Linux host connected to Tailscale, install the production web build as a
-user service and expose it only inside the same tailnet:
+user service and expose it only inside the same tailnet. Before installing:
+
+- Sign in to Tailscale on both the host and phone, and confirm `tailscale status`
+  succeeds on the host.
+- Enable [HTTPS certificates](https://tailscale.com/docs/how-to/set-up-https-certificates)
+  for the tailnet. This may require a tailnet administrator.
+- Ensure the [tailnet access policy](https://tailscale.com/docs/features/access-control)
+  lets the phone's user or device reach the host on TCP port `9443`.
+- Use a Linux login with a systemd user manager and `flock` from `util-linux`.
+
+Then install the service:
 
 ```bash
 make tailnet-install
 ```
 
-The command builds `dist/`, installs and starts `trace-ml-web.service`, and
-creates a dedicated Tailscale Serve endpoint on HTTPS port `9443`. The server
-listens only on `127.0.0.1:5600`; Tailscale supplies the private HTTPS
-connection. It does not use Funnel and is not public on the internet. The
-installer refuses to replace any existing Serve handler on the selected port.
+The command installs the pinned npm dependencies, builds a versioned release,
+starts `trace-ml-web.service`, and creates a dedicated Tailscale Serve endpoint
+on HTTPS port `9443`. The server listens only on `127.0.0.1:5600`; Tailscale
+supplies the private HTTPS connection. It does not use Funnel and is not public
+on the internet. The installer refuses endpoints with another proxy, sibling
+handlers, a foreground Serve session, or Funnel enabled.
 
 The command prints the exact URL, in this form:
 
@@ -274,6 +285,8 @@ The service uses systemd's user manager. User lingering keeps it available
 after logout and before the next login; the installer reports when lingering
 is disabled. Tailscale Serve runs in background mode, which
 [resumes sharing after a reboot](https://tailscale.com/docs/reference/tailscale-cli/serve).
+Lifecycle commands take a non-blocking `flock`; a concurrent install, restart,
+start, stop, or uninstall is rejected instead of racing the active command.
 
 Use the lifecycle commands after installation:
 
@@ -286,10 +299,38 @@ make tailnet-uninstall
 ```
 
 `tailnet-stop` and `tailnet-uninstall` remove only Trace ML's dedicated Serve
-route. They preserve every unrelated Tailscale Serve or Funnel route. Override
-the defaults with `TRACE_ML_WEB_PORT` and
-`TRACE_ML_TAILNET_HTTPS_PORT` when another local service already owns either
-port.
+route. They preserve every unrelated Tailscale Serve or Funnel route.
+`tailnet-restart` builds and validates a new immutable release before switching
+the service, and keeps the previous release for rollback. `tailnet-uninstall`
+also removes Trace ML's managed releases.
+
+Override the defaults during installation when another local service already
+owns either port:
+
+```bash
+TRACE_ML_WEB_PORT=5601 \
+TRACE_ML_TAILNET_HTTPS_PORT=9444 \
+make tailnet-install
+```
+
+Those values are stored in
+`${XDG_CONFIG_HOME:-$HOME/.config}/trace-ml/tailnet.conf`, so start, restart,
+status, stop, and uninstall all continue to use the same ports. Versioned web
+releases use `${XDG_DATA_HOME:-$HOME/.local/share}/trace-ml-web/releases`.
+Changing installed ports is intentionally not an in-place operation: uninstall
+the service first, then reinstall with the new values.
+
+If uninstall cannot contact Tailscale or remove the owned route, it removes the
+local service and managed releases but retains the port configuration. After
+Tailscale reconnects and the endpoint is exclusively owned by Trace ML again,
+run the ownership-checked cleanup printed by the command:
+
+```bash
+make tailnet-uninstall
+```
+
+The command never recommends port-wide removal when the endpoint belongs to a
+different proxy, a foreground Serve session, or Funnel.
 
 ## Development
 
