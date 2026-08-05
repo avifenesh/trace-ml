@@ -19,6 +19,7 @@ const manageScript = fileURLToPath(
   new URL("./manage-tailnet.sh", import.meta.url),
 );
 const cleanups = [];
+const describeLinux = process.platform === "linux" ? describe : describe.skip;
 
 afterEach(async () => {
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
@@ -384,7 +385,7 @@ async function readFixtureJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
-describe("managed tailnet lifecycle", () => {
+describeLinux("managed tailnet lifecycle", () => {
   test(
     "installs, probes, stops, restores, and uninstalls the real server process",
     async () => {
