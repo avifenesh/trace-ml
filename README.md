@@ -244,6 +244,94 @@ If browser storage is unavailable, activity continues in memory for that
 session and the compact toolbar displays **Session only**. That warning means
 the current evidence will not survive a reload.
 
+## Phone access over Tailscale
+
+On a Linux host connected to Tailscale, install the production web build as a
+user service and expose it only inside the same tailnet. Before installing:
+
+- Sign in to Tailscale on both the host and phone, and confirm `tailscale status`
+  succeeds on the host.
+- Enable [HTTPS certificates](https://tailscale.com/docs/how-to/set-up-https-certificates)
+  for the tailnet. This may require a tailnet administrator.
+- Ensure the [tailnet access policy](https://tailscale.com/docs/features/access-control)
+  lets the phone's user or device reach the host on TCP port `9443`.
+- Use a Linux login with a systemd user manager and `flock` from `util-linux`.
+
+Then install the service:
+
+```bash
+make tailnet-install
+```
+
+The command installs the pinned npm dependencies, builds a versioned release,
+starts `trace-ml-web.service`, and creates a dedicated Tailscale Serve endpoint
+on HTTPS port `9443`. The server listens only on `127.0.0.1:5600`; Tailscale
+supplies the private HTTPS connection. It does not use Funnel and is not public
+on the internet. The installer refuses endpoints with another proxy, sibling
+handlers, a foreground Serve session, or Funnel enabled.
+
+The command prints the exact URL, in this form:
+
+```text
+https://<machine>.<tailnet>.ts.net:9443/
+```
+
+Open that URL in Chrome on an Android phone signed into the same tailnet. Use
+**Add to Home screen** for the Trace icon and a standalone course window.
+Progress remains local to that phone's browser profile; it does not sync with
+the desktop app.
+
+The service uses systemd's user manager. User lingering keeps it available
+after logout and before the next login; the installer reports when lingering
+is disabled. Tailscale Serve runs in background mode, which
+[resumes sharing after a reboot](https://tailscale.com/docs/reference/tailscale-cli/serve).
+Lifecycle commands take a non-blocking `flock`; a concurrent install, restart,
+start, stop, or uninstall is rejected instead of racing the active command.
+
+Use the lifecycle commands after installation:
+
+```bash
+make tailnet-status
+make tailnet-restart  # rebuild after pulling new course changes
+make tailnet-stop
+make tailnet-start
+make tailnet-uninstall
+```
+
+`tailnet-stop` and `tailnet-uninstall` remove only Trace ML's dedicated Serve
+route. They preserve every unrelated Tailscale Serve or Funnel route.
+`tailnet-restart` builds and validates a new immutable release before switching
+the service, and keeps the previous release for rollback. `tailnet-uninstall`
+also removes Trace ML's managed releases.
+
+Override the defaults during installation when another local service already
+owns either port:
+
+```bash
+TRACE_ML_WEB_PORT=5601 \
+TRACE_ML_TAILNET_HTTPS_PORT=9444 \
+make tailnet-install
+```
+
+Those values are stored in
+`${XDG_CONFIG_HOME:-$HOME/.config}/trace-ml/tailnet.conf`, so start, restart,
+status, stop, and uninstall all continue to use the same ports. Versioned web
+releases use `${XDG_DATA_HOME:-$HOME/.local/share}/trace-ml-web/releases`.
+Changing installed ports is intentionally not an in-place operation: uninstall
+the service first, then reinstall with the new values.
+
+If uninstall cannot contact Tailscale or remove the owned route, it removes the
+local service and managed releases but retains the port configuration. After
+Tailscale reconnects and the endpoint is exclusively owned by Trace ML again,
+run the ownership-checked cleanup printed by the command:
+
+```bash
+make tailnet-uninstall
+```
+
+The command never recommends port-wide removal when the endpoint belongs to a
+different proxy, a foreground Serve session, or Funnel.
+
 ## Development
 
 The desktop build requires Node `^22.22.2`, `^24.15.0`, or `>=26.0.0`, npm,
@@ -266,6 +354,10 @@ The portable Make targets are:
 | `make smoke` | Exercise the exact installed app and process |
 | `make start` | Open the installed native app |
 | `make dmg` | Build a macOS DMG on a Mac |
+| `make tailnet-install` | Build and install private phone access on Linux |
+| `make tailnet-restart` | Rebuild and restart the installed phone service |
+| `make tailnet-status` | Check local and tailnet phone access |
+| `make tailnet-stop` | Stop phone access and remove its dedicated route |
 
 The equivalent npm-only browser setup remains:
 
@@ -286,6 +378,7 @@ automatically synchronizes the local Pyodide assets.
 | `npm test` | Run the Vitest unit suite |
 | `npm run build` | Sync Pyodide, typecheck, and build the Vite app |
 | `npm run preview` | Serve the production Vite build locally |
+| `npm run serve:production` | Serve a built `dist/` on loopback with runtime headers |
 
 ## End-to-End Tests
 

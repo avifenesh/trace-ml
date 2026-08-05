@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor setup web dev check test-e2e build install smoke start dmg first-run
+.PHONY: help doctor setup web dev check test-e2e build install smoke start dmg first-run tailnet-install tailnet-start tailnet-restart tailnet-status tailnet-stop tailnet-uninstall
 
 help:
 	@printf '%s\n' \
@@ -17,7 +17,13 @@ help:
 		'  make smoke     Exercise the exact installed app and process' \
 		'  make start     Open the installed desktop app' \
 		'  make dmg       Build a macOS DMG on a Mac' \
-		'  make first-run Run setup, install, and start in sequence'
+		'  make first-run Run setup, install, and start in sequence' \
+		'  make tailnet-install  Build and install the private phone web service' \
+		'  make tailnet-start    Start the installed tailnet service' \
+		'  make tailnet-restart  Rebuild and restart the tailnet service' \
+		'  make tailnet-status   Show local and tailnet service health' \
+		'  make tailnet-stop     Stop the service and its dedicated route' \
+		'  make tailnet-uninstall Remove the service and dedicated route'
 
 doctor:
 	@bash scripts/setup.sh --check
@@ -64,3 +70,21 @@ first-run:
 	@$(MAKE) setup
 	@$(MAKE) install
 	@$(MAKE) start
+
+tailnet-install:
+	@bash scripts/manage-tailnet.sh install
+
+tailnet-start:
+	@bash scripts/manage-tailnet.sh start
+
+tailnet-restart:
+	@bash scripts/manage-tailnet.sh restart
+
+tailnet-status:
+	@bash scripts/manage-tailnet.sh status
+
+tailnet-stop:
+	@bash scripts/manage-tailnet.sh stop
+
+tailnet-uninstall:
+	@bash scripts/manage-tailnet.sh uninstall

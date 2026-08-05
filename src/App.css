@@ -1,5 +1,6 @@
 #root {
   min-height: 100svh;
+  min-height: 100dvh;
 }
 
 .sr-only {
@@ -39,6 +40,7 @@
   display: grid;
   grid-template-columns: 258px minmax(560px, 1fr);
   height: 100svh;
+  height: 100dvh;
   min-height: 680px;
   background: var(--canvas);
   overflow: hidden;
@@ -2467,7 +2469,7 @@
   display: none;
   min-width: 0;
   min-height: 0;
-  grid-template-rows: 58px auto minmax(0, 1fr) auto auto;
+  grid-template-rows: 58px auto minmax(0, 1fr) auto;
   border-left: 1px solid var(--line);
   background: #ffffff;
 }
@@ -2575,12 +2577,16 @@
   text-overflow: ellipsis;
 }
 
-.tutor-transcript {
+.tutor-conversation {
   min-height: 0;
-  padding: 16px 15px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #d0d3d8 transparent;
+}
+
+.tutor-transcript {
+  padding: 16px 15px;
 }
 
 .tutor-message {
@@ -3059,8 +3065,18 @@
     width: min(88vw, 340px);
     visibility: hidden;
     pointer-events: none;
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
     box-shadow: 0 16px 50px rgba(18, 22, 31, 0.2);
     transition: transform 220ms ease;
+  }
+
+  .lesson-workspace {
+    grid-template-rows:
+      calc(58px + env(safe-area-inset-top))
+      minmax(0, 1fr);
   }
 
   .course-nav {
@@ -3127,6 +3143,7 @@
   .tutor-panel .tutor-composer textarea {
     min-height: 76px;
     padding-right: 58px;
+    font-size: 16px;
   }
 
   .mobile-scrim {
@@ -3143,7 +3160,13 @@
   .workspace-bar {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 16px;
-    padding-inline: 16px;
+    padding-top: env(safe-area-inset-top);
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-left: max(16px, env(safe-area-inset-left));
+  }
+
+  .visual-lab-control input[type="range"] {
+    min-height: 48px;
   }
 
   .mobile-workspace-actions {
@@ -3194,6 +3217,7 @@
 @media (max-width: 720px) {
   .app-shell {
     min-height: 100svh;
+    min-height: 100dvh;
   }
 
   .icon-button,
@@ -3252,14 +3276,24 @@
     padding-right: 58px;
   }
 
+  .self-explanation textarea,
+  .code-editor textarea,
+  .tutor-composer textarea {
+    font-size: 16px;
+  }
+
   .lesson-workspace {
-    grid-template-rows: 54px minmax(0, 1fr);
+    grid-template-rows:
+      calc(54px + env(safe-area-inset-top))
+      minmax(0, 1fr);
   }
 
   .workspace-bar {
     min-width: 0;
     gap: 8px;
-    padding-inline: 11px;
+    padding-top: env(safe-area-inset-top);
+    padding-right: max(11px, env(safe-area-inset-right));
+    padding-left: max(11px, env(safe-area-inset-left));
   }
 
   .mobile-workspace-actions strong,
@@ -3534,7 +3568,7 @@
     padding: 9px 12px;
     border: 0;
     color: #aeb4be;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     background: transparent;
   }
@@ -3582,7 +3616,7 @@
     display: grid;
     grid-template-columns: 44px minmax(0, 1fr);
     align-items: center;
-    padding: 8px;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
   }
 
   .code-editor > footer .icon-button {
@@ -3611,11 +3645,14 @@
 
   .code-editor textarea {
     min-height: min(52svh, 480px);
+    min-height: min(52dvh, 480px);
+    line-height: 1.55;
   }
 
   .code-output {
     display: grid;
     min-height: min(58svh, 520px);
+    min-height: min(58dvh, 520px);
   }
 
   .explanation-brief h2 {
@@ -3653,6 +3690,16 @@
   .lesson-footer {
     align-items: flex-start;
     flex-direction: column;
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 480px) {
+  .course-nav,
+  .tutor-panel {
+    width: 100%;
+    max-width: none;
+    box-shadow: none;
   }
 }
 
