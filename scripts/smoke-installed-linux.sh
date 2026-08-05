@@ -187,6 +187,7 @@ read_launch_proof() {
 }
 
 run_self_test() {
+  # shellcheck disable=SC2034 # These arrays are read through collect_new_ids namerefs.
   local -a baseline_ids=(101 202)
   local -a current_ids=(101 202 303)
   local -a new_ids=()
@@ -201,6 +202,7 @@ run_self_test() {
   [[ "${new_ids[*]}" == "303" ]] ||
     fail "self-test did not isolate a newly created window"
 
+  # shellcheck disable=SC2034 # Read through the current_ref nameref.
   current_ids=(101 202)
   collect_new_ids baseline_ids current_ids new_ids
   ((${#new_ids[@]} == 0)) ||
@@ -346,12 +348,13 @@ expected_executable="$(readlink -f -- "$binary")"
 desktop-file-validate "$menu_entry" "$desktop_entry"
 
 desktop_info="$(
-  gio info -a metadata::trusted,access::can-execute "$desktop_entry"
+  gio info -a metadata::trusted "$desktop_entry" 2>/dev/null ||
+    true
 )"
-grep -Fq 'metadata::trusted: true' <<<"$desktop_info" ||
-  fail "Desktop shortcut is not trusted according to gio"
-grep -Fq 'access::can-execute: TRUE' <<<"$desktop_info" ||
-  fail "Desktop shortcut is not executable according to gio"
+if grep -Fq 'metadata::trusted:' <<<"$desktop_info"; then
+  grep -Fq 'metadata::trusted: true' <<<"$desktop_info" ||
+    fail "Desktop shortcut exposes GNOME trust metadata but is not trusted"
+fi
 
 for size in 32 64 128 256 512; do
   icon_path="$icon_theme_dir/${size}x${size}/apps/trace-ml.png"
@@ -416,6 +419,7 @@ xprop -root >/dev/null 2>&1 ||
   fail "the X11 root window is unavailable on DISPLAY=$DISPLAY"
 matching_window_ids=()
 snapshot_matching_windows
+# shellcheck disable=SC2034 # Read through collect_new_ids' baseline_ref nameref.
 baseline_window_ids=("${matching_window_ids[@]}")
 rm -f -- "$proof_path"
 

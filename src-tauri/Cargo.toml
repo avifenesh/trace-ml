@@ -1,12 +1,13 @@
 [package]
 name = "trace-ml"
 version = "0.1.0"
+publish = false
 description = "An inspectable, evidence-led machine learning course."
 authors = ["Avi Fenesh"]
-license = "UNLICENSED"
-repository = ""
+license = "MIT"
+repository = "https://github.com/avifenesh/trace-ml"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.88.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

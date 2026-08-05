@@ -85,6 +85,14 @@ validate_app() {
     printf 'error: bundle icon is missing\n' >&2
     return 1
   }
+  [[ -f "$app_path/Contents/Resources/LICENSE" ]] || {
+    printf 'error: bundled project license is missing\n' >&2
+    return 1
+  }
+  [[ -f "$app_path/Contents/Resources/THIRD_PARTY_NOTICES.md" ]] || {
+    printf 'error: bundled third-party notices are missing\n' >&2
+    return 1
+  }
 }
 
 validate_app "$source_app"

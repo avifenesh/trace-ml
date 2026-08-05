@@ -1,10 +1,21 @@
 {
   "name": "trace-ml",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "An inspectable, evidence-led machine-learning course.",
+  "author": "Avi Fenesh",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/avifenesh/trace-ml.git"
+  },
+  "bugs": {
+    "url": "https://github.com/avifenesh/trace-ml/issues"
+  },
+  "homepage": "https://github.com/avifenesh/trace-ml#readme",
   "type": "module",
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
     "setup": "bash scripts/setup.sh",
@@ -12,6 +23,7 @@
     "sync:opener-scope": "node scripts/sync-opener-scope.mjs",
     "sync:prose-manifest": "node scripts/sync-prose-assessment-manifest.mjs",
     "sync:helper-manifest": "node scripts/sync-lesson-helper-manifest.mjs",
+    "check:metadata": "node scripts/check-repository-metadata.mjs",
     "check:manifests": "node scripts/sync-prose-assessment-manifest.mjs --check && node scripts/sync-lesson-helper-manifest.mjs --check && node scripts/sync-opener-scope.mjs --check",
     "predev": "npm run sync:pyodide && npm run sync:prose-manifest && npm run sync:helper-manifest",
     "dev": "vite",
@@ -25,7 +37,7 @@
     "desktop:install:linux": "bash scripts/release-linux-desktop.sh",
     "desktop:install:macos": "bash scripts/release-macos-desktop.sh",
     "desktop:install-artifact": "bash scripts/install-linux-desktop.sh",
-    "desktop:smoke": "bash scripts/smoke-installed-linux.sh",
+    "desktop:smoke": "bash scripts/smoke-installed-desktop.sh",
     "desktop:start": "bash scripts/start-desktop.sh",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
@@ -51,6 +63,7 @@
     "oxlint": "^1.75.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "yaml": "^2.9.0"
   }
 }

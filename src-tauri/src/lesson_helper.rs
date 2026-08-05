@@ -826,9 +826,9 @@ fn bedrock_request_for_chunks(
 
 fn retrieval_token(token: &str) -> Option<String> {
     const STOP_WORDS: [&str; 31] = [
-        "a", "about", "an", "and", "are", "can", "could", "do", "does", "explain", "for",
-        "from", "how", "i", "in", "is", "it", "me", "of", "on", "or", "that", "the",
-        "this", "to", "what", "when", "where", "which", "why", "with",
+        "a", "about", "an", "and", "are", "can", "could", "do", "does", "explain", "for", "from",
+        "how", "i", "in", "is", "it", "me", "of", "on", "or", "that", "the", "this", "to", "what",
+        "when", "where", "which", "why", "with",
     ];
     if token.len() <= 1 || STOP_WORDS.contains(&token) {
         return None;
@@ -912,7 +912,7 @@ fn authored_sentence_spans(text: &str) -> Vec<&str> {
             continue;
         }
         let end = index + character.len_utf8();
-        let ends_sentence = text[end..].chars().next().map_or(true, char::is_whitespace);
+        let ends_sentence = text[end..].chars().next().is_none_or(char::is_whitespace);
         if !ends_sentence {
             continue;
         }

@@ -4,8 +4,7 @@ use std::{env, fs, path::PathBuf, time::Duration};
 
 pub(crate) const BEDROCK_ENDPOINT: &str =
     "https://bedrock-mantle.us-east-1.api.aws/openai/v1/responses";
-const BEDROCK_MODELS_ENDPOINT: &str =
-    "https://bedrock-mantle.us-east-1.api.aws/v1/models";
+const BEDROCK_MODELS_ENDPOINT: &str = "https://bedrock-mantle.us-east-1.api.aws/v1/models";
 pub(crate) const BEDROCK_MODEL: &str = "openai.gpt-5.6-sol";
 const MAX_MODELS_RESPONSE_BYTES: usize = 2 * 1_024 * 1_024;
 

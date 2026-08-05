@@ -245,6 +245,7 @@ data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
 bin_dir="$HOME/.local/bin"
 applications_dir="$data_home/applications"
 icon_theme_dir="$data_home/icons/hicolor"
+notices_dir="$data_home/trace-ml"
 desktop_dir="$HOME/Desktop"
 if command -v xdg-user-dir >/dev/null 2>&1; then
   configured_desktop_dir="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
@@ -256,6 +257,8 @@ binary_destination="$bin_dir/trace-ml"
 launcher_destination="$bin_dir/trace-ml-launcher"
 menu_destination="$applications_dir/trace-ml.desktop"
 desktop_destination="$desktop_dir/Trace ML.desktop"
+license_destination="$notices_dir/LICENSE"
+third_party_notices_destination="$notices_dir/THIRD_PARTY_NOTICES.md"
 
 printf -v binary_shell '%q' "$binary_destination"
 launcher_contents="$(<"$repo_root/packaging/linux/trace-ml-launcher.in")"
@@ -296,12 +299,19 @@ done
 begin_transaction \
   "$binary_destination" \
   "$launcher_destination" \
+  "$license_destination" \
+  "$third_party_notices_destination" \
   "${icon_destinations[@]}" \
   "$menu_destination" \
   "$desktop_destination"
 
 atomic_copy 0755 "$release_binary" "$binary_destination"
 atomic_copy 0755 "$temporary_dir/trace-ml-launcher" "$launcher_destination"
+atomic_copy 0644 "$repo_root/LICENSE" "$license_destination"
+atomic_copy \
+  0644 \
+  "$repo_root/THIRD_PARTY_NOTICES.md" \
+  "$third_party_notices_destination"
 for ((index = 0; index < ${#icon_sources[@]}; index += 1)); do
   source_path=${icon_sources[index]#*:}
   atomic_copy 0644 "$source_path" "${icon_destinations[index]}"
@@ -315,22 +325,27 @@ uid="$(id -u)"
 if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" && -S "$XDG_RUNTIME_DIR/bus" ]]; then
   export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 fi
-gio set --type=string "$desktop_destination" metadata::trusted true
-desktop_info="$(
-  gio info \
-    -a metadata::trusted,access::can-execute \
-    "$desktop_destination"
-)"
-grep -Fq 'metadata::trusted: true' <<<"$desktop_info" || {
-  printf 'error: GNOME did not retain metadata::trusted on %s\n' \
-    "$desktop_destination" >&2
-  exit 1
-}
-grep -Fq 'access::can-execute: TRUE' <<<"$desktop_info" || {
+[[ -x "$desktop_destination" ]] || {
   printf 'error: desktop shortcut is not executable: %s\n' \
     "$desktop_destination" >&2
   exit 1
 }
+if gio set --type=string "$desktop_destination" metadata::trusted true \
+  2>/dev/null; then
+  desktop_info="$(
+    gio info \
+      -a metadata::trusted \
+      "$desktop_destination" 2>/dev/null ||
+      true
+  )"
+  if ! grep -Fq 'metadata::trusted: true' <<<"$desktop_info"; then
+    printf 'warning: this desktop does not retain GNOME launcher trust metadata\n' \
+      >&2
+  fi
+else
+  printf 'warning: this desktop does not support GNOME launcher trust metadata\n' \
+    >&2
+fi
 
 refresh_desktop_caches
 
@@ -349,6 +364,7 @@ printf 'Installed Trace ML:\n'
 printf '  binary:  %s\n' "$binary_destination"
 printf '  menu:    %s\n' "$menu_destination"
 printf '  desktop: %s\n' "$desktop_destination"
+printf '  notices: %s\n' "$notices_dir"
 if [[ "$run_smoke" == true ]]; then
   printf '  smoke:   passed before transaction commit\n'
 fi

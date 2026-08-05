@@ -9,14 +9,10 @@ set -euo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-npm run check:manifests
-npm run lint
-npm run typecheck
-npm test
-cargo test --manifest-path src-tauri/Cargo.toml
+make check
 if [[ "${TRACE_ML_RUN_E2E:-0}" == "1" ]]; then
   npm run test:e2e
 fi
-npm run tauri build -- --bundles app
+npm run tauri -- build --bundles app -- --locked
 
 bash "$repo_root/scripts/install-macos-desktop.sh"

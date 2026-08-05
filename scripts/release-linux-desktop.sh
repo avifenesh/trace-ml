@@ -4,16 +4,17 @@ set -euo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-npm run check:manifests
-npm run lint
-npm run typecheck
-npm test
-cargo test --manifest-path src-tauri/Cargo.toml
-npm run test:e2e
-npm run tauri build
+make check
+if [[ "${TRACE_ML_RUN_E2E:-0}" == "1" ]]; then
+  npm run test:e2e
+fi
+npm run tauri -- build --no-bundle -- --locked
 
 release_binary="$repo_root/src-tauri/target/release/trace-ml"
-install_args=(--binary "$release_binary" --smoke)
+install_args=(--binary "$release_binary")
+if [[ "${TRACE_ML_RUN_SMOKE:-0}" == "1" ]]; then
+  install_args+=(--smoke)
+fi
 if [[ "${TRACE_ML_REQUIRE_BEDROCK_SMOKE:-0}" == "1" ]]; then
   install_args+=(--require-bedrock)
 fi

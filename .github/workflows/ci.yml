@@ -1,0 +1,222 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Linux validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable 2026-07-16
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            desktop-file-utils \
+            file \
+            gtk-update-icon-cache \
+            libayatana-appindicator3-dev \
+            libglib2.0-bin \
+            libgtk-3-bin \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            patchelf \
+            pkg-config \
+            shellcheck
+
+      - name: Reproduce local setup
+        run: make setup
+
+      - name: Verify setup leaves source unchanged
+        run: |
+          status="$(git status --porcelain)"
+          if [[ -n "$status" ]]; then
+            printf '%s\n' "$status"
+            git diff
+            exit 1
+          fi
+
+      - name: Run fast quality gates
+        run: make check
+
+      - name: Build production web app
+        run: npm run build
+
+      - name: Lint shell scripts and GitHub Actions
+        run: |
+          shellcheck scripts/*.sh
+          version=1.7.12
+          archive="actionlint_${version}_linux_amd64.tar.gz"
+          archive_path="$RUNNER_TEMP/$archive"
+          curl -fsSL \
+            "https://github.com/rhysd/actionlint/releases/download/v${version}/${archive}" \
+            -o "$archive_path"
+          printf '%s  %s\n' \
+            8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8 \
+            "$archive_path" |
+            sha256sum -c -
+          tar -xzf "$archive_path" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint"
+
+      - name: Verify repository remains clean
+        run: |
+          git diff --check
+          status="$(git status --porcelain)"
+          if [[ -n "$status" ]]; then
+            printf '%s\n' "$status"
+            git diff
+            exit 1
+          fi
+
+  browser:
+    name: Browser and Pyodide workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install pinned browser dependencies
+        run: |
+          npm ci
+          npm run prebuild
+
+      - name: Verify browser and source generation
+        run: |
+          google-chrome --version
+          status="$(git status --porcelain)"
+          if [[ -n "$status" ]]; then
+            printf '%s\n' "$status"
+            git diff
+            exit 1
+          fi
+
+      - name: Run browser and real-Pyodide workflows
+        run: make test-e2e
+
+      - name: Upload failure traces
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-failure-traces
+          path: outputs/playwright/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  linux-package:
+    name: Linux package and installed app
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    needs: validate
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable 2026-07-16
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install package and smoke dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            at-spi2-core \
+            build-essential \
+            dbus-x11 \
+            desktop-file-utils \
+            file \
+            gjs \
+            gtk-update-icon-cache \
+            iproute2 \
+            libayatana-appindicator3-dev \
+            libglib2.0-bin \
+            libgtk-3-bin \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            patchelf \
+            pkg-config \
+            x11-utils \
+            xdotool \
+            xvfb
+
+      - name: Prepare pinned application assets
+        run: |
+          npm ci
+          npm run prebuild
+
+      - name: Build Linux package
+        run: npm run tauri -- build --bundles deb -- --locked
+
+      - name: Verify package and installed application
+        run: |
+          package="$(find src-tauri/target/release/bundle/deb -name '*.deb' -print -quit)"
+          test -n "$package"
+          dpkg-deb --info "$package"
+          package_contents="$(dpkg-deb --contents "$package")"
+          printf '%s\n' "$package_contents"
+          grep -Eq '/LICENSE$' <<<"$package_contents"
+          grep -Eq '/THIRD_PARTY_NOTICES\.md$' <<<"$package_contents"
+          sudo dpkg -i "$package"
+          package_name="$(dpkg-deb --field "$package" Package)"
+          test "$(dpkg-query --show --showformat='${Status}' "$package_name")" = \
+            "install ok installed"
+          dpkg-query --listfiles "$package_name"
+          runtime_dir="$RUNNER_TEMP/trace-ml-runtime"
+          mkdir -p "$runtime_dir"
+          chmod 700 "$runtime_dir"
+          dbus-run-session -- \
+            xvfb-run -a \
+            env XDG_RUNTIME_DIR="$runtime_dir" \
+            bash scripts/install-linux-desktop.sh \
+              --binary src-tauri/target/release/trace-ml \
+              --smoke
+          test -f "$HOME/.local/share/trace-ml/LICENSE"
+          test -f "$HOME/.local/share/trace-ml/THIRD_PARTY_NOTICES.md"

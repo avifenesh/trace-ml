@@ -9,39 +9,46 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: macos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   app-bundle:
     name: ${{ matrix.runner }}
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
         runner: [macos-15, macos-15-intel]
 
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable 2026-07-16
+        with:
+          components: clippy, rustfmt
 
-      - name: Check native prerequisites
-        run: bash scripts/setup.sh --check
-      - name: Install dependencies
-        run: npm ci
-      - name: Validate authored authority
-        run: npm run check:manifests
-      - name: Lint and typecheck
+      - name: Reproduce local setup
+        run: make setup
+      - name: Verify setup leaves source unchanged
         run: |
-          npm run lint
-          npm run typecheck
-      - name: Test frontend and Rust
-        run: |
-          npm test
-          cargo test --manifest-path src-tauri/Cargo.toml
+          status="$(git status --porcelain)"
+          if [[ -n "$status" ]]; then
+            printf '%s\n' "$status"
+            git diff
+            exit 1
+          fi
+      - name: Run fast quality gates
+        run: make check
       - name: Build macOS application bundle
-        run: npm run tauri build -- --bundles app
+        run: npm run tauri -- build --bundles app -- --locked
       - name: Install and verify application bundle
         run: |
           applications_dir="$RUNNER_TEMP/Applications"
@@ -50,5 +57,20 @@ jobs:
           app="$applications_dir/Trace ML.app"
           test -d "$app"
           test -f "$app/Contents/Resources/icon.icns"
+          test -f "$app/Contents/Resources/LICENSE"
+          test -f "$app/Contents/Resources/THIRD_PARTY_NOTICES.md"
           identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")"
           test "$identifier" = "com.avifenesh.traceml"
+      - name: Launch installed application through Launch Services
+        run: |
+          bash scripts/smoke-installed-macos.sh \
+            --applications-dir "$RUNNER_TEMP/Applications"
+      - name: Verify repository remains clean
+        run: |
+          git diff --check
+          status="$(git status --porcelain)"
+          if [[ -n "$status" ]]; then
+            printf '%s\n' "$status"
+            git diff
+            exit 1
+          fi
