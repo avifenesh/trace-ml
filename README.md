@@ -1,25 +1,20 @@
 # Trace ML
 
-Trace ML is an inspectable, evidence-led machine-learning course delivered as a
-React web app and a Tauri desktop app. The curriculum is fixed and pre-authored:
-all 21 published lessons are visible and selectable from the first run.
-Objective checkpoints record supported predictions and executable checks.
-Controlled comparisons remain saved experiment state rather than comprehension
-evidence. None of these signals claims durable retention, unlocks, generates, or
-reorders course material. Free-form explanation and transfer prompts remain
-formative drafts and never control access or objective completion.
+[![CI](https://github.com/avifenesh/trace-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/avifenesh/trace-ml/actions/workflows/ci.yml)
+[![macOS build](https://github.com/avifenesh/trace-ml/actions/workflows/macos-build.yml/badge.svg)](https://github.com/avifenesh/trace-ml/actions/workflows/macos-build.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Quick Start on Another Machine
+Trace ML is a fixed, research-grounded machine-learning course for beginners,
+delivered as a React web app and a Tauri desktop app. Its 21 lessons are
+authored in advance, visible from the first run, and studied without handing
+curriculum control to an LLM.
 
-Trace ML builds natively on Linux and macOS. Install Node 24 LTS and the stable
-Rust toolchain. On macOS Catalina 10.15 or newer, also install Apple's desktop
-build tools:
+> **Pre-release:** Trace ML is currently distributed from source. There are no
+> supported downloadable desktop binaries yet.
 
-```bash
-xcode-select --install
-```
+## Quick Start
 
-Clone this private repository, then run the first-machine setup:
+After installing the platform prerequisites below:
 
 ```bash
 git clone https://github.com/avifenesh/trace-ml.git
@@ -28,15 +23,59 @@ make doctor
 make first-run
 ```
 
-`make first-run` installs the pinned dependencies, verifies the project, builds
-the native app, installs it for the current user, and opens it. On macOS the app
-is installed at `~/Applications/Trace ML.app`; on Linux the existing
-applications-menu and desktop launchers are installed. Subsequent launches need
-only:
+`make first-run` installs pinned dependencies, verifies the source, builds the
+native app, installs it for the current user, and opens it. Later, open
+**Trace ML** from the Linux applications menu or desktop, from
+`~/Applications` or Spotlight on macOS, or run `make start`.
+
+![Trace ML installed desktop course](docs/assets/trace-ml-desktop.png)
+
+All course material remains available without Bedrock credentials. The optional
+helper answers questions about the current authored page, and the optional prose
+reviewer gives bounded formative direction; neither can create, select, reorder,
+unlock, or replace lessons.
+
+## Prerequisites
+
+Trace ML builds natively on Linux and macOS. Install the latest Node 24 LTS
+(24.15.0 or newer), the stable Rust toolchain, and GNU Make or the Make supplied
+by your platform.
+
+On macOS 13.5 or newer, the minimum supported by the recommended Node 24
+binaries, install Apple's desktop build tools:
 
 ```bash
-make start
+xcode-select --install
 ```
+
+On Debian or Ubuntu, install the
+[official Tauri prerequisites](https://v2.tauri.app/start/prerequisites/):
+
+```bash
+sudo apt update
+sudo apt install libwebkit2gtk-4.1-dev \
+  build-essential \
+  curl \
+  desktop-file-utils \
+  wget \
+  file \
+  libglib2.0-bin \
+  libgtk-3-bin \
+  gtk-update-icon-cache \
+  libxdo-dev \
+  libssl-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev \
+  pkg-config
+```
+
+On macOS the app is installed at `~/Applications/Trace ML.app`. On Linux it is
+installed for the current user with applications-menu and desktop launchers.
+The menu entry is portable across freedesktop environments. Desktop-file trust
+metadata is applied when the environment supports the GNOME/GVfs attribute;
+other desktops use their own executable-launcher policy.
+Google Chrome is needed only by the contributor Playwright suite, not to build,
+install, or run the course.
 
 The application works without Bedrock credentials by using its local,
 page-grounded fallback. To enable semantic Q&A and prose review in a
@@ -83,6 +122,11 @@ or `demonstrated`, but that immediate formative label is not evidence of
 retention or mastery and is excluded from lesson completion. It cannot change
 the rubric, lesson sequence, course material, helper conversation, or learner
 access.
+
+Controlled comparisons remain saved experiment state rather than comprehension
+evidence. None of these signals claims durable retention, unlocks, generates, or
+reorders course material. Free-form explanation and transfer prompts remain
+formative drafts and never control access or objective completion.
 
 The 204 focused reading paragraphs and 489 teaching chunks form 693
 source-linked page chunks backed by a 109-source research registry. Compact
@@ -193,7 +237,7 @@ Browser Q&A and structure checks send nothing remotely. `store: false`
 disables retrievable Responses state but does not guarantee zero retention;
 AWS documents that classifier-flagged GPT-5.6 Sol traffic may be retained for
 up to 30 days. Account/project retention and provider-sharing policy still
-apply. Live model metadata reported `provider_data_share` on 2026-08-03, so
+apply. Live model metadata reported `provider_data_share` on 2026-08-05, so
 this installation does not establish zero data retention.
 
 If browser storage is unavailable, activity continues in memory for that
@@ -202,23 +246,24 @@ the current evidence will not survive a reload.
 
 ## Development
 
-The desktop build requires Node `^20.19.0` or `>=22.12.0`, npm, Rust `1.77.2`
-or newer, and the operating-system prerequisites below. Node 24 LTS is the
-recommended version; `.nvmrc` and `rust-toolchain.toml` describe the expected
-toolchains.
+The desktop build requires Node `^22.22.2`, `^24.15.0`, or `>=26.0.0`, npm,
+Rust `1.88.0` or newer, and the operating-system prerequisites below. The
+latest Node 24 LTS is the recommended version; `.nvmrc` and
+`rust-toolchain.toml` describe the expected toolchains.
 
 The portable Make targets are:
 
 | Command | Purpose |
 | --- | --- |
 | `make doctor` | Check Node, Rust, and native desktop prerequisites |
-| `make setup` | Run deterministic `npm ci` and synchronize local runtime assets |
+| `make setup` | Install dependencies and local runtime assets |
 | `make web` | Start browser development on `127.0.0.1:5173` |
 | `make dev` | Start Tauri desktop development |
-| `make check` | Verify manifests, lint, types, frontend tests, and Rust tests |
+| `make check` | Run all fast JavaScript and Rust quality gates |
 | `make test-e2e` | Run browser and real-Pyodide integration tests |
-| `make build` | Build native bundles for the current operating system |
+| `make build` | Build distributable bundles for the current operating system |
 | `make install` | Verify, build, and install the native app |
+| `make smoke` | Exercise the exact installed app and process |
 | `make start` | Open the installed native app |
 | `make dmg` | Build a macOS DMG on a Mac |
 
@@ -235,7 +280,7 @@ automatically synchronizes the local Pyodide assets.
 | Command | Purpose |
 | --- | --- |
 | `npm run sync:pyodide` | Refresh `public/pyodide/` from the pinned package |
-| `npm run check:manifests` | Verify compiled lesson, rubric, and opener authority without rewriting it |
+| `npm run check:manifests` | Verify generated lesson authority |
 | `npm run typecheck` | Run the TypeScript project build checks |
 | `npm run lint` | Run Oxlint |
 | `npm test` | Run the Vitest unit suite |
@@ -244,15 +289,22 @@ automatically synchronizes the local Pyodide assets.
 
 ## End-to-End Tests
 
+Install [Google Chrome](https://www.google.com/chrome/) before running the
+Playwright suite:
+
 ```bash
 npm run test:e2e
 ```
 
 Playwright uses the installed Google Chrome channel at a `1440x1000` viewport.
-It allocates an isolated loopback port, starts a fresh Vite server, and runs one
-worker so multi-window persistence cases cannot interfere with one another.
-Browser course-flow tests and the real Pyodide runtime test live in `e2e/`;
-saved failure traces are written to `outputs/playwright/`.
+It allocates isolated loopback ports and runs the production course, responsive
+layouts, runtime boundaries, and five authored-lab batches as separate
+projects. Each project receives a fresh browser process, scientific package
+cases run serially, and one worker keeps multi-window persistence cases from
+interfering with one another. The suite stops after the first failure instead
+of repeatedly launching browsers on a resource-starved host. Browser
+course-flow tests and the real Pyodide runtime tests live in `e2e/`; ignored
+failure traces are written to `outputs/playwright/`.
 
 ## Tauri Desktop
 
@@ -261,8 +313,10 @@ system. Run `make doctor` before setup.
 
 ### macOS
 
-Tauri's current macOS prerequisites require Catalina 10.15 or newer and Xcode
-or Xcode Command Line Tools. Desktop-only builds can use:
+Building this repository with the recommended Node 24 toolchain requires macOS
+13.5 or newer. Tauri's own native prerequisites cover Catalina 10.15 and later,
+but that lower floor does not satisfy this repository's Node toolchain.
+Desktop-only builds can use Xcode Command Line Tools:
 
 ```bash
 xcode-select --install
@@ -271,8 +325,9 @@ xcode-select --install
 `make install` runs the core quality gates, builds the official Tauri `.app`
 bundle on that Mac, validates its bundle identifier, executable, and `.icns`
 icon, then transactionally installs it to `~/Applications/Trace ML.app`.
-An interrupted replacement restores the previous app. `make start` opens the
-installed app through macOS Launch Services.
+An ordinary installer failure restores the previous app; power loss or
+`SIGKILL` during replacement may require rebuilding it with `make install`.
+`make start` opens the installed app through macOS Launch Services.
 
 To produce a drag-to-Applications installer on a Mac:
 
@@ -286,21 +341,8 @@ does not contain signing credentials.
 
 ### Linux
 
-On Debian or Ubuntu, install the
-[official Tauri prerequisites](https://v2.tauri.app/start/prerequisites/):
-
-```bash
-sudo apt update
-sudo apt install libwebkit2gtk-4.1-dev \
-  build-essential \
-  curl \
-  wget \
-  file \
-  libxdo-dev \
-  libssl-dev \
-  libayatana-appindicator3-dev \
-  librsvg2-dev
-```
+Install the Linux packages listed in [Prerequisites](#prerequisites) before
+running native development or release commands.
 
 Run the desktop app in development on either supported operating system:
 
@@ -308,29 +350,33 @@ Run the desktop app in development on either supported operating system:
 make dev
 ```
 
-Build, test, install, and verify the self-contained native release:
+Build, test, and install the production native app:
 
 ```bash
 make install
 ```
 
-On Linux, the release command additionally runs serial Playwright tests,
-installs the exact built artifact, and runs the installed-app smoke with port
-`5173` closed. The low-level installer is idempotent. It copies the release
-binary from
-`src-tauri/target/release/trace-ml`, installs the hicolor icon at 32, 64, 128,
+On Linux, the install command runs the fast quality gates, builds the locked
+release binary without spending time on distributable package formats, installs
+that exact artifact, and leaves it ready for a normal desktop launch. The
+low-level installer is idempotent. It copies the release binary from
+`src-tauri/target/release/trace-ml`, installs the project license and third-party
+notices, installs the hicolor icon at 32, 64, 128,
 256, and 512 pixels, refreshes the desktop and icon caches, and creates both
 the **Trace ML** applications-menu entry and `Trace ML.desktop` in the
 configured XDG desktop directory.
 To install a different release artifact, run
 `scripts/install-linux-desktop.sh --binary /absolute/path/to/trace-ml`.
 
-The smoke test deliberately fails while anything is listening on port `5173`.
+For the maintainer action test, install `gjs`, `at-spi2-core`, `xdotool`,
+`x11-utils`, and `iproute2`, then run `make smoke` from an X11 or XWayland
+desktop session. The smoke test deliberately fails while anything is listening
+on port `5173`.
 It activates the installed desktop file, establishes cleanup ownership for the
 new process, proves the window's `/proc` executable and `WM_CLASS`, resolves
 the installed icon through GTK, starts a fresh helper conversation, submits an
 authored page question, and requires a completed local or Bedrock response. Run
-`npm run desktop:smoke -- --require-bedrock` for the optional credentialed
+`npm run desktop:smoke -- --require-bedrock` on Linux for the optional credentialed
 semantic-readiness check.
 Startup diagnostics are written to `~/.cache/trace-ml/launcher.log`.
 
@@ -369,3 +415,31 @@ Its 109-source registry is
 [`agent-knowledge/resources/ml-course-research-sources.json`](agent-knowledge/resources/ml-course-research-sources.json).
 Source IDs in lesson content resolve against that registry; the guide also
 records synthesized design decisions and known evidence gaps.
+
+## Limitations
+
+- Trace ML is a local, single-user application. It has no account, cloud
+  progress sync, cohort management, or learning-management-system integration.
+- Pyodide isolates runs in disposable browser workers, not an OS sandbox. A
+  memory-exhausting submission can still pressure its renderer process.
+- Bedrock is optional, but semantic helper and prose review require a supported
+  credential and network connection in the desktop app.
+- Local macOS builds are suitable for personal use. Distribution to other Mac
+  users requires Apple Developer ID signing and notarization.
+- The first public release is source-only. Downloadable desktop binaries also
+  require a complete bundled third-party license report before publication.
+
+## Project Health
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing course material or
+  runtime boundaries.
+- Report vulnerabilities privately through [SECURITY.md](SECURITY.md).
+- Community participation follows [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+- Release history is recorded in [CHANGELOG.md](CHANGELOG.md).
+- Citation metadata is available in [CITATION.cff](CITATION.cff).
+
+## License
+
+Original Trace ML code and authored course material are available under the
+[MIT License](LICENSE). Third-party libraries and bundled runtime components
+retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
