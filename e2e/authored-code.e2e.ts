@@ -81,10 +81,10 @@ function checkFailureLabel(
   ].join("\n");
 }
 
-test("all 19 authored Python labs are satisfiable in real Pyodide", async ({
+test("authored Python lab batch is satisfiable in real Pyodide", async ({
   page,
-}) => {
-  test.setTimeout(15 * 60_000);
+}, testInfo) => {
+  test.setTimeout(5 * 60_000);
   await page.goto("/");
 
   const activities = (await page.evaluate(async () => {
@@ -115,7 +115,29 @@ test("all 19 authored Python labs are satisfiable in real Pyodide", async ({
     "Every and only authored code-lab activity must have a bounded solved-source repair.",
   ).toEqual(authoredIds);
 
-  for (const activity of activities) {
+  const batchIndex = Number(
+    testInfo.project.metadata.authoredLabBatchIndex,
+  );
+  const batchCount = Number(
+    testInfo.project.metadata.authoredLabBatchCount,
+  );
+  expect(Number.isInteger(batchIndex) && batchIndex >= 0).toBe(true);
+  expect(Number.isInteger(batchCount) && batchCount > 0).toBe(true);
+  expect(batchIndex).toBeLessThan(batchCount);
+
+  const batchStart = Math.floor(
+    (activities.length * batchIndex) / batchCount,
+  );
+  const batchEnd = Math.floor(
+    (activities.length * (batchIndex + 1)) / batchCount,
+  );
+  const batchActivities = activities.slice(batchStart, batchEnd);
+  expect(
+    batchActivities.length,
+    `Authored lab batch ${batchIndex + 1} of ${batchCount} is empty.`,
+  ).toBeGreaterThan(0);
+
+  for (const activity of batchActivities) {
     await test.step(`${activity.id}: starter fails and solution passes`, async () => {
       const starterFile = activity.spec.starterFiles[0];
       expect(

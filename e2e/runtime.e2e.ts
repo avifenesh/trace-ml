@@ -404,18 +404,18 @@ test("pinned NumPy, autograd, and scikit-learn run from local assets", async ({
       },
     ];
 
-    return Promise.all(
-      cases.map(async ({ packages, code }) => {
-        const runner = new PyodideRunner({ allowedPackages: packages });
-        try {
-          const environment = await runner.initialize();
-          const result = await runner.run({ code, timeoutMs: 20_000 });
-          return { environment, result };
-        } finally {
-          runner.dispose();
-        }
-      }),
-    );
+    const results = [];
+    for (const { packages, code } of cases) {
+      const runner = new PyodideRunner({ allowedPackages: packages });
+      try {
+        const environment = await runner.initialize();
+        const result = await runner.run({ code, timeoutMs: 20_000 });
+        results.push({ environment, result });
+      } finally {
+        runner.dispose();
+      }
+    }
+    return results;
   });
 
   expect(results[0]?.environment.packages).toEqual({ numpy: "2.4.3" });

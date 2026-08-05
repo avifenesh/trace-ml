@@ -588,7 +588,8 @@ test("concurrent windows merge durable evidence before either reloads", async ({
   await page.waitForTimeout(500);
   const settledPendingWrites = await pendingLearnerWrites();
   expect(settledPendingWrites).toBeGreaterThanOrEqual(2);
-  expect(settledPendingWrites).toBeLessThanOrEqual(3);
+  // Two direct commits can each schedule one cross-window reconciliation.
+  expect(settledPendingWrites).toBeLessThanOrEqual(4);
   await page.waitForTimeout(250);
   expect(await pendingLearnerWrites()).toBe(settledPendingWrites);
 
