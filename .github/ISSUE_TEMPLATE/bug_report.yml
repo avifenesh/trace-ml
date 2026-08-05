@@ -1,0 +1,72 @@
+name: Bug report
+description: Report reproducible application, setup, or course-delivery behavior.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials or learner data. Report security issues through the private advisory link instead.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the actual behavior and what you expected.
+      placeholder: Expected ... but observed ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Give the smallest sequence that reproduces the problem.
+      placeholder: |
+        1. Open lesson ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Linux desktop app
+        - macOS desktop app
+        - Browser development app
+        - Setup, build, or packaging
+        - Course content or activity
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: 0.1.0 or git commit
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include operating system, architecture, Node version, and Rust version when relevant.
+      placeholder: macOS 15 arm64, Node 24.19.0, Rust 1.97.0
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Add relevant logs or screenshots after removing credentials and personal data.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched for an existing issue.
+          required: true
+        - label: I removed credentials, learner data, and private account content.
+          required: true

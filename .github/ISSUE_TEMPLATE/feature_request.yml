@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a focused improvement to the fixed course or application.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What learner or maintainer problem is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Explain the smallest useful change and its expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Course and helper boundaries
+      description: Explain whether this changes authored material, progression, evidence, helper authority, native IPC, or Python execution.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: contract
+    attributes:
+      label: Fixed-course contract
+      options:
+        - label: This proposal does not require an LLM to create, select, reorder, or unlock course material.
+          required: true

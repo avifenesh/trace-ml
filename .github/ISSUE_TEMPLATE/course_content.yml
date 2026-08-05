@@ -1,0 +1,55 @@
+name: Course content report
+description: Report an unclear, unsupported, incorrect, or inaccessible authored lesson.
+title: "[Content]: "
+labels:
+  - content
+body:
+  - type: input
+    id: lesson
+    attributes:
+      label: Lesson and section
+      placeholder: Lesson 01, Majority baseline worked example
+    validations:
+      required: true
+  - type: dropdown
+    id: issue
+    attributes:
+      label: Issue type
+      options:
+        - Unclear from a beginner perspective
+        - Missing prerequisite explanation
+        - Factual or mathematical error
+        - Source does not support the claim
+        - Worked example or activity mismatch
+        - Accessibility or information-design problem
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current material and problem
+      description: Quote the smallest relevant passage and explain the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should a learner be able to understand?
+      description: Describe the missing connection or corrected outcome without drafting an entire replacement lesson.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Supporting sources
+      description: Link primary or authoritative sources when reporting a factual issue.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I checked the complete teaching and reading sections, not only the activity prompt.
+          required: true
+        - label: I did not include learner data or credentials.
+          required: true

@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use Trace ML in teaching or research, cite this software."
+type: software
+title: "Trace ML"
+abstract: "An inspectable, evidence-led machine-learning course delivered as a React web app and a Tauri desktop app."
+authors:
+  - family-names: "Fenesh"
+    given-names: "Avi"
+license: MIT
+repository-code: "https://github.com/avifenesh/trace-ml"
+keywords:
+  - machine learning
+  - education
+  - Tauri
+  - Pyodide
+  - React
