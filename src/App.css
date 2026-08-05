@@ -568,9 +568,14 @@
   margin-top: 26px;
 }
 
+.lesson-heading > div {
+  min-width: 0;
+}
+
 .lesson-heading h1 {
   max-width: 680px;
   margin: 10px 0 12px;
+  overflow-wrap: anywhere;
   color: var(--ink);
   font-size: 48px;
   font-weight: 640;
@@ -3648,6 +3653,12 @@
   .lesson-footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 360px) {
+  .lesson-heading h1 {
+    font-size: 32px;
   }
 }
 
