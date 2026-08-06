@@ -377,8 +377,13 @@ print_bedrock_status() {
       process.exit(1);
     }
     process.stdout.write(
-      `Bedrock: ${readiness.available ? "available" : "unavailable"} ` +
-        `(${readiness.model}, retention: ${readiness.retentionMode})\n`,
+      "Bedrock: " +
+        (readiness.available ? "available" : "unavailable") +
+        " (" +
+        readiness.model +
+        ", retention: " +
+        readiness.retentionMode +
+        ")\n",
     );
   '; then
     printf '%s\n' 'Bedrock: unavailable (invalid readiness response)'
