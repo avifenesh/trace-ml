@@ -1,6 +1,7 @@
 mod bedrock;
 mod lesson_helper;
 mod prose_assessment;
+mod tailnet_bridge;
 
 #[tauri::command]
 async fn answer_lesson_question(
@@ -74,4 +75,8 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+pub fn run_bedrock_bridge() -> Result<(), String> {
+    tailnet_bridge::run()
 }

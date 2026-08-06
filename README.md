@@ -38,8 +38,9 @@ unlock, or replace lessons.
 ## Prerequisites
 
 Trace ML builds natively on Linux and macOS. Install the latest Node 24 LTS
-(24.15.0 or newer), the stable Rust toolchain, and GNU Make or the Make supplied
-by your platform.
+(24.15.0 or newer), Rust through `rustup`, and GNU Make or the Make supplied by
+your platform. `rust-toolchain.toml` selects the reproducible Rust `1.97.1`
+toolchain automatically.
 
 On macOS 13.5 or newer, the minimum supported by the recommended Node 24
 binaries, install Apple's desktop build tools:
@@ -79,7 +80,7 @@ install, or run the course.
 
 The application works without Bedrock credentials by using its local,
 page-grounded fallback. To enable semantic Q&A and prose review in a
-Finder-launched macOS app, put
+Finder-launched macOS app or the managed Tailnet web service, put
 `AWS_BEARER_TOKEN_BEDROCK=<your token>` in
 `~/.config/claude/bedrock.env` and restrict that file to the current user with
 `chmod 600`. Never commit that file or token.
@@ -110,12 +111,12 @@ pages. Opening a resource records exposure only; authored activities provide
 immediate evidence without inferring retention or mastery.
 
 Lesson completion uses only objectively checkable prediction and code
-activities. In the desktop app, a bounded Bedrock model classifies prose against
-the current authored page and rubric. Rust derives the formative level and
-renders novice-appropriate revision direction from authored course strings; the
-model cannot write feedback or replacement teaching. It accepts reasonable
-paraphrases and does not require expert wording. The browser build retains a
-deterministic structure-only fallback when the desktop command is unavailable.
+activities. In the desktop app and managed Tailnet build, a bounded Bedrock
+model classifies prose against the current authored page and rubric. Rust
+derives the formative level and renders novice-appropriate revision direction
+from authored course strings; the model cannot write feedback or replacement
+teaching. It accepts reasonable paraphrases and does not require expert wording.
+Ordinary browser builds retain a deterministic structure-only fallback.
 
 The prose assessor may label the submitted activity `unsupported`, `partial`,
 or `demonstrated`, but that immediate formative label is not evidence of
@@ -142,11 +143,12 @@ labs; correctness changes the feedback, not course access.
 ## Page-Grounded Helper
 
 The optional helper answers questions about the current lesson. In the desktop
-app, a bounded Bedrock model explains page wording; the browser build uses a
-deterministic exact-page fallback. Neither path is an LLM-directed teacher:
+app and managed Tailnet build, a bounded Bedrock model explains page wording;
+ordinary browser builds use a deterministic exact-page fallback. Neither path
+is an LLM-directed teacher:
 
-- Rust resolves only the active lesson and revision from a generated manifest
-  compiled into the app.
+- Rust resolves only the active lesson and revision from generated manifests
+  compiled into the desktop app or Tailnet bridge.
 - Every semantic claim carries an adjacent page citation and an exact authored
   quote that Rust validates before the answer reaches the webview.
 - A deterministic preflight rejects grading, hints, activity answers,
@@ -224,20 +226,22 @@ Helper threads merge ordinary concurrent writes and honor explicit deletion
 markers rather than inferring deletion from an absent record. Malformed or
 orphaned evidence is discarded during normalization.
 
-Desktop Q&A sends the current authored lesson, the question, and bounded recent
-thread context to the configured Amazon Bedrock model. Desktop prose review
-sends the authored lesson text, activity prompt and guidance, rubric labels,
-and the submitted draft. The webview supplies only authored IDs and
-learner text; Rust resolves trusted material from generated manifests compiled
-into the app. The backend sends direct HTTPS requests to the documented Mantle
-Responses endpoint with strict structured output, `tool_choice: "none"`,
-`store: false`, fixed timeouts, bounded input and output, request cancellation,
-and per-feature rate limits. The protected credential remains in Rust.
-Browser Q&A and structure checks send nothing remotely. `store: false`
+Desktop and managed Tailnet Q&A send the current authored lesson, the question,
+and bounded recent thread context to the configured Amazon Bedrock model.
+Their prose review sends the authored lesson text, activity prompt and
+guidance, rubric labels, and the submitted draft. The client supplies only
+authored IDs and learner text; Rust resolves trusted material from generated
+manifests compiled into the app or host-side bridge. The backend sends direct
+HTTPS requests to the documented Mantle Responses endpoint with strict
+structured output, `tool_choice: "none"`, `store: false`, fixed timeouts,
+bounded input and output, request cancellation, and per-feature rate limits.
+The protected credential remains in the native process on desktop and on the
+Linux host for Tailnet access. Ordinary browser Q&A and structure checks send
+nothing remotely. `store: false`
 disables retrievable Responses state but does not guarantee zero retention;
 AWS documents that classifier-flagged GPT-5.6 Sol traffic may be retained for
 up to 30 days. Account/project retention and provider-sharing policy still
-apply. Live model metadata reported `provider_data_share` on 2026-08-05, so
+apply. Live model metadata reported `provider_data_share` on 2026-08-06, so
 this installation does not establish zero data retention.
 
 If browser storage is unavailable, activity continues in memory for that
@@ -246,8 +250,9 @@ the current evidence will not survive a reload.
 
 ## Phone access over Tailscale
 
-On a Linux host connected to Tailscale, install the production web build as a
-user service and expose it only inside the same tailnet. Before installing:
+On a Linux host connected to Tailscale, install the production web build and
+its bounded Bedrock bridge as a user service, then expose it only inside the
+same tailnet. Before installing:
 
 - Sign in to Tailscale on both the host and phone, and confirm `tailscale status`
   succeeds on the host.
@@ -256,6 +261,8 @@ user service and expose it only inside the same tailnet. Before installing:
 - Ensure the [tailnet access policy](https://tailscale.com/docs/features/access-control)
   lets the phone's user or device reach the host on TCP port `9443`.
 - Use a Linux login with a systemd user manager and `flock` from `util-linux`.
+- Install the Rust toolchain declared in `rust-toolchain.toml`; Tailnet releases
+  compile the same Rust validation boundary used by the desktop app.
 
 Then install the service:
 
@@ -263,12 +270,23 @@ Then install the service:
 make tailnet-install
 ```
 
-The command installs the pinned npm dependencies, builds a versioned release,
-starts `trace-ml-web.service`, and creates a dedicated Tailscale Serve endpoint
-on HTTPS port `9443`. The server listens only on `127.0.0.1:5600`; Tailscale
-supplies the private HTTPS connection. It does not use Funnel and is not public
-on the internet. The installer refuses endpoints with another proxy, sibling
-handlers, a foreground Serve session, or Funnel enabled.
+The command installs the pinned npm dependencies, builds a versioned web
+release and Rust Bedrock bridge, starts `trace-ml-web.service`, and creates a
+dedicated Tailscale Serve endpoint on HTTPS port `9443`. The server listens only
+on `127.0.0.1:5600`; Tailscale supplies the private HTTPS connection. Bedrock
+requests are accepted only by fixed same-origin course routes, and the bridge
+never exposes a generic prompt or model endpoint. It does not use Funnel and is
+not public on the internet. The installer refuses endpoints with another proxy,
+sibling handlers, a foreground Serve session, or Funnel enabled. The Bedrock
+routes also reject Tailscale's Funnel request marker. Before each
+credential-backed operation, the host verifies that the exact private Serve
+route is still owned by Trace ML and that no HTTP or TLS-terminated TCP Funnel
+forwards to its loopback backend. Unrelated Funnel routes for other local
+services remain valid.
+
+Helper and prose requests use unique cancellation IDs per browser action.
+Concurrency and rate limits remain host-global across connected Tailnet
+browsers so opening more tabs cannot multiply Bedrock work.
 
 The command prints the exact URL, in this form:
 
@@ -335,9 +353,10 @@ different proxy, a foreground Serve session, or Funnel.
 ## Development
 
 The desktop build requires Node `^22.22.2`, `^24.15.0`, or `>=26.0.0`, npm,
-Rust `1.88.0` or newer, and the operating-system prerequisites below. The
-latest Node 24 LTS is the recommended version; `.nvmrc` and
-`rust-toolchain.toml` describe the expected toolchains.
+the pinned Rust `1.97.1` toolchain (the crate remains compatible with Rust
+`1.88.0` or newer), and the operating-system prerequisites below. The latest
+Node 24 LTS is recommended; `.nvmrc` and `rust-toolchain.toml` select the
+expected toolchains.
 
 The portable Make targets are:
 
@@ -516,7 +535,8 @@ records synthesized design decisions and known evidence gaps.
 - Pyodide isolates runs in disposable browser workers, not an OS sandbox. A
   memory-exhausting submission can still pressure its renderer process.
 - Bedrock is optional, but semantic helper and prose review require a supported
-  credential and network connection in the desktop app.
+  credential and network connection in the desktop app or managed Tailnet
+  service.
 - Local macOS builds are suitable for personal use. Distribution to other Mac
   users requires Apple Developer ID signing and notarization.
 - The first public release is source-only. Downloadable desktop binaries also

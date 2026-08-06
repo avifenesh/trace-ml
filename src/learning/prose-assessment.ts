@@ -1,5 +1,8 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
 import { normalizeBedrockReadiness } from "../bedrock-readiness";
+import {
+  bedrockTransportAvailable,
+  invokeBedrock,
+} from "../bedrock-transport";
 import type {
   Lesson,
   TextResponseActivity,
@@ -141,14 +144,14 @@ function requestFor(
 }
 
 export function semanticProseAssessmentAvailable() {
-  return isTauri();
+  return bedrockTransportAvailable();
 }
 
 export async function proseAssessmentReady() {
-  if (!isTauri()) return null;
+  if (!bedrockTransportAvailable()) return null;
   try {
     return normalizeBedrockReadiness(
-      await invoke<unknown>("prose_assessment_ready"),
+      await invokeBedrock<unknown>("proseAssessmentReady"),
     );
   } catch {
     return null;
@@ -161,15 +164,15 @@ export async function assessProseSemantically(
   response: string,
   requestId: string,
 ) {
-  const result = await invoke<unknown>("assess_prose", {
+  const result = await invokeBedrock<unknown>("assessProse", {
     request: requestFor(lesson, activity, response, requestId),
   });
   return normalizeSemanticAssessment(activity, result);
 }
 
 export async function cancelProseAssessment(requestId: string) {
-  if (!isTauri()) return false;
-  return invoke<boolean>("cancel_prose_assessment", { requestId });
+  if (!bedrockTransportAvailable()) return false;
+  return invokeBedrock<boolean>("cancelProseAssessment", { requestId });
 }
 
 export function proseAssessmentError(error: unknown) {

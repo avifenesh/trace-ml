@@ -44,9 +44,14 @@ application installation are trusted.
 
 The following properties must hold:
 
-- Bedrock credentials remain in the Rust process and are never returned to the
-  webview, browser build, logs, or learner-visible output.
-- Webview input can select only compiled authored lesson and activity IDs.
+- Bedrock credentials remain in the Rust desktop or Tailnet bridge process and
+  are never returned to the webview, browser, logs, or learner-visible output.
+- Client input can select only compiled authored lesson and activity IDs.
+- The Tailnet server accepts Bedrock work only on fixed same-origin course
+  routes. Those routes cannot forward an arbitrary model, prompt, endpoint, or
+  tool request. They reject Tailscale's Funnel marker and fail closed unless the
+  live private Serve route remains exclusively owned and no Funnel forwards to
+  the Trace ML loopback backend.
 - Helper and prose-assessment output is schema-validated and cannot create or
   reorder material, answer protected activities, change access, or claim
   mastery.

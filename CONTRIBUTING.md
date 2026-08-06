@@ -6,8 +6,8 @@ course generator, grader, or progression authority.
 
 ## Prerequisites
 
-Install the latest Node 24 LTS (24.15.0 or newer), the stable Rust toolchain,
-and the
+Install the latest Node 24 LTS (24.15.0 or newer), `rustup` (the repository
+pins Rust 1.97.1), and the
 [Tauri 2 system prerequisites](https://v2.tauri.app/start/prerequisites/) for
 your operating system. Google Chrome is required only for the Playwright
 end-to-end suite.

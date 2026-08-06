@@ -1,7 +1,10 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
   normalizeBedrockReadiness,
 } from "../bedrock-readiness";
+import {
+  bedrockTransportAvailable,
+  invokeBedrock,
+} from "../bedrock-transport";
 import {
   pageChunksForLesson,
   type Lesson,
@@ -176,14 +179,14 @@ function normalizeAnswer(lesson: Lesson, value: unknown): LessonHelperAnswer {
 }
 
 export function nativeLessonHelperAvailable() {
-  return isTauri();
+  return bedrockTransportAvailable();
 }
 
 export async function lessonHelperReady() {
-  if (!isTauri()) return null;
+  if (!bedrockTransportAvailable()) return null;
   try {
     return normalizeBedrockReadiness(
-      await invoke<unknown>("lesson_helper_ready"),
+      await invokeBedrock<unknown>("lessonHelperReady"),
     );
   } catch {
     return null;
@@ -204,15 +207,15 @@ export async function answerLessonQuestion(
       claims: [],
     } satisfies LessonHelperAnswer;
   }
-  const result = await invoke<unknown>("answer_lesson_question", {
+  const result = await invokeBedrock<unknown>("answerLessonQuestion", {
     request: requestFor(lesson, question, history, requestId),
   });
   return normalizeAnswer(lesson, result);
 }
 
 export async function cancelLessonAnswer(requestId: string) {
-  if (!isTauri()) return false;
-  return invoke<boolean>("cancel_lesson_answer", { requestId });
+  if (!bedrockTransportAvailable()) return false;
+  return invokeBedrock<boolean>("cancelLessonAnswer", { requestId });
 }
 
 export function lessonHelperError(error: unknown) {

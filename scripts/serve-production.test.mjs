@@ -1,10 +1,15 @@
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { connect } from "node:net";
 import { brotliCompressSync } from "node:zlib";
-import { afterEach, describe, expect, test } from "vitest";
-import { createTraceServer, parsePort } from "./serve-production.mjs";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import {
+  createBedrockBridge,
+  createTailnetRouteGuard,
+  createTraceServer,
+  parsePort,
+} from "./serve-production.mjs";
 
 const cleanups = [];
 
@@ -12,7 +17,7 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
-async function startFixtureServer() {
+async function startFixtureServer(serverOptions = {}) {
   const root = await mkdtemp(join(tmpdir(), "trace-ml-server-"));
   await mkdir(join(root, "assets"));
   await mkdir(join(root, "pyodide"));
@@ -26,7 +31,7 @@ async function startFixtureServer() {
   await writeFile(join(root, "manifest.webmanifest"), '{"name":"Trace ML"}');
   await writeFile(join(root, "pyodide", "runtime.json"), '{"version":"test"}');
   await writeFile(join(root, "empty.bin"), "");
-  const server = createTraceServer({ root });
+  const server = createTraceServer({ root, ...serverOptions });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolve);
@@ -43,6 +48,21 @@ async function startFixtureServer() {
     throw new Error("Fixture server did not bind a TCP port");
   }
   return { assetSource, baseUrl: `http://127.0.0.1:${address.port}` };
+}
+
+async function startBridgeFixture(source, options = {}) {
+  const root = await mkdtemp(join(tmpdir(), "trace-ml-bridge-"));
+  const executable = join(root, "bridge.mjs");
+  await writeFile(executable, `#!/usr/bin/env node\n${source}`);
+  await chmod(executable, 0o755);
+  const bridge = createBedrockBridge(executable, options);
+  cleanups.push(
+    () => {
+      bridge.close();
+    },
+    () => rm(root, { force: true, recursive: true }),
+  );
+  return bridge;
 }
 
 async function sendRawRequest(baseUrl, requestTarget) {
@@ -326,6 +346,281 @@ describe("production static server", () => {
     expect(health.headers.get("cache-control")).toBe("no-store");
     expect(write.status).toBe(405);
     expect(write.headers.get("allow")).toBe("GET, HEAD");
+  });
+
+  test("forwards only fixed same-origin Bedrock course operations", async () => {
+    const calls = [];
+    const bedrockBridge = {
+      async request(action, payload) {
+        calls.push({ action, payload });
+        if (action === "lessonHelperReady") {
+          return {
+            available: true,
+            model: "openai.gpt-5.6-sol",
+            retentionMode: "provider_data_share",
+            retentionSource: "account",
+            allowedRetentionModes: ["default", "provider_data_share"],
+          };
+        }
+        return { status: "boundary", text: "Boundary.", claims: [] };
+      },
+    };
+    const { baseUrl } = await startFixtureServer({
+      bedrockBridge,
+      tailnetGuard: async () => true,
+    });
+    const headers = {
+      "Content-Type": "application/json",
+      Origin: baseUrl,
+      "Sec-Fetch-Site": "same-origin",
+    };
+    const readiness = await fetch(
+      `${baseUrl}/_trace/bedrock/lesson-helper/readiness`,
+      {
+        method: "POST",
+        headers,
+        body: "{}",
+      },
+    );
+    const request = {
+      requestId: "request-1",
+      lessonId: "lesson-1",
+      lessonRevision: "revision-1",
+      question: "What is a class?",
+      history: [],
+    };
+    const answer = await fetch(`${baseUrl}/_trace/bedrock/lesson-helper`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ request }),
+    });
+
+    expect(readiness.status).toBe(200);
+    expect((await readiness.json()).result).toMatchObject({
+      available: true,
+      model: "openai.gpt-5.6-sol",
+    });
+    expect(readiness.headers.get("cache-control")).toBe("no-store");
+    expect(answer.status).toBe(200);
+    expect(await answer.json()).toEqual({
+      result: { status: "boundary", text: "Boundary.", claims: [] },
+    });
+    expect(calls).toEqual([
+      { action: "lessonHelperReady", payload: {} },
+      { action: "answerLessonQuestion", payload: request },
+    ]);
+  });
+
+  test("rejects cross-origin, malformed, and unconfigured Bedrock requests", async () => {
+    const bedrockBridge = { request: vi.fn() };
+    const logger = { error: vi.fn() };
+    const { baseUrl } = await startFixtureServer({
+      bedrockBridge,
+      logger,
+      tailnetGuard: async () => true,
+    });
+    const endpoint = `${baseUrl}/_trace/bedrock/prose-assessment`;
+    const funnel = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: baseUrl,
+        "Sec-Fetch-Site": "same-origin",
+        "Tailscale-Funnel-Request": "?1",
+      },
+      body: JSON.stringify({ request: {} }),
+    });
+    const crossOrigin = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "https://attacker.example",
+      },
+      body: JSON.stringify({ request: {} }),
+    });
+    const wrongType = await fetch(endpoint, {
+      method: "POST",
+      headers: { Origin: baseUrl },
+      body: JSON.stringify({ request: {} }),
+    });
+    const genericPayload = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: baseUrl,
+      },
+      body: JSON.stringify({ prompt: "Use the model for something else." }),
+    });
+    const unconfigured = await startFixtureServer();
+    const unavailable = await fetch(
+      `${unconfigured.baseUrl}/_trace/bedrock/lesson-helper/readiness`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: unconfigured.baseUrl,
+        },
+        body: "{}",
+      },
+    );
+
+    expect(funnel.status).toBe(403);
+    expect(await funnel.json()).toEqual({
+      error: "Tailnet-only request required.",
+    });
+    expect(crossOrigin.status).toBe(403);
+    expect(wrongType.status).toBe(415);
+    expect(genericPayload.status).toBe(400);
+    expect(unavailable.status).toBe(503);
+    expect(bedrockBridge.request).not.toHaveBeenCalled();
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  test("fails closed when live Tailnet route ownership cannot be verified", async () => {
+    const bedrockBridge = { request: vi.fn() };
+    const tailnetGuard = vi.fn().mockResolvedValue(false);
+    const { baseUrl } = await startFixtureServer({
+      bedrockBridge,
+      tailnetGuard,
+    });
+    const response = await fetch(
+      `${baseUrl}/_trace/bedrock/lesson-helper/readiness`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: baseUrl,
+        },
+        body: "{}",
+      },
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: "Trace ML's private Tailnet route could not be verified.",
+    });
+    expect(tailnetGuard).toHaveBeenCalledOnce();
+    expect(bedrockBridge.request).not.toHaveBeenCalled();
+
+    const malformedStatusGuard = createTailnetRouteGuard({
+      command: "/unused/tailscale",
+      httpsPort: 9443,
+      localTarget: "http://127.0.0.1:5600",
+      readStatus: async () => "{",
+    });
+    await expect(malformedStatusGuard()).resolves.toBe(false);
+  });
+
+  test("correlates out-of-order bridge replies and bounds pending work", async () => {
+    const bridge = await startBridgeFixture(`
+      import { createInterface } from "node:readline";
+      createInterface({ input: process.stdin, crlfDelay: Infinity })
+        .on("line", (line) => {
+          const request = JSON.parse(line);
+          if (request.action === "hold") return;
+          setTimeout(() => {
+            process.stdout.write(JSON.stringify({
+              id: request.id,
+              ok: true,
+              result: request.payload.value,
+            }) + "\\n");
+          }, request.payload.delay);
+        });
+    `);
+
+    await expect(
+      Promise.all([
+        bridge.request("echo", { delay: 30, value: "slow" }),
+        bridge.request("echo", { delay: 0, value: "fast" }),
+      ]),
+    ).resolves.toEqual(["slow", "fast"]);
+
+    const held = Array.from(
+      { length: 8 },
+      (_, index) => bridge.request("hold", { index }).catch(() => null),
+    );
+    await expect(bridge.request("hold", {})).rejects.toThrow("busy");
+    await expect(
+      bridge.request("cancelLessonAnswer", {
+        requestId: "held",
+        value: true,
+      }),
+    ).resolves.toBe(true);
+    bridge.close();
+    await Promise.all(held);
+  });
+
+  test("terminates a silent or malformed bridge instead of hanging", async () => {
+    const silent = await startBridgeFixture(
+      "process.stdin.resume();",
+      { timeouts: { ping: 40 } },
+    );
+    await expect(silent.request("ping", {})).rejects.toThrow(
+      "timed out during ping",
+    );
+
+    const malformed = await startBridgeFixture(`
+      process.stdin.once("data", () => process.stdout.write("not json\\n"));
+    `);
+    await expect(malformed.request("ping", {})).rejects.toThrow(
+      "invalid JSON",
+    );
+  });
+
+  test("cancels Bedrock work when the browser disconnects", async () => {
+    let rejectAnswer;
+    let markStarted;
+    const started = new Promise((resolve) => {
+      markStarted = resolve;
+    });
+    const calls = [];
+    const bedrockBridge = {
+      request(action, payload) {
+        calls.push({ action, payload });
+        if (action === "answerLessonQuestion") {
+          markStarted();
+          return new Promise((_, reject) => {
+            rejectAnswer = reject;
+          });
+        }
+        if (action === "cancelLessonAnswer") {
+          rejectAnswer(new Error("cancelled"));
+          return Promise.resolve(true);
+        }
+        return Promise.reject(new Error("Unexpected operation."));
+      },
+    };
+    const { baseUrl } = await startFixtureServer({
+      bedrockBridge,
+      tailnetGuard: async () => true,
+    });
+    const controller = new AbortController();
+    const requestId = "disconnect-request";
+    const answer = fetch(`${baseUrl}/_trace/bedrock/lesson-helper`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: baseUrl,
+      },
+      body: JSON.stringify({
+        request: {
+          requestId,
+          lessonId: "lesson-1",
+          lessonRevision: "revision-1",
+          question: "What is a class?",
+          history: [],
+        },
+      }),
+      signal: controller.signal,
+    });
+    await started;
+    controller.abort();
+    await expect(answer).rejects.toThrow();
+    await expect.poll(() => calls.length).toBe(2);
+    expect(calls[1]).toEqual({
+      action: "cancelLessonAnswer",
+      payload: { requestId },
+    });
   });
 
   test("labels malformed URL encoding as a bad request", async () => {

@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import {
   chmod,
+  copyFile,
   mkdtemp,
   mkdir,
   readFile,
@@ -18,6 +19,12 @@ import { afterEach, describe, expect, test } from "vitest";
 const manageScript = fileURLToPath(
   new URL("./manage-tailnet.sh", import.meta.url),
 );
+const productionServerScript = fileURLToPath(
+  new URL("./serve-production.mjs", import.meta.url),
+);
+const routeInspectorScript = fileURLToPath(
+  new URL("./inspect-tailnet-route.mjs", import.meta.url),
+);
 const cleanups = [];
 const describeLinux = process.platform === "linux" ? describe : describe.skip;
 
@@ -28,6 +35,7 @@ afterEach(async () => {
 const toolShim = String.raw`#!/usr/bin/env node
 import { spawn } from "node:child_process";
 import {
+  chmodSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -92,23 +100,38 @@ function parseUnit() {
       .replaceAll("\\x5c", "\\")
       .replaceAll("%%", "%");
   const execStart = /^ExecStart=(.+)$/m.exec(unit)?.[1];
-  const match = execStart?.match(
+  const bridgeMatch = execStart?.match(
+    /^"([^"]+)" "([^"]+)" --host ([^ ]+) --port ([^ ]+) --root "([^"]+)" --bedrock-bridge "([^"]+)" --tailscale-command "([^"]+)" --tailnet-https-port ([^ ]+)$/,
+  );
+  const legacyMatch = execStart?.match(
     /^"([^"]+)" "([^"]+)" --host ([^ ]+) --port ([^ ]+) --root "([^"]+)"$/,
   );
+  const match = bridgeMatch ?? legacyMatch;
   if (!workingDirectory || !match) {
     throw new Error("Could not parse fixture systemd unit.");
   }
+  const arguments_ = [
+    match[2].replaceAll("%%", "%"),
+    "--host",
+    match[3],
+    "--port",
+    match[4],
+    "--root",
+    match[5].replaceAll("%%", "%"),
+  ];
+  if (bridgeMatch) {
+    arguments_.push(
+      "--bedrock-bridge",
+      bridgeMatch[6].replaceAll("%%", "%"),
+      "--tailscale-command",
+      bridgeMatch[7].replaceAll("%%", "%"),
+      "--tailnet-https-port",
+      bridgeMatch[8],
+    );
+  }
   return {
     command: match[1].replaceAll("%%", "%"),
-    arguments: [
-      match[2].replaceAll("%%", "%"),
-      "--host",
-      match[3],
-      "--port",
-      match[4],
-      "--root",
-      match[5].replaceAll("%%", "%"),
-    ],
+    arguments: arguments_,
     workingDirectory,
   };
 }
@@ -153,7 +176,7 @@ async function runSystemctl() {
       argument.startsWith("--property="),
     )?.slice("--property=".length);
     if (property === "WorkingDirectory") {
-      process.stdout.write(state.workingDirectory + "\n");
+      process.stdout.write(parseUnit().workingDirectory + "\n");
     } else if (property === "MainPID") {
       process.stdout.write(String(state.pid) + "\n");
     }
@@ -254,6 +277,54 @@ function runNpm() {
   throw new Error("Unsupported fixture npm command: " + args.join(" "));
 }
 
+function runCargo() {
+  const targetIndex = args.indexOf("--target-dir");
+  const target = args[targetIndex + 1];
+  if (targetIndex < 0 || !target) {
+    throw new Error("Fixture cargo build is missing --target-dir.");
+  }
+  const output = join(target, "release", "trace-ml-bedrock-bridge");
+  mkdirSync(join(target, "release"), { recursive: true });
+  writeFileSync(
+    output,
+    [
+      "#!/usr/bin/env node",
+      'import { appendFileSync } from "node:fs";',
+      'import { join } from "node:path";',
+      'import { createInterface } from "node:readline";',
+      "appendFileSync(",
+      '  join(process.env.TRACE_ML_TEST_STATE, "bridge-pids.log"),',
+      '  String(process.pid) + "\\n",',
+      ");",
+      "const lines = createInterface({ input: process.stdin, crlfDelay: Infinity });",
+      'lines.on("line", (line) => {',
+      "  const request = JSON.parse(line);",
+      "  let result;",
+      '  if (request.action === "ping") {',
+      '    result = { service: "trace-ml-bedrock-bridge", status: "ok" };',
+      '} else if (request.action.endsWith("Ready")) {',
+      "    result = {",
+      "      available: true,",
+      '      model: "openai.gpt-5.6-sol",',
+      '      retentionMode: "provider_data_share",',
+      '      retentionSource: "account",',
+      '      allowedRetentionModes: ["default", "provider_data_share"],',
+      "    };",
+      '} else if (request.action.startsWith("cancel")) {',
+      "    result = true;",
+      "} else {",
+      '    result = { status: "boundary", text: "Boundary.", claims: [] };',
+      "  }",
+      "  process.stdout.write(JSON.stringify({",
+      "    id: request.id, ok: true, result,",
+      '  }) + "\\n");',
+      "});",
+      "",
+    ].join("\n"),
+  );
+  chmodSync(output, 0o755);
+}
+
 try {
   if (command === "systemctl") {
     await runSystemctl();
@@ -261,6 +332,8 @@ try {
     runTailscale();
   } else if (command === "npm") {
     runNpm();
+  } else if (command === "cargo") {
+    runCargo();
   } else if (command === "loginctl") {
     process.stdout.write("yes\n");
   } else if (command !== "systemd-analyze") {
@@ -305,9 +378,14 @@ async function createFixture() {
   await writeFile(shimPath, toolShim);
   await chmod(shimPath, 0o755);
   await Promise.all(
-    ["loginctl", "npm", "systemctl", "systemd-analyze", "tailscale"].map(
-      (command) => symlink("tool-shim.mjs", join(bin, command)),
-    ),
+    [
+      "cargo",
+      "loginctl",
+      "npm",
+      "systemctl",
+      "systemd-analyze",
+      "tailscale",
+    ].map((command) => symlink("tool-shim.mjs", join(bin, command))),
   );
 
   const [localPort, httpsPort] = await Promise.all([
@@ -318,6 +396,7 @@ async function createFixture() {
     ...process.env,
     HOME: root,
     PATH: `${bin}:${process.env.PATH}`,
+    TRACE_ML_CARGO_TARGET_DIR: join(root, "cargo-target"),
     TRACE_ML_TAILNET_HTTPS_PORT: String(httpsPort),
     TRACE_ML_TEST_STATE: state,
     TRACE_ML_WEB_PORT: String(localPort),
@@ -385,6 +464,92 @@ async function readFixtureJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
+function processExists(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function bridgePids(fixture) {
+  const contents = await readFile(
+    join(fixture.state, "bridge-pids.log"),
+    "utf8",
+  ).catch((error) => {
+    if (error?.code === "ENOENT") return "";
+    throw error;
+  });
+  return contents
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map(Number)
+    .filter((pid) => Number.isInteger(pid) && pid > 0);
+}
+
+async function liveBridgePids(fixture) {
+  return (await bridgePids(fixture)).filter(processExists);
+}
+
+async function seedLegacyInstallation(fixture) {
+  const release = join(
+    fixture.data,
+    "trace-ml-web/releases/legacy-release",
+  );
+  const unitDirectory = join(fixture.config, "systemd/user");
+  const unitPath = join(unitDirectory, "trace-ml-web.service");
+  const configDirectory = join(fixture.config, "trace-ml");
+  await Promise.all([
+    mkdir(join(release, "dist"), { recursive: true }),
+    mkdir(join(release, "scripts"), { recursive: true }),
+    mkdir(unitDirectory, { recursive: true }),
+    mkdir(configDirectory, { recursive: true }),
+  ]);
+  await Promise.all([
+    writeFile(
+      join(release, "dist/index.html"),
+      "<main>Legacy Trace ML release</main>",
+    ),
+    copyFile(
+      productionServerScript,
+      join(release, "scripts/serve-production.mjs"),
+    ),
+    copyFile(
+      routeInspectorScript,
+      join(release, "scripts/inspect-tailnet-route.mjs"),
+    ),
+    writeFile(
+      join(configDirectory, "tailnet.conf"),
+      `TRACE_ML_WEB_PORT=${fixture.localPort}\n` +
+        `TRACE_ML_TAILNET_HTTPS_PORT=${fixture.httpsPort}\n`,
+    ),
+  ]);
+  await writeFile(
+    unitPath,
+    [
+      "# Managed by Trace ML",
+      "[Unit]",
+      "Description=Trace ML tailnet web course",
+      "",
+      "[Service]",
+      "Type=simple",
+      `WorkingDirectory=${release}`,
+      `ExecStart="${process.execPath}" ` +
+        `"${join(release, "scripts/serve-production.mjs")}" ` +
+        `--host 127.0.0.1 --port ${fixture.localPort} ` +
+        `--root "${join(release, "dist")}"`,
+      "Restart=on-failure",
+      "",
+      "[Install]",
+      "WantedBy=default.target",
+      "",
+    ].join("\n"),
+  );
+  return release;
+}
+
 describeLinux("managed tailnet lifecycle", () => {
   test(
     "installs, probes, stops, restores, and uninstalls the real server process",
@@ -400,6 +565,7 @@ describeLinux("managed tailnet lifecycle", () => {
       expect(install.stdout).toContain(
         `https://trace.tail0000.ts.net:${fixture.httpsPort}/`,
       );
+      await expect.poll(() => liveBridgePids(fixture)).toHaveLength(1);
 
       const status = await runLifecycle("status", fixture.environment);
       expect(status.code).toBe(0);
@@ -407,9 +573,13 @@ describeLinux("managed tailnet lifecycle", () => {
         '{"service":"trace-ml","status":"ok"}',
       );
       expect(status.stdout).toMatch(/Main PID: [1-9][0-9]*/);
+      expect(status.stdout).toContain(
+        "Bedrock: available (openai.gpt-5.6-sol",
+      );
 
       const stop = await runLifecycle("stop", fixture.environment);
       expect(stop.code).toBe(0);
+      await expect.poll(() => liveBridgePids(fixture)).toEqual([]);
       expect(await readFixtureJson(join(fixture.state, "routes.json"))).toEqual(
         {},
       );
@@ -422,6 +592,7 @@ describeLinux("managed tailnet lifecycle", () => {
       expect(
         await readFixtureJson(join(fixture.state, "systemctl.json")),
       ).toMatchObject({ active: false, enabled: false });
+      await expect.poll(() => liveBridgePids(fixture)).toEqual([]);
 
       const failedStart = await runLifecycle("start", {
         ...fixture.environment,
@@ -434,6 +605,7 @@ describeLinux("managed tailnet lifecycle", () => {
 
       const start = await runLifecycle("start", fixture.environment);
       expect(start.code, start.stderr).toBe(0);
+      await expect.poll(() => liveBridgePids(fixture)).toHaveLength(1);
       expect(await readFixtureJson(join(fixture.state, "routes.json"))).toEqual(
         {
           [fixture.httpsPort]: `http://127.0.0.1:${fixture.localPort}`,
@@ -448,6 +620,7 @@ describeLinux("managed tailnet lifecycle", () => {
       expect(
         await readFixtureJson(join(fixture.state, "systemctl.json")),
       ).toMatchObject({ active: true, enabled: true });
+      await expect.poll(() => liveBridgePids(fixture)).toHaveLength(1);
       expect(await readFixtureJson(join(fixture.state, "routes.json"))).toEqual(
         {
           [fixture.httpsPort]: `http://127.0.0.1:${fixture.localPort}`,
@@ -456,12 +629,88 @@ describeLinux("managed tailnet lifecycle", () => {
 
       const uninstall = await runLifecycle("uninstall", fixture.environment);
       expect(uninstall.code).toBe(0);
+      await expect.poll(() => liveBridgePids(fixture)).toEqual([]);
       await expect(
         readFile(join(fixture.config, "trace-ml/tailnet.conf"), "utf8"),
       ).rejects.toMatchObject({ code: "ENOENT" });
       await expect(
         readdir(join(fixture.data, "trace-ml-web/releases")),
       ).rejects.toMatchObject({ code: "ENOENT" });
+    },
+    30_000,
+  );
+
+  test(
+    "upgrades a running legacy release to the bridge-enabled service",
+    async () => {
+      const fixture = await createFixture();
+      const legacyRelease = await seedLegacyInstallation(fixture);
+      const legacyStart = await runLifecycle("start", fixture.environment);
+      expect(legacyStart.code, legacyStart.stderr).toBe(0);
+      expect(await liveBridgePids(fixture)).toEqual([]);
+
+      const upgrade = await runLifecycle("install", fixture.environment);
+      expect(upgrade.code, upgrade.stderr).toBe(0);
+      await expect.poll(() => liveBridgePids(fixture)).toHaveLength(1);
+
+      const state = await readFixtureJson(
+        join(fixture.state, "systemctl.json"),
+      );
+      expect(state).toMatchObject({ active: true, enabled: true });
+      expect(state.workingDirectory).not.toBe(legacyRelease);
+      expect(
+        await readFile(
+          join(fixture.config, "systemd/user/trace-ml-web.service"),
+          "utf8",
+        ),
+      ).toContain("--bedrock-bridge");
+      await expect(
+        readFile(join(legacyRelease, ".deployed"), "utf8"),
+      ).resolves.toBe("");
+      expect((await runLifecycle("status", fixture.environment)).code).toBe(0);
+    },
+    30_000,
+  );
+
+  test(
+    "restores a running legacy release after a failed bridge cutover",
+    async () => {
+      const fixture = await createFixture();
+      const legacyRelease = await seedLegacyInstallation(fixture);
+      const unitPath = join(
+        fixture.config,
+        "systemd/user/trace-ml-web.service",
+      );
+      const legacyUnit = await readFile(unitPath, "utf8");
+      const legacyStart = await runLifecycle("start", fixture.environment);
+      expect(legacyStart.code, legacyStart.stderr).toBe(0);
+
+      const failedUpgrade = await runLifecycle("install", {
+        ...fixture.environment,
+        TRACE_ML_TEST_FAIL_ROUTE_CONFIGURE: "1",
+      });
+      expect(failedUpgrade.code).toBe(1);
+      expect(failedUpgrade.stderr).toContain(
+        "Tailscale did not establish Trace ML's exclusive HTTPS route",
+      );
+      await expect.poll(() => liveBridgePids(fixture)).toEqual([]);
+
+      expect(await readFile(unitPath, "utf8")).toBe(legacyUnit);
+      expect(
+        await readFixtureJson(join(fixture.state, "systemctl.json")),
+      ).toMatchObject({
+        active: true,
+        enabled: true,
+        workingDirectory: legacyRelease,
+      });
+      expect(await readdir(join(fixture.data, "trace-ml-web/releases"))).toEqual(
+        ["legacy-release"],
+      );
+      expect(await readFixtureJson(join(fixture.state, "routes.json"))).toEqual(
+        {
+          [fixture.httpsPort]: `http://127.0.0.1:${fixture.localPort}`,
+        },
+      );
     },
     30_000,
   );

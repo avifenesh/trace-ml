@@ -9,6 +9,7 @@ config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/trace-ml"
 config_file="$config_dir/tailnet.conf"
 data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/trace-ml-web"
 releases_dir="$data_dir/releases"
+cargo_target_dir="${TRACE_ML_CARGO_TARGET_DIR:-$repo_root/src-tauri/target}"
 default_local_port="5600"
 default_https_port="9443"
 expected_health='{"service":"trace-ml","status":"ok"}'
@@ -348,6 +349,42 @@ health_body() {
     "$local_target/_trace/health"
 }
 
+bedrock_readiness_body() {
+  curl --fail --silent --show-error --max-time 20 \
+    --request POST \
+    --header "Origin: $local_target" \
+    --header 'Content-Type: application/json' \
+    --data '{}' \
+    "$local_target/_trace/bedrock/lesson-helper/readiness"
+}
+
+print_bedrock_status() {
+  local body
+  if ! body="$(bedrock_readiness_body 2>/dev/null)"; then
+    printf '%s\n' 'Bedrock: unavailable (local fallback remains active)'
+    return
+  fi
+  if ! printf '%s' "$body" | node --input-type=module --eval '
+    const chunks = [];
+    for await (const chunk of process.stdin) chunks.push(chunk);
+    const value = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    const readiness = value?.result;
+    if (
+      typeof readiness?.available !== "boolean" ||
+      typeof readiness?.model !== "string" ||
+      typeof readiness?.retentionMode !== "string"
+    ) {
+      process.exit(1);
+    }
+    process.stdout.write(
+      `Bedrock: ${readiness.available ? "available" : "unavailable"} ` +
+        `(${readiness.model}, retention: ${readiness.retentionMode})\n`,
+    );
+  '; then
+    printf '%s\n' 'Bedrock: unavailable (invalid readiness response)'
+  fi
+}
+
 service_working_directory() {
   systemctl --user show "$service_name" \
     --property=WorkingDirectory \
@@ -367,15 +404,23 @@ main_process_matches_release() {
   [[ "$pid" =~ ^[1-9][0-9]*$ && -r "/proc/$pid/cmdline" ]] || return 1
 
   local argument
+  local requires_bridge="false"
+  local saw_bridge="false"
   local saw_server="false"
   local saw_root="false"
+  [[ ! -x "$expected_release/bin/trace-ml-bedrock-bridge" ]] ||
+    requires_bridge="true"
   while IFS= read -r -d '' argument; do
     [[ "$argument" != "$expected_release/scripts/serve-production.mjs" ]] ||
       saw_server="true"
     [[ "$argument" != "$expected_release/dist" ]] ||
       saw_root="true"
+    [[ "$argument" != "$expected_release/bin/trace-ml-bedrock-bridge" ]] ||
+      saw_bridge="true"
   done <"/proc/$pid/cmdline"
-  [[ "$saw_server" == "true" && "$saw_root" == "true" ]]
+  [[ "$saw_server" == "true" &&
+    "$saw_root" == "true" &&
+    ("$requires_bridge" == "false" || "$saw_bridge" == "true") ]]
 }
 
 main_process_owns_listener() {
@@ -459,7 +504,7 @@ release_revision() {
 }
 
 build_release() {
-  require_commands npm
+  require_commands cargo npm
   mkdir -p "$releases_dir"
   find "$releases_dir" \
     -mindepth 1 \
@@ -475,21 +520,38 @@ build_release() {
   release_path="$releases_dir/$release_id"
   [[ ! -e "$staging_release" && ! -e "$release_path" ]] ||
     fail "release path already exists: $release_id"
-  mkdir -p "$staging_release/dist" "$staging_release/scripts"
+  mkdir -p \
+    "$staging_release/bin" \
+    "$staging_release/dist" \
+    "$staging_release/scripts"
 
   (
     cd "$repo_root"
     npm ci
-    npm run build -- \
+    VITE_TRACE_BEDROCK_HTTP=1 npm run build -- \
       --outDir "$staging_release/dist" \
       --emptyOutDir
+    cargo build \
+      --locked \
+      --release \
+      --manifest-path src-tauri/Cargo.toml \
+      --target-dir "$cargo_target_dir" \
+      --bin trace-ml-bedrock-bridge
   )
+  cp -- \
+    "$cargo_target_dir/release/trace-ml-bedrock-bridge" \
+    "$staging_release/bin/trace-ml-bedrock-bridge"
+  chmod 0755 "$staging_release/bin/trace-ml-bedrock-bridge"
   cp -- \
     "$repo_root/scripts/serve-production.mjs" \
     "$staging_release/scripts/serve-production.mjs"
+  cp -- \
+    "$repo_root/scripts/inspect-tailnet-route.mjs" \
+    "$staging_release/scripts/inspect-tailnet-route.mjs"
   node "$repo_root/scripts/compress-production-assets.mjs" \
     "$staging_release/dist"
   node --check "$staging_release/scripts/serve-production.mjs"
+  node --check "$staging_release/scripts/inspect-tailnet-route.mjs"
   [[ -f "$staging_release/dist/index.html" ]] ||
     fail "production release is missing index.html"
 
@@ -519,16 +581,21 @@ validate_release() {
   local release="$1"
   local validation_port
   local validation_target
+  local tailscale_path
   local attempt
   local body
   validation_port="$(select_validation_port)"
   validation_target="http://127.0.0.1:$validation_port"
+  tailscale_path="$(command -v tailscale)"
   candidate_server_log="$(mktemp "$data_dir/.release-validation.XXXXXX.log")"
 
   node "$release/scripts/serve-production.mjs" \
     --host 127.0.0.1 \
     --port "$validation_port" \
     --root "$release/dist" \
+    --bedrock-bridge "$release/bin/trace-ml-bedrock-bridge" \
+    --tailscale-command "$tailscale_path" \
+    --tailnet-https-port "$https_port" \
     >"$candidate_server_log" 2>&1 &
   candidate_server_pid="$!"
 
@@ -584,7 +651,9 @@ render_unit() {
   local release="$1"
   local destination="$2"
   local node_path
+  local tailscale_path
   node_path="$(command -v node)"
+  tailscale_path="$(command -v tailscale)"
   {
     printf '%s\n' \
       '# Managed by Trace ML' \
@@ -594,11 +663,14 @@ render_unit() {
       '[Service]' \
       'Type=simple'
     printf 'WorkingDirectory=%s\n' "$(unit_path "$release")"
-    printf 'ExecStart=%s %s --host 127.0.0.1 --port %s --root %s\n' \
+    printf 'ExecStart=%s %s --host 127.0.0.1 --port %s --root %s --bedrock-bridge %s --tailscale-command %s --tailnet-https-port %s\n' \
       "$(unit_quote "$node_path")" \
       "$(unit_quote "$release/scripts/serve-production.mjs")" \
       "$local_port" \
-      "$(unit_quote "$release/dist")"
+      "$(unit_quote "$release/dist")" \
+      "$(unit_quote "$release/bin/trace-ml-bedrock-bridge")" \
+      "$(unit_quote "$tailscale_path")" \
+      "$https_port"
     printf '%s\n' \
       'Environment=NODE_ENV=production' \
       'Restart=on-failure' \
@@ -999,6 +1071,7 @@ show_status() {
   printf '%s\n' "$expected_health"
   printf 'Active release: %s\n' "$installed_release"
   printf 'Main PID: %s\n' "$(service_main_pid)"
+  print_bedrock_status
   print_access
 }
 
