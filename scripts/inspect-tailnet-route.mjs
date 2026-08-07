@@ -14,7 +14,7 @@ function effectivePort(url) {
   return "";
 }
 
-function sameLocalTarget(value, expectedTarget, defaultProtocol) {
+function targetsProtectedBackendPort(value, expectedTarget, defaultProtocol) {
   if (typeof value !== "string" || value.startsWith("unix:")) return false;
   try {
     const actual = new URL(
@@ -64,13 +64,13 @@ function funnelReachesTarget(config, expectedTarget) {
         handlers &&
         typeof handlers === "object" &&
         Object.values(handlers).some((handler) =>
-          sameLocalTarget(handler?.Proxy, expectedTarget, "http")
+          targetsProtectedBackendPort(handler?.Proxy, expectedTarget, "http")
         )
       ) {
         return true;
       }
       if (
-        sameLocalTarget(
+        targetsProtectedBackendPort(
           scope?.TCP?.[port]?.TCPForward,
           expectedTarget,
           "tcp",

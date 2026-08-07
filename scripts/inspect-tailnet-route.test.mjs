@@ -139,6 +139,27 @@ describe("Tailscale Serve route ownership", () => {
     );
   });
 
+  test("rejects every Funnel target on the protected backend port", () => {
+    for (const proxyTarget of [
+      "http://127.0.0.2:5600",
+      "http://[::1]:5600",
+    ]) {
+      const config = ownedConfig();
+      const funnelEndpoint = "trace.tail0000.ts.net:8443";
+      config.AllowFunnel = { [funnelEndpoint]: true };
+      config.TCP[8443] = { HTTPS: true };
+      config.Web[funnelEndpoint] = {
+        Handlers: {
+          "/": { Proxy: proxyTarget },
+        },
+      };
+
+      expect(inspectTailnetBedrockRoute(config, 9443, target)).toMatch(
+        /^conflict:Funnel can reach/,
+      );
+    }
+  });
+
   test("combines background Funnel permission with foreground TCP handlers", () => {
     const config = ownedConfig();
     const funnelEndpoint = "trace.tail0000.ts.net:8443";
