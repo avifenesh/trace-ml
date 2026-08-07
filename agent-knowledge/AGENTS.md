@@ -6,7 +6,7 @@
 
 | Topic | Guide | Sources | Depth | Created |
 |---|---|---:|---|---|
-| Fixed authored ML course research | [ml-course-research.md](ml-course-research.md) | 109 | deep | 2026-08-04 |
+| Fixed authored ML course research | [ml-course-research.md](ml-course-research.md) | 110 | deep | 2026-08-07 |
 | Bounded LLM prose assessment | [llm-prose-assessment.md](llm-prose-assessment.md) | 40 | deep | 2026-08-03 |
 
 ## Use This Guide For

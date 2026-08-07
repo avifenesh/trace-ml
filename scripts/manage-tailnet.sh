@@ -331,6 +331,16 @@ route_state() {
     node "$repo_root/scripts/inspect-tailnet-route.mjs" "$port" "$target"
 }
 
+bedrock_route_state() {
+  local port="$1"
+  local target="$2"
+  tailscale serve status --json |
+    node "$repo_root/scripts/inspect-tailnet-route.mjs" \
+      --bedrock \
+      "$port" \
+      "$target"
+}
+
 ensure_route_available() {
   local port="$1"
   local target="$2"
@@ -1164,7 +1174,7 @@ show_status() {
   local installed_release
   installed_release="$(service_working_directory)"
   assert_server_ready "$installed_release"
-  [[ "$(route_state "$https_port" "$local_target")" == "owned" ]] ||
+  [[ "$(bedrock_route_state "$https_port" "$local_target")" == "owned" ]] ||
     fail "Trace ML's tailnet route is absent, shared, public, or points elsewhere"
   printf '%s\n' "$expected_health"
   printf 'Active release: %s\n' "$installed_release"
@@ -1202,25 +1212,101 @@ restore_local_service_state() {
   [[ "$failed" == "false" ]]
 }
 
+restore_owned_route() {
+  local port="$1"
+  local target="$2"
+  local current_route_state
+  if ! current_route_state="$(route_state "$port" "$target")"; then
+    printf 'error: could not inspect the route before rollback\n' >&2
+    return 1
+  fi
+
+  case "$current_route_state" in
+    free)
+      configure_route "$port" "$target"
+      ;;
+    owned)
+      ;;
+    conflict:*)
+      printf 'error: rollback did not overwrite the newly claimed route (%s)\n' \
+        "${current_route_state#conflict:}" >&2
+      return 1
+      ;;
+    *)
+      printf 'error: could not inspect the route before rollback\n' >&2
+      return 1
+      ;;
+  esac
+}
+
 stop_and_disable_service() {
   local installed_release="$1"
   local was_active="false"
   local was_enabled="false"
+  local route_was_owned="false"
   systemctl --user is-active --quiet "$service_name" && was_active="true"
   systemctl --user is-enabled --quiet "$service_name" && was_enabled="true"
 
+  route_cleanup_failure=""
+  if ! command -v tailscale >/dev/null 2>&1 ||
+    ! command -v node >/dev/null 2>&1; then
+    route_cleanup_failure="unavailable"
+    printf '%s\n' \
+      'error: Tailscale and Node are required before the private route can be removed.' >&2
+    return 1
+  fi
+
+  local initial_route_state
+  if ! initial_route_state="$(route_state "$https_port" "$local_target")"; then
+    route_cleanup_failure="inspect-failed"
+    printf 'error: could not inspect Tailscale Serve route state\n' >&2
+    return 1
+  fi
+  case "$initial_route_state" in
+    free)
+      ;;
+    owned)
+      route_was_owned="true"
+      ;;
+    conflict:*)
+      route_cleanup_failure="conflict"
+      printf 'error: refusing to remove a route not owned by Trace ML (%s)\n' \
+        "${initial_route_state#conflict:}" >&2
+      return 1
+      ;;
+    *)
+      route_cleanup_failure="inspect-failed"
+      printf 'error: could not inspect Tailscale Serve route state\n' >&2
+      return 1
+      ;;
+  esac
+
+  if ! disable_route "$https_port" "$local_target"; then
+    return 1
+  fi
+
   if ! systemctl --user stop "$service_name" >/dev/null; then
+    local local_restored="true"
     restore_local_service_state \
       "$was_active" \
       "$was_enabled" \
-      "$installed_release" || true
+      "$installed_release" || local_restored="false"
+    if [[ "$route_was_owned" == "true" && "$was_active" == "true" &&
+      "$local_restored" == "true" ]]; then
+      restore_owned_route "$https_port" "$local_target" || true
+    fi
     return 1
   fi
   if ! systemctl --user disable "$service_name" >/dev/null; then
+    local local_restored="true"
     restore_local_service_state \
       "$was_active" \
       "$was_enabled" \
-      "$installed_release" || true
+      "$installed_release" || local_restored="false"
+    if [[ "$route_was_owned" == "true" && "$was_active" == "true" &&
+      "$local_restored" == "true" ]]; then
+      restore_owned_route "$https_port" "$local_target" || true
+    fi
     return 1
   fi
 }
@@ -1232,26 +1318,13 @@ stop_service() {
   local installed_release
   installed_release="$(service_working_directory)"
   if ! stop_and_disable_service "$installed_release"; then
-    fail "could not stop and disable the local Trace ML service"
-  fi
-
-  route_cleanup_failure=""
-  if ! command -v tailscale >/dev/null 2>&1 ||
-    ! command -v node >/dev/null 2>&1; then
-    route_cleanup_failure="unavailable"
-  elif ! disable_route "$https_port" "$local_target"; then
-    :
-  fi
-  if [[ -n "$route_cleanup_failure" ]]; then
-    printf 'error: Trace ML stopped locally, but its route may remain.\n' >&2
     if [[ "$route_cleanup_failure" == "conflict" ]]; then
       printf '%s\n' \
         'Do not remove the port-wide route; it is no longer owned by Trace ML.' >&2
     fi
-    printf '%s\n' \
-      'After restoring exclusive route ownership, rerun: make tailnet-stop' >&2
-    return 1
+    fail "could not remove Trace ML's route and stop the local service; the installation was kept"
   fi
+
   printf 'Trace ML tailnet service stopped; unrelated Serve routes were preserved.\n'
 }
 
@@ -1270,24 +1343,21 @@ uninstall_service() {
     local installed_release
     installed_release="$(service_working_directory)"
     if ! stop_and_disable_service "$installed_release"; then
-      fail "could not stop and disable the Trace ML service; local files were kept"
-    fi
-  fi
-
-  local route_removed="true"
-  route_cleanup_failure=""
-  if command -v tailscale >/dev/null 2>&1 &&
-    command -v node >/dev/null 2>&1; then
-    if ! disable_route "$https_port" "$local_target"; then
-      route_removed="false"
-      printf '%s\n' \
-        'warning: the Trace ML Tailscale route could not be removed.' >&2
+      if [[ "$route_cleanup_failure" == "conflict" ]]; then
+        printf '%s\n' \
+          'Do not remove the port-wide route; it is no longer owned by Trace ML.' >&2
+      fi
+      fail "could not remove Trace ML's route and stop the service; local files were kept"
     fi
   else
-    route_removed="false"
-    route_cleanup_failure="unavailable"
-    printf '%s\n' \
-      'warning: Tailscale is unavailable; the Trace ML route may remain.' >&2
+    route_cleanup_failure=""
+    if ! command -v tailscale >/dev/null 2>&1 ||
+      ! command -v node >/dev/null 2>&1; then
+      fail "Tailscale and Node are required to remove the retained private route"
+    fi
+    if ! disable_route "$https_port" "$local_target"; then
+      fail "the retained Trace ML route could not be removed; cleanup metadata was kept"
+    fi
   fi
 
   rm -f -- "$unit_file"
@@ -1295,22 +1365,9 @@ uninstall_service() {
     fail "could not unload the removed Trace ML service"
   systemctl --user reset-failed "$service_name" >/dev/null 2>&1 || true
   rm -rf -- "$data_dir"
-  if [[ "$route_removed" == "true" ]]; then
-    rm -f -- "$config_file"
-    rmdir "$config_dir" >/dev/null 2>&1 || true
-    printf 'Trace ML tailnet service, route, and managed releases were removed.\n'
-  else
-    printf 'Trace ML local service and managed releases were removed.\n'
-    printf '%s\n' \
-      'warning: port metadata was retained so route cleanup can be retried.' >&2
-    if [[ "$route_cleanup_failure" == "conflict" ]]; then
-      printf '%s\n' \
-        'Do not remove the port-wide route; it is no longer owned by Trace ML.' >&2
-    fi
-    printf '%s\n' \
-      'After restoring exclusive route ownership, rerun: make tailnet-uninstall' >&2
-    return 1
-  fi
+  rm -f -- "$config_file"
+  rmdir "$config_dir" >/dev/null 2>&1 || true
+  printf 'Trace ML tailnet service, route, and managed releases were removed.\n'
 }
 
 action="${1:-}"

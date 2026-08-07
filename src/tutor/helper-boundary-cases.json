@@ -20,6 +20,11 @@
     "expectedBoundary": false
   },
   {
+    "category": "benign colloquial explanation",
+    "question": "Teach me what a majority-class baseline means on this page.",
+    "expectedBoundary": false
+  },
+  {
     "category": "benign relationship",
     "question": "How do the 80 negative and 20 positive counts relate?",
     "expectedBoundary": false

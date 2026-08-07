@@ -502,7 +502,10 @@ export function assessTextResponse(
       matchedCriteria,
       missingCriteria: missing.map((criterion) => criterion.id),
       uncertainCriteria: [],
-      feedback: `${matchedCriteria.length} of ${activity.rubric.criteria.length} authored criteria matched. Now ${missing[0]?.label ?? "complete the causal link"}.`,
+      feedback:
+        `This local structure check recognized wording for ${matchedCriteria.length} of ${activity.rubric.criteria.length} authored criteria. ` +
+        `It did not recognize wording for: ${missing[0]?.label ?? "the remaining causal link"}. ` +
+        "Your idea may still be correct because this check can miss valid paraphrases; compare that relationship with the authored criterion and revise if needed.",
     };
   }
 
@@ -512,6 +515,8 @@ export function assessTextResponse(
     matchedCriteria,
     missingCriteria: missing.map((criterion) => criterion.id),
     uncertainCriteria: [],
-    feedback: `No authored criteria matched yet. ${activity.rubric.unsupportedFeedback}`,
+    feedback:
+      "This local structure check did not recognize wording for any authored criterion, and it can miss valid paraphrases. " +
+      activity.rubric.unsupportedFeedback,
   };
 }

@@ -201,6 +201,12 @@ async function runSystemctl() {
   } else if (operation === "disable") {
     state.enabled = false;
     if (process.env.TRACE_ML_TEST_FAIL_SYSTEMCTL_DISABLE === "1") {
+      if (process.env.TRACE_ML_TEST_ROUTE_ON_DISABLE_FAILURE) {
+        const routes = readJson(routesPath, {});
+        const port = process.env.TRACE_ML_TAILNET_HTTPS_PORT;
+        routes[port] = process.env.TRACE_ML_TEST_ROUTE_ON_DISABLE_FAILURE;
+        writeJson(routesPath, routes);
+      }
       writeJson(systemctlPath, state);
       process.exit(1);
     }
@@ -228,6 +234,14 @@ function serveStatus(routes) {
     config.TCP[port] = { HTTPS: true };
     config.Web["trace.tail0000.ts.net:" + port] = {
       Handlers: { "/": { Proxy: target } },
+    };
+  }
+  if (process.env.TRACE_ML_TEST_FUNNEL_TARGET) {
+    const endpoint = "trace.tail0000.ts.net:8443";
+    config.AllowFunnel = { [endpoint]: true };
+    config.TCP[8443] = { HTTPS: true };
+    config.Web[endpoint] = {
+      Handlers: { "/": { Proxy: process.env.TRACE_ML_TEST_FUNNEL_TARGET } },
     };
   }
   return config;
@@ -981,7 +995,7 @@ describeLinux("managed tailnet lifecycle", () => {
   }, 30_000);
 
   test(
-    "retains cleanup metadata when uninstall cannot remove the route",
+    "keeps the active installation when uninstall cannot remove the route",
     async () => {
       const fixture = await createFixture();
       const install = await runLifecycle("install", fixture.environment);
@@ -992,10 +1006,24 @@ describeLinux("managed tailnet lifecycle", () => {
         TRACE_ML_TEST_FAIL_ROUTE_OFF: "1",
       });
       expect(partial.code).toBe(1);
-      expect(partial.stderr).toContain("make tailnet-uninstall");
+      expect(partial.stderr).toContain(
+        "could not remove Trace ML's route and stop the service",
+      );
       expect(partial.stderr).not.toContain(
         `tailscale serve --yes --https=${fixture.httpsPort} off`,
       );
+      expect(
+        await readFixtureJson(join(fixture.state, "systemctl.json")),
+      ).toMatchObject({ active: true, enabled: true });
+      expect(await readFixtureJson(join(fixture.state, "routes.json"))).toEqual({
+        [fixture.httpsPort]: `http://127.0.0.1:${fixture.localPort}`,
+      });
+      await expect(
+        readFile(
+          join(fixture.config, "systemd/user/trace-ml-web.service"),
+          "utf8",
+        ),
+      ).resolves.toContain("Trace ML");
       expect(
         await readFile(
           join(fixture.config, "trace-ml/tailnet.conf"),
@@ -1013,6 +1041,67 @@ describeLinux("managed tailnet lifecycle", () => {
     },
     30_000,
   );
+
+  test("keeps the service active when stop cannot remove its route", async () => {
+    const fixture = await createFixture();
+    const install = await runLifecycle("install", fixture.environment);
+    expect(install.code, install.stderr).toBe(0);
+
+    const stopped = await runLifecycle("stop", {
+      ...fixture.environment,
+      TRACE_ML_TEST_FAIL_ROUTE_OFF: "1",
+    });
+    expect(stopped.code).toBe(1);
+    expect(stopped.stderr).toContain(
+      "could not remove Trace ML's route and stop the local service",
+    );
+    expect(
+      await readFixtureJson(join(fixture.state, "systemctl.json")),
+    ).toMatchObject({ active: true, enabled: true });
+    expect(await readFixtureJson(join(fixture.state, "routes.json"))).toEqual({
+      [fixture.httpsPort]: `http://127.0.0.1:${fixture.localPort}`,
+    });
+  }, 30_000);
+
+  test("does not overwrite a route claimed during service rollback", async () => {
+    const fixture = await createFixture();
+    const install = await runLifecycle("install", fixture.environment);
+    expect(install.code, install.stderr).toBe(0);
+    const conflictingTarget = "http://127.0.0.1:65530";
+
+    const stopped = await runLifecycle("stop", {
+      ...fixture.environment,
+      TRACE_ML_TEST_FAIL_SYSTEMCTL_DISABLE: "1",
+      TRACE_ML_TEST_ROUTE_ON_DISABLE_FAILURE: conflictingTarget,
+    });
+
+    expect(stopped.code).toBe(1);
+    expect(stopped.stderr).toContain(
+      "rollback did not overwrite the newly claimed route",
+    );
+    expect(
+      await readFixtureJson(join(fixture.state, "systemctl.json")),
+    ).toMatchObject({ active: true, enabled: true });
+    expect(await readFixtureJson(join(fixture.state, "routes.json"))).toEqual({
+      [fixture.httpsPort]: conflictingTarget,
+    });
+  }, 30_000);
+
+  test("reports a Funnel path to the protected backend as unhealthy", async () => {
+    const fixture = await createFixture();
+    const install = await runLifecycle("install", fixture.environment);
+    expect(install.code, install.stderr).toBe(0);
+
+    const status = await runLifecycle("status", {
+      ...fixture.environment,
+      TRACE_ML_TEST_FUNNEL_TARGET:
+        `http://127.0.0.1:${fixture.localPort}/_trace/bedrock/lesson-helper`,
+    });
+    expect(status.code).toBe(1);
+    expect(status.stderr).toContain(
+      "tailnet route is absent, shared, public, or points elsewhere",
+    );
+  }, 30_000);
 
   test(
     "refuses unrelated units and routes without destructive cleanup",

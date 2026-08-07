@@ -398,7 +398,6 @@ fn is_typoglycemic_match(candidate: &str, expected: &str) -> bool {
 fn helper_boundary_patterns() -> &'static [Regex] {
     HELPER_BOUNDARY_PATTERNS.get_or_init(|| {
         [
-            r"\b(?:teach|tutor|coach)\s+(?:me|us)\b",
             r"\b(?:teach|tutor|coach)\b.{0,35}\b(?:lesson|course|module|topic|step by step|through)\b",
             r"\bremediat(?:e|ion)\b.{0,30}\b(?:me|my|understanding|lesson|topic)\b",
             r"\b(?:act|behave|pretend|roleplay)\b.{0,30}\b(?:teacher|instructor|examiner|grader|coach|tutor|curriculum designer)\b",

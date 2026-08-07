@@ -78,7 +78,7 @@ export const foundationLessons: Lesson[] = [
       "Start from the notation itself, then trace a small Python and NumPy program, a composed slope, and a probability baseline.",
     durationMinutes: 75,
     revision: lessonRevision("prerequisite-trace"),
-    sourceIds: ["S43", "S48", "S58", "S76", "S85", "S108", "S109"],
+    sourceIds: ["S43", "S48", "S58", "S76", "S85", "S108", "S109", "S110"],
     mechanism: {
       input:
         "Named values, a short Python function, a table of numbers, plot coordinates, a composed arithmetic rule, and two class counts.",
@@ -124,7 +124,7 @@ export const foundationLessons: Lesson[] = [
       introduction: [
         "This course begins before machine-learning notation. An example is one recorded case, such as one delivery. A feature is a measured input about that case, and a target is the value or category to predict. A class is one possible category, such as positive or negative. Nothing on this page assumes that you already know Python, NumPy, matrix notation, derivatives, or probability.",
         "Python reads instructions in order. In `count = 3`, the equals sign stores the value 3 under the variable name count; it does not claim that two algebraic expressions are forever equal. Square brackets make a list, so `[1, 2, 3]` is one ordered collection. `def center(values):` begins a reusable function whose indented lines belong to it. Calling `center([1, 2, 3])` supplies a list, and `return` sends the function's result back to the caller. A `for` loop repeats an indented step for each item.",
-        "NumPy is a Python tool for arrays, which are ordered tables of numbers. `import numpy as np` gives that tool the short name `np`, and `np.array([1, 2, 3])` constructs an array. A shape reports axis lengths in order: 4 by 3 means four rows and three columns. Here each row is one example and each column is one feature. If x and prediction are one-dimensional arrays, `np.column_stack((x, prediction))` makes x column zero and prediction column one, so every row is one plotted `(x, y)` coordinate pair.",
+        "NumPy is a Python tool for arrays, which are ordered tables of numbers. `import numpy as np` gives that tool the short name `np`, and `np.array([1, 2, 3])` constructs an array. A shape reports axis lengths in order. NumPy prints the shape of a one-dimensional array with three positions as `(3,)`; the comma marks a one-item Python tuple and does not add a second axis. A 4 by 3 shape means four rows and three columns. Here each row is one example and each column is one feature. If x and prediction are one-dimensional arrays, `np.column_stack((x, prediction))` makes x column zero and prediction column one, so every row is one plotted `(x, y)` coordinate pair.",
         "Arithmetic notation can be read as instructions too. In `u = 2x + 1`, `2x` means 2 times x; calculate that product and then add 1. In `y = u^2`, the superscript 2 means multiply u by itself. A slope says how much an output changes when an input rises by one. A derivative is the slope at one particular input. For this page, accept two supplied rules: the slope of `u^2` with respect to u is `2u`, and the slope of `2x + 1` with respect to x is 2. The chain rule multiplies those adjacent slopes.",
         "A probability can begin as a count divided by a total count. If 80 of 100 target labels are negative, the observed negative fraction is 80/100 = 0.80 = 80 percent. A majority-class baseline always predicts the most frequent class, so it is correct on those 80 negative cases and wrong on the 20 positive cases. It uses no features and gives a simple comparison floor for any model evaluated on comparable cases.",
       ],
@@ -152,7 +152,7 @@ export const foundationLessons: Lesson[] = [
         {
           term: "NumPy array and shape",
           definition:
-            "An ordered table of values whose shape lists each axis length, such as four rows by three columns.",
+            "An ordered table of values whose shape lists each axis length. A one-dimensional array with three positions has shape (3,), where the comma marks a one-item tuple.",
         },
         {
           term: "Coordinate pair",
@@ -232,14 +232,14 @@ export const foundationLessons: Lesson[] = [
         "For a composition, evaluate the intermediate value and multiply the adjacent local derivatives.",
         "Derive a majority baseline from class counts before judging a model's accuracy.",
       ],
-      sourceIds: ["S43", "S48", "S58", "S76", "S85", "S108", "S109"],
+      sourceIds: ["S43", "S48", "S58", "S76", "S85", "S108", "S109", "S110"],
     },
     blocks: [
       {
         id: "00-diagnostic-contract",
         kind: "opening",
         heading: "Start here: this lesson supplies the prerequisites",
-        sourceIds: ["S43", "S58", "S108", "S109"],
+        sourceIds: ["S43", "S58", "S108", "S109", "S110"],
         body: [
           "Many introductory machine-learning courses require Python, arrays, algebra, statistics, and sometimes calculus before the first lesson. Trace does not send you elsewhere for that prerequisite: the notation guide above and the worked specimen on this page teach the exact subset used here.",
           "In the code lab, you are not expected to invent a program. Read the supplied comments and working example, predict the named values, run it, and repair one demonstrated array operation. Later lessons repeat this inspect-before-modify pattern.",
@@ -256,11 +256,11 @@ export const foundationLessons: Lesson[] = [
         id: "00-shapes",
         kind: "worked-example",
         heading: "Shapes describe which axes can interact",
-        sourceIds: ["S58"],
+        sourceIds: ["S58", "S110"],
         body: [
           "A batch X with shape 4 by 3 contains four examples and three features per example. Multiplying X by a weight vector with three entries combines the feature axis and leaves one score per example, so the result has shape 4.",
           "The operation is valid because the three feature positions align with the three weights. The batch axis is not summed away.",
-          "In NumPy, shape reports axis lengths in order. Given one-dimensional x and prediction arrays, np.column_stack((x, prediction)) makes each input a column, producing one (x, prediction) row per observation. A plotting table with shape 3 by 2 therefore has three points; transposing it to 2 by 3 swaps the meaning of rows and columns.",
+          "In NumPy, shape reports axis lengths in order. A one-dimensional array with three positions prints as (3,): the comma belongs to Python's one-item tuple notation and does not mean there is a second axis. Given one-dimensional x and prediction arrays, np.column_stack((x, prediction)) makes each input a column, producing one (x, prediction) row per observation. A plotting table with shape 3 by 2 therefore has three points; transposing it to 2 by 3 swaps the meaning of rows and columns.",
         ],
         conceptIds: ["python-state", "numpy-array", "plot-axes", "array-shape"],
         tags: [

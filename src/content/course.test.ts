@@ -102,7 +102,7 @@ const EXPECTED_LESSON_IDS = EXPECTED_MODULES.flatMap(
   (module) => module.lessonIds,
 );
 const EXPECTED_SOURCE_IDS = Array.from(
-  { length: 109 },
+  { length: 110 },
   (_, index) => `S${String(index + 1).padStart(2, "0")}`,
 );
 const CODE_LAB_LESSON_IDS = [
@@ -1436,10 +1436,10 @@ describe("fixed authored course integrity", () => {
     );
   });
 
-  it("resolves every block and direct resource against 109 audited sources", () => {
-    expect(researchRegistry.generated).toBe("2026-08-04");
-    expect(researchRegistry.totalSources).toBe(109);
-    expect(researchRegistry.sources).toHaveLength(109);
+  it("resolves every block and direct resource against 110 audited sources", () => {
+    expect(researchRegistry.generated).toBe("2026-08-07");
+    expect(researchRegistry.totalSources).toBe(110);
+    expect(researchRegistry.sources).toHaveLength(110);
     expect(researchRegistry.sources.map((source) => source.id)).toEqual(
       EXPECTED_SOURCE_IDS,
     );
@@ -1453,7 +1453,7 @@ describe("fixed authored course integrity", () => {
     researchRegistry.sources.forEach((source) => {
       expectNonBlank(source.title);
       expectNonBlank(source.publisher);
-      expect(source.verifiedAt).toMatch(/^2026-08-0[234]$/);
+      expect(source.verifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(source.verifiedAt <= COURSE_REVISION.slice(0, 10)).toBe(true);
       expect(["http:", "https:"]).toContain(new URL(source.url).protocol);
     });
@@ -1501,7 +1501,6 @@ describe("fixed authored course integrity", () => {
         expectNonBlank(resource.publisher);
         expectNonBlank(resource.placement);
         expect(resource.durationMinutes).toBeGreaterThan(0);
-        expect(resource.verifiedAt).toBe(COURSE_REVISION);
         expect(lesson.activities.map((activity) => activity.id)).toContain(
           resource.afterActivityId,
         );
@@ -1522,6 +1521,7 @@ describe("fixed authored course integrity", () => {
         );
         expect(resource.title).toBe(source.title);
         expect(resource.publisher).toBe(source.publisher);
+        expect(resource.verifiedAt).toBe(source.verifiedAt);
 
         if (
           resource.kind === "video" ||

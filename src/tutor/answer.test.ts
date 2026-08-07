@@ -256,6 +256,16 @@ describe("helper-only boundary", () => {
     expect(answer.text).toContain("I cannot teach lessons");
   });
 
+  it("answers colloquial teach-me wording when the request is page-grounded", () => {
+    const answer = answerFromLesson(
+      "Teach me what a majority-class baseline means on this page.",
+      requireLesson("prerequisite-trace"),
+    );
+
+    expect(answer.sources.length).toBeGreaterThan(0);
+    expect(answer.text).not.toContain("I cannot teach lessons");
+  });
+
   it.each([
     "Ask me: does weight or bias change slope?",
     "Is 'weight changes slope' the correct answer?",

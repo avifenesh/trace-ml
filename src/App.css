@@ -409,7 +409,7 @@
   min-width: 0;
   align-items: center;
   gap: 8px;
-  color: #777c86;
+  color: #6b707a;
   font-size: 11px;
 }
 
@@ -3184,20 +3184,34 @@
   }
 
   .compact-progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .compact-progress-label {
+    color: #515762;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .compact-progress-bars {
     display: grid;
-    width: 58px;
+    width: 42px;
     grid-auto-flow: column;
     grid-auto-columns: minmax(5px, 1fr);
     gap: 3px;
   }
 
-  .compact-progress i {
+  .compact-progress-bars i {
     height: 4px;
     border-radius: 1px;
     background: #d0d4dc;
   }
 
-  .compact-progress i.supported {
+  .compact-progress-bars i.supported {
     background: var(--green);
   }
 
@@ -3313,16 +3327,19 @@
   }
 
   .lesson-opening {
-    padding: 30px 20px 26px;
+    padding: 24px 20px 22px;
   }
 
   .lesson-sequence {
-    flex-wrap: wrap;
+    overflow-x: auto;
+    flex-wrap: nowrap;
     gap: 6px;
     font-size: 10px;
+    scrollbar-width: thin;
   }
 
   .lesson-sequence li {
+    flex: 0 0 auto;
     gap: 6px;
   }
 
@@ -3338,8 +3355,8 @@
 
   .lesson-heading {
     grid-template-columns: 1fr;
-    gap: 18px;
-    margin-top: 22px;
+    gap: 14px;
+    margin-top: 14px;
   }
 
   .lesson-heading h1 {
@@ -3356,13 +3373,21 @@
   }
 
   .mechanism-strip {
-    grid-template-columns: 1fr;
+    overflow-x: auto;
+    grid-template-columns: 140px 24px 260px 24px 180px;
     gap: 10px;
-    margin-top: 28px;
+    margin-top: 20px;
+    padding-top: 14px;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
   }
 
   .mechanism-strip svg {
-    transform: rotate(90deg);
+    transform: none;
+  }
+
+  .mechanism-strip strong {
+    font-size: 14px;
   }
 
   .lesson-teaching {

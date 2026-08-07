@@ -8,10 +8,11 @@ import type {
   ConceptId,
   EvidenceKind,
 } from "../learning/types";
+import { researchSourceForId } from "./research-sources";
 
-export const COURSE_REVISION = "2026-08-04-r2";
+export const COURSE_REVISION = "2026-08-07-r1";
 export const LESSON_REVISIONS = {
-  "prerequisite-trace": "2026-08-04-r2",
+  "prerequisite-trace": "2026-08-07-r1",
   "data-and-baseline": "2026-08-04-r1",
   "linear-model": "2026-08-04-r1",
   "loss-landscape": "2026-08-04-r1",
@@ -66,7 +67,7 @@ export function reading(
     url,
     durationMinutes,
     placement,
-    verifiedAt: COURSE_REVISION,
+    verifiedAt: researchSourceForId(sourceId).verifiedAt,
     sourceId,
   };
 }

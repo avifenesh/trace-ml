@@ -33,18 +33,6 @@ export function LessonTeachingGuide({
       onMouseEnter={() => onActive(blockId)}
       onFocus={() => onActive(blockId)}
     >
-      <aside className="lesson-outcomes" aria-label="Lesson outcomes">
-        <span>BY THE END OF THIS LESSON</span>
-        <ul>
-          {lesson.outcomes.map((outcome) => (
-            <li key={outcome.id}>
-              <ArrowRight size={12} aria-hidden="true" />
-              <span>{outcome.text}</span>
-            </li>
-          ))}
-        </ul>
-      </aside>
-
       <header className="teaching-introduction">
         <div>
           <span className="eyebrow">LEARN · BUILD THE IDEA</span>
@@ -62,6 +50,18 @@ export function LessonTeachingGuide({
           ))}
         </div>
       </header>
+
+      <aside className="lesson-outcomes" aria-label="Lesson outcomes">
+        <span>BY THE END OF THIS LESSON</span>
+        <ul>
+          {lesson.outcomes.map((outcome) => (
+            <li key={outcome.id}>
+              <ArrowRight size={12} aria-hidden="true" />
+              <span>{outcome.text}</span>
+            </li>
+          ))}
+        </ul>
+      </aside>
 
       <section
         className="teaching-vocabulary"

@@ -410,28 +410,31 @@ export function SelfExplanationGate({
             )}
             <p>{assessment.feedback}</p>
             <ul className="structure-criteria">
-              {activity.rubric.criteria.map((criterion) => (
-                <li
-                  aria-label={`${
-                    matchedCriteria.has(criterion.id)
-                      ? "Supported"
-                      : uncertainCriteria.has(criterion.id)
-                        ? "Needs clarification"
-                        : "Needs revision"
-                  }: ${criterion.label}`}
-                  className={
-                    matchedCriteria.has(criterion.id)
-                      ? "mentioned"
-                      : uncertainCriteria.has(criterion.id)
-                        ? "uncertain"
-                        : "missing"
-                  }
-                  key={criterion.id}
-                >
-                  <span aria-hidden="true" />
-                  {criterion.label}
-                </li>
-              ))}
+              {activity.rubric.criteria.map((criterion) => {
+                const criterionStatus = matchedCriteria.has(criterion.id)
+                  ? "Supported"
+                  : uncertainCriteria.has(criterion.id)
+                    ? "Needs clarification"
+                    : assessment.assessmentMode === "structure"
+                      ? "Wording not recognized"
+                      : "Needs revision";
+                return (
+                  <li
+                    aria-label={`${criterionStatus}: ${criterion.label}`}
+                    className={
+                      matchedCriteria.has(criterion.id)
+                        ? "mentioned"
+                        : uncertainCriteria.has(criterion.id)
+                          ? "uncertain"
+                          : "missing"
+                    }
+                    key={criterion.id}
+                  >
+                    <span aria-hidden="true" />
+                    {criterion.label}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

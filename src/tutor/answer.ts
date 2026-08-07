@@ -78,7 +78,6 @@ const questionCases: QuestionCase[] = [
 ];
 
 const helperBoundaryPatterns = [
-  /\b(?:teach|tutor|coach)\s+(?:me|us)\b/,
   /\b(?:teach|tutor|coach)\b.{0,35}\b(?:lesson|course|module|topic|step by step|through)\b/,
   /\bremediat(?:e|ion)\b.{0,30}\b(?:me|my|understanding|lesson|topic)\b/,
   /\b(?:act|behave|pretend|roleplay)\b.{0,30}\b(?:teacher|instructor|examiner|grader|coach|tutor|curriculum designer)\b/,

@@ -352,6 +352,9 @@ describe("SelfExplanationGate semantic review", () => {
     expect(
       screen.getByText("FORMATIVE STRUCTURE CHECK · NOT SEMANTIC GRADING"),
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByLabelText(/^Wording not recognized:/i),
+    ).not.toHaveLength(0);
     expect(onStateChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: "text-response",

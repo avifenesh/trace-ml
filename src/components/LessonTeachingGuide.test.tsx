@@ -73,9 +73,10 @@ describe("LessonTeachingGuide", () => {
       lesson.teaching.summary.length,
     );
     expect(
-      outcomes.compareDocumentPosition(
-        screen.getByRole("heading", { name: lesson.teaching.title }),
-      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+      screen.getByRole("heading", { name: lesson.teaching.title })
+        .compareDocumentPosition(
+          outcomes,
+        ) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
