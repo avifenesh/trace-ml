@@ -172,10 +172,14 @@ export function inspectTailnetBedrockRoute(config, port, expectedTarget) {
 }
 
 async function main() {
-  const [port, expectedTarget] = process.argv.slice(2);
+  const arguments_ = process.argv.slice(2);
+  const bedrockAware = arguments_[0] === "--bedrock";
+  const [port, expectedTarget] = bedrockAware
+    ? arguments_.slice(1)
+    : arguments_;
   if (!port || !expectedTarget) {
     throw new Error(
-      "Usage: inspect-tailnet-route.mjs <port> <expected-target>",
+      "Usage: inspect-tailnet-route.mjs [--bedrock] <port> <expected-target>",
     );
   }
 
@@ -183,7 +187,11 @@ async function main() {
   process.stdin.setEncoding("utf8");
   for await (const chunk of process.stdin) input += chunk;
   const config = JSON.parse(input || "{}");
-  process.stdout.write(inspectTailnetRoute(config, port, expectedTarget));
+  process.stdout.write(
+    bedrockAware
+      ? inspectTailnetBedrockRoute(config, port, expectedTarget)
+      : inspectTailnetRoute(config, port, expectedTarget),
+  );
 }
 
 const invokedPath = process.argv[1]

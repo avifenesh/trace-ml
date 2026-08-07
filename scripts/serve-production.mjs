@@ -187,17 +187,27 @@ export function createTailnetRouteGuard({
   socketPath = null,
   readStatus = readTailnetStatus,
 }) {
-  return async () => {
-    try {
-      const rawStatus = await readStatus(command, socketPath);
-      const config =
-        typeof rawStatus === "string" ? JSON.parse(rawStatus) : rawStatus;
-      return (
-        inspectTailnetBedrockRoute(config, httpsPort, localTarget) === "owned"
-      );
-    } catch {
-      return false;
-    }
+  let inFlight = null;
+  return () => {
+    if (inFlight) return inFlight;
+
+    const attempt = (async () => {
+      try {
+        const rawStatus = await readStatus(command, socketPath);
+        const config =
+          typeof rawStatus === "string" ? JSON.parse(rawStatus) : rawStatus;
+        return (
+          inspectTailnetBedrockRoute(config, httpsPort, localTarget) === "owned"
+        );
+      } catch {
+        return false;
+      }
+    })();
+    inFlight = attempt;
+    void attempt.finally(() => {
+      if (inFlight === attempt) inFlight = null;
+    });
+    return attempt;
   };
 }
 
@@ -347,6 +357,9 @@ async function handleBedrockRoute(
   request.once("aborted", cancelOnClose);
   request.socket.once("close", cancelOnClose);
   try {
+    const body = await readJsonBody(request);
+    if (clientClosed) return;
+
     if (!tailnetGuard || !(await tailnetGuard())) {
       if (clientClosed) return;
       sendJson(response, 503, {
@@ -356,9 +369,7 @@ async function handleBedrockRoute(
     }
     if (clientClosed) return;
 
-    const body = await readJsonBody(request);
     const payload = bridgePayload(route, body);
-    if (clientClosed) return;
     if (
       route.cancelAction &&
       typeof payload.requestId === "string" &&

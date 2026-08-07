@@ -417,10 +417,11 @@ describe("production static server", () => {
   test("rejects cross-origin, malformed, and unconfigured Bedrock requests", async () => {
     const bedrockBridge = { request: vi.fn() };
     const logger = { error: vi.fn() };
+    const tailnetGuard = vi.fn(async () => true);
     const { baseUrl } = await startFixtureServer({
       bedrockBridge,
       logger,
-      tailnetGuard: async () => true,
+      tailnetGuard,
     });
     const endpoint = `${baseUrl}/_trace/bedrock/prose-assessment`;
     const funnel = await fetch(endpoint, {
@@ -476,6 +477,7 @@ describe("production static server", () => {
     expect(genericPayload.status).toBe(400);
     expect(unavailable.status).toBe(503);
     expect(bedrockBridge.request).not.toHaveBeenCalled();
+    expect(tailnetGuard).toHaveBeenCalledOnce();
     expect(logger.error).not.toHaveBeenCalled();
   });
 
@@ -537,6 +539,48 @@ describe("production static server", () => {
       "/snap/tailscale/current/bin/tailscale",
       "/var/snap/tailscale/common/socket/tailscaled.sock",
     );
+  });
+
+  test("shares one live route inspection across simultaneous requests", async () => {
+    let releaseStatus;
+    const ownedStatus = {
+      TCP: { 9443: { HTTPS: true } },
+      Web: {
+        "trace.tail0000.ts.net:9443": {
+          Handlers: {
+            "/": { Proxy: "http://127.0.0.1:5600" },
+          },
+        },
+      },
+    };
+    const readStatus = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          releaseStatus = resolve;
+        }),
+    );
+    const guard = createTailnetRouteGuard({
+      command: "/unused/tailscale",
+      httpsPort: 9443,
+      localTarget: "http://127.0.0.1:5600",
+      readStatus,
+    });
+
+    const first = guard();
+    const second = guard();
+    const third = guard();
+    expect(readStatus).toHaveBeenCalledOnce();
+
+    releaseStatus(ownedStatus);
+    await expect(Promise.all([first, second, third])).resolves.toEqual([
+      true,
+      true,
+      true,
+    ]);
+
+    readStatus.mockResolvedValueOnce(ownedStatus);
+    await guard();
+    expect(readStatus).toHaveBeenCalledTimes(2);
   });
 
   test("does not start Bedrock work after a disconnect during route verification", async () => {
