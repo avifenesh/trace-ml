@@ -298,9 +298,20 @@ function writeBoundedRecord(
   return writeLocalStorage(key, JSON.stringify(fallback)) ? fallback : null;
 }
 
+let fallbackMessageSequence = 0;
+
 function messageId() {
-  const value = globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36);
-  return `message-${value}`;
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return `message-${uuid}`;
+
+  fallbackMessageSequence += 1;
+  const entropy = Math.random().toString(36).slice(2) || "0";
+  return [
+    "message",
+    Date.now().toString(36),
+    entropy,
+    fallbackMessageSequence.toString(36),
+  ].join("-");
 }
 
 function objectRecord(value: unknown): Record<string, unknown> | null {
