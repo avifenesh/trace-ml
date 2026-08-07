@@ -22,5 +22,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   installed-app smoke verification for Linux.
 - Portable `make` setup, build, install, and start commands for Linux and
   macOS, with Apple Silicon and Intel macOS CI coverage.
+- A private Tailnet web deployment with live Serve/Funnel verification and the
+  same bounded Bedrock helper and prose-review validation used by the desktop
+  app.
 
 [Unreleased]: https://github.com/avifenesh/trace-ml/commits/main

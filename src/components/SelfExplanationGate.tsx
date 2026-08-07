@@ -150,7 +150,8 @@ export function SelfExplanationGate({
 
     const currentRequest = [
       activity.id,
-      Date.now().toString(36),
+      globalThis.crypto?.randomUUID?.() ??
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
       String(++requestSequence.current),
     ].join("-");
     pendingRequestRef.current = currentRequest;

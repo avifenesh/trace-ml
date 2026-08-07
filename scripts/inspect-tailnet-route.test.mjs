@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { inspectTailnetRoute } from "./inspect-tailnet-route.mjs";
+import {
+  inspectTailnetBedrockRoute,
+  inspectTailnetRoute,
+} from "./inspect-tailnet-route.mjs";
 
 const endpoint = "trace.tail0000.ts.net:9443";
 const target = "http://127.0.0.1:5600";
@@ -89,6 +92,97 @@ describe("Tailscale Serve route ownership", () => {
 
     expect(inspectTailnetRoute(config, 9443, target)).toBe(
       "conflict:foreground Serve session uses port 9443 (sessionB)",
+    );
+  });
+
+  test("allows unrelated Funnel routes for other local services", () => {
+    const config = ownedConfig();
+    const funnelEndpoint = "trace.tail0000.ts.net:8443";
+    config.AllowFunnel = { [funnelEndpoint]: true };
+    config.TCP[8443] = { HTTPS: true };
+    config.Web[funnelEndpoint] = {
+      Handlers: {
+        "/github/webhook": { Proxy: "http://127.0.0.1:8787/github/webhook" },
+      },
+    };
+
+    expect(inspectTailnetBedrockRoute(config, 9443, target)).toBe("owned");
+  });
+
+  test("rejects HTTP Funnel routes that reach the Trace ML backend", () => {
+    const config = ownedConfig();
+    const funnelEndpoint = "trace.tail0000.ts.net:8443";
+    config.AllowFunnel = { [funnelEndpoint]: true };
+    config.TCP[8443] = { HTTPS: true };
+    config.Web[funnelEndpoint] = {
+      Handlers: {
+        "/": { Proxy: `${target}/_trace/bedrock/lesson-helper` },
+      },
+    };
+
+    expect(inspectTailnetBedrockRoute(config, 9443, target)).toMatch(
+      /^conflict:Funnel can reach/,
+    );
+  });
+
+  test("rejects TLS-terminated TCP Funnel routes to Trace ML", () => {
+    const config = ownedConfig();
+    const funnelEndpoint = "trace.tail0000.ts.net:443";
+    config.AllowFunnel = { [funnelEndpoint]: true };
+    config.TCP[443] = {
+      TCPForward: "localhost:5600",
+      TerminateTLS: "trace.tail0000.ts.net",
+    };
+
+    expect(inspectTailnetBedrockRoute(config, 9443, target)).toMatch(
+      /^conflict:Funnel can reach/,
+    );
+  });
+
+  test("rejects every Funnel target on the protected backend port", () => {
+    for (const proxyTarget of [
+      "http://127.0.0.2:5600",
+      "http://[::1]:5600",
+    ]) {
+      const config = ownedConfig();
+      const funnelEndpoint = "trace.tail0000.ts.net:8443";
+      config.AllowFunnel = { [funnelEndpoint]: true };
+      config.TCP[8443] = { HTTPS: true };
+      config.Web[funnelEndpoint] = {
+        Handlers: {
+          "/": { Proxy: proxyTarget },
+        },
+      };
+
+      expect(inspectTailnetBedrockRoute(config, 9443, target)).toMatch(
+        /^conflict:Funnel can reach/,
+      );
+    }
+  });
+
+  test("combines background Funnel permission with foreground TCP handlers", () => {
+    const config = ownedConfig();
+    const funnelEndpoint = "trace.tail0000.ts.net:8443";
+    config.AllowFunnel = { [funnelEndpoint]: true };
+    config.TCP[8443] = { HTTPS: true };
+    config.Web[funnelEndpoint] = {
+      Handlers: {
+        "/github/webhook": { Proxy: "http://127.0.0.1:8787/github/webhook" },
+      },
+    };
+    config.Foreground = {
+      sessionC: {
+        TCP: {
+          8443: {
+            TCPForward: "localhost:5600",
+            TerminateTLS: "trace.tail0000.ts.net",
+          },
+        },
+      },
+    };
+
+    expect(inspectTailnetBedrockRoute(config, 9443, target)).toMatch(
+      /^conflict:Funnel can reach/,
     );
   });
 });

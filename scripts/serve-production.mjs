@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
+import { execFile, spawn } from "node:child_process";
 import { createReadStream } from "node:fs";
 import { realpath, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
+import { createInterface } from "node:readline";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { pipeline } from "node:stream/promises";
+import { inspectTailnetBedrockRoute } from "./inspect-tailnet-route.mjs";
 
 const DEFAULT_ROOT = resolve(
   fileURLToPath(new URL("../dist", import.meta.url)),
@@ -52,6 +55,64 @@ const FIXED_ASSET_PATHS = new Set([
   "/trace-ml-512.png",
   "/trace-ml-maskable-512.png",
 ]);
+const MAX_BEDROCK_REQUEST_BYTES = 128 * 1_024;
+const MAX_TAILNET_STATUS_BYTES = 1_024 * 1_024;
+const MAX_PENDING_BRIDGE_REQUESTS = 10;
+const MAX_PENDING_NON_CANCELLATIONS = 8;
+const BRIDGE_CANCELLATION_ACTIONS = new Set([
+  "cancelLessonAnswer",
+  "cancelProseAssessment",
+]);
+const BRIDGE_TIMEOUTS = Object.freeze({
+  ping: 5_000,
+  lessonHelperReady: 30_000,
+  answerLessonQuestion: 100_000,
+  cancelLessonAnswer: 5_000,
+  proseAssessmentReady: 30_000,
+  assessProse: 190_000,
+  cancelProseAssessment: 5_000,
+});
+const BEDROCK_ROUTES = new Map([
+  [
+    "/_trace/bedrock/lesson-helper/readiness",
+    { action: "lessonHelperReady", shape: "empty" },
+  ],
+  [
+    "/_trace/bedrock/lesson-helper",
+    {
+      action: "answerLessonQuestion",
+      cancelAction: "cancelLessonAnswer",
+      shape: "request",
+    },
+  ],
+  [
+    "/_trace/bedrock/lesson-helper/cancel",
+    { action: "cancelLessonAnswer", shape: "cancellation" },
+  ],
+  [
+    "/_trace/bedrock/prose-assessment/readiness",
+    { action: "proseAssessmentReady", shape: "empty" },
+  ],
+  [
+    "/_trace/bedrock/prose-assessment",
+    {
+      action: "assessProse",
+      cancelAction: "cancelProseAssessment",
+      shape: "request",
+    },
+  ],
+  [
+    "/_trace/bedrock/prose-assessment/cancel",
+    { action: "cancelProseAssessment", shape: "cancellation" },
+  ],
+]);
+
+class HttpRequestError extends Error {
+  constructor(statusCode, message) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
 
 function isWithin(root, candidate) {
   return candidate === root || candidate.startsWith(`${root}${sep}`);
@@ -83,6 +144,389 @@ function sendText(response, statusCode, message) {
     }),
   );
   response.end(body);
+}
+
+function sendJson(response, statusCode, value) {
+  const body = `${JSON.stringify(value)}\n`;
+  response.writeHead(
+    statusCode,
+    baseHeaders({
+      "Cache-Control": "no-store",
+      "Content-Length": Buffer.byteLength(body),
+      "Content-Type": "application/json; charset=utf-8",
+    }),
+  );
+  response.end(body);
+}
+
+function readTailnetStatus(command) {
+  return new Promise((resolveStatus, rejectStatus) => {
+    execFile(
+      command,
+      ["serve", "status", "--json"],
+      {
+        encoding: "utf8",
+        maxBuffer: MAX_TAILNET_STATUS_BYTES,
+        timeout: 3_000,
+      },
+      (error, stdout) => {
+        if (error) rejectStatus(error);
+        else resolveStatus(stdout);
+      },
+    );
+  });
+}
+
+export function createTailnetRouteGuard({
+  command,
+  httpsPort,
+  localTarget,
+  readStatus = readTailnetStatus,
+}) {
+  return async () => {
+    try {
+      const rawStatus = await readStatus(command);
+      const config =
+        typeof rawStatus === "string" ? JSON.parse(rawStatus) : rawStatus;
+      return (
+        inspectTailnetBedrockRoute(config, httpsPort, localTarget) === "owned"
+      );
+    } catch {
+      return false;
+    }
+  };
+}
+
+function sameOriginRequest(request) {
+  const host = request.headers.host;
+  const origin = request.headers.origin;
+  if (
+    typeof host !== "string" ||
+    typeof origin !== "string" ||
+    (request.headers["sec-fetch-site"] &&
+      request.headers["sec-fetch-site"] !== "same-origin")
+  ) {
+    return false;
+  }
+  try {
+    const parsed = new URL(origin);
+    if (parsed.host !== host) return false;
+    return (
+      parsed.protocol === "https:" ||
+      (parsed.protocol === "http:" && LOOPBACK_HOSTS.has(parsed.hostname))
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function readJsonBody(request) {
+  const contentType = request.headers["content-type"]
+    ?.split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  if (contentType !== "application/json") {
+    throw new HttpRequestError(415, "Content-Type must be application/json.");
+  }
+  const contentEncoding = request.headers["content-encoding"];
+  if (contentEncoding && contentEncoding !== "identity") {
+    throw new HttpRequestError(415, "Encoded request bodies are not supported.");
+  }
+  const declaredLength = Number(request.headers["content-length"]);
+  if (
+    Number.isFinite(declaredLength) &&
+    declaredLength > MAX_BEDROCK_REQUEST_BYTES
+  ) {
+    request.resume();
+    throw new HttpRequestError(413, "Request body is too large.");
+  }
+
+  const chunks = [];
+  let length = 0;
+  for await (const chunk of request) {
+    length += chunk.length;
+    if (length > MAX_BEDROCK_REQUEST_BYTES) {
+      request.resume();
+      throw new HttpRequestError(413, "Request body is too large.");
+    }
+    chunks.push(chunk);
+  }
+  let value;
+  try {
+    value = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    throw new HttpRequestError(400, "Request body must be valid JSON.");
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new HttpRequestError(400, "Request body must be a JSON object.");
+  }
+  return value;
+}
+
+function bridgePayload(route, body) {
+  const keys = Object.keys(body);
+  if (route.shape === "empty") {
+    if (keys.length !== 0) {
+      throw new HttpRequestError(400, "Readiness requests must be empty.");
+    }
+    return {};
+  }
+  if (route.shape === "request") {
+    if (
+      keys.length !== 1 ||
+      keys[0] !== "request" ||
+      !body.request ||
+      typeof body.request !== "object" ||
+      Array.isArray(body.request)
+    ) {
+      throw new HttpRequestError(400, "Invalid Bedrock course request.");
+    }
+    return body.request;
+  }
+  if (
+    keys.length !== 1 ||
+    keys[0] !== "requestId" ||
+    typeof body.requestId !== "string"
+  ) {
+    throw new HttpRequestError(400, "Invalid Bedrock cancellation request.");
+  }
+  return body;
+}
+
+async function handleBedrockRoute(
+  request,
+  response,
+  route,
+  bedrockBridge,
+  tailnetGuard,
+  logger,
+) {
+  if (request.headers["tailscale-funnel-request"] !== undefined) {
+    sendJson(response, 403, { error: "Tailnet-only request required." });
+    return;
+  }
+  if (request.method !== "POST") {
+    response.setHeader("Allow", "POST");
+    sendText(response, 405, "Method not allowed");
+    return;
+  }
+  if (!sameOriginRequest(request)) {
+    sendJson(response, 403, { error: "Same-origin request required." });
+    return;
+  }
+  if (!bedrockBridge) {
+    sendJson(response, 503, {
+      error: "Bedrock is not configured for this web release.",
+    });
+    return;
+  }
+  let bridgeStarted = false;
+  let completed = false;
+  let clientClosed = false;
+  let cancelPayload = null;
+  const cancelOnClose = () => {
+    if (clientClosed) return;
+    clientClosed = true;
+    if (!bridgeStarted || completed || !route.cancelAction || !cancelPayload) {
+      return;
+    }
+    void bedrockBridge
+      .request(route.cancelAction, cancelPayload)
+      .catch((error) => {
+        logger.error(
+          `Trace ML Bedrock ${route.cancelAction} failed after disconnect: ` +
+            `${error instanceof Error ? error.message : "unknown error"}`,
+        );
+      });
+  };
+  response.once("close", cancelOnClose);
+  request.once("aborted", cancelOnClose);
+  request.socket.once("close", cancelOnClose);
+  try {
+    if (!tailnetGuard || !(await tailnetGuard())) {
+      if (clientClosed) return;
+      sendJson(response, 503, {
+        error: "Trace ML's private Tailnet route could not be verified.",
+      });
+      return;
+    }
+    if (clientClosed) return;
+
+    const body = await readJsonBody(request);
+    const payload = bridgePayload(route, body);
+    if (clientClosed) return;
+    if (
+      route.cancelAction &&
+      typeof payload.requestId === "string" &&
+      payload.requestId.trim()
+    ) {
+      cancelPayload = { requestId: payload.requestId };
+    }
+    bridgeStarted = true;
+    const result = await bedrockBridge.request(
+      route.action,
+      payload,
+    );
+    if (clientClosed) return;
+    completed = true;
+    sendJson(response, 200, { result });
+  } catch (error) {
+    if (clientClosed) return;
+    completed = true;
+    if (error instanceof HttpRequestError) {
+      sendJson(response, error.statusCode, { error: error.message });
+      return;
+    }
+    const message =
+      error instanceof Error && error.message.trim()
+        ? Array.from(error.message).slice(0, 500).join("")
+        : "The Bedrock service is unavailable.";
+    logger.error(`Trace ML Bedrock ${route.action} failed: ${message}`);
+    sendJson(response, 503, { error: message });
+  } finally {
+    response.off("close", cancelOnClose);
+    request.off("aborted", cancelOnClose);
+    request.socket.off("close", cancelOnClose);
+  }
+}
+
+export function createBedrockBridge(
+  executablePath,
+  {
+    onFailure = () => {},
+    timeouts = BRIDGE_TIMEOUTS,
+  } = {},
+) {
+  const child = spawn(executablePath, [], {
+    stdio: ["pipe", "pipe", "inherit"],
+  });
+  const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
+  const pending = new Map();
+  let sequence = 0;
+  let failure = null;
+  let closing = false;
+
+  const stopChild = (signal) => {
+    lines.close();
+    child.stdin.destroy();
+    child.stdout.destroy();
+    if (child.exitCode === null && child.signalCode === null) {
+      try {
+        child.kill(signal);
+      } catch {
+        // The process already ended between the status check and kill.
+      }
+    }
+  };
+
+  const rejectPending = (error) => {
+    for (const request of pending.values()) {
+      clearTimeout(request.timer);
+      request.reject(error);
+    }
+    pending.clear();
+  };
+
+  const fail = (error) => {
+    if (failure || closing) return;
+    failure = error instanceof Error
+      ? error
+      : new Error("The Bedrock bridge stopped.");
+    rejectPending(failure);
+    stopChild("SIGKILL");
+    onFailure(failure);
+  };
+
+  lines.on("line", (line) => {
+    let response;
+    try {
+      response = JSON.parse(line);
+    } catch {
+      fail(new Error("The Bedrock bridge returned invalid JSON."));
+      return;
+    }
+    const request = pending.get(response?.id);
+    if (!request) {
+      fail(new Error("The Bedrock bridge returned an unknown response."));
+      return;
+    }
+    pending.delete(response.id);
+    clearTimeout(request.timer);
+    if (response.ok === true && "result" in response) {
+      request.resolve(response.result);
+    } else if (
+      response.ok === false &&
+      typeof response.error === "string" &&
+      response.error.trim()
+    ) {
+      request.reject(new Error(response.error));
+    } else {
+      const error = new Error("The Bedrock bridge returned an invalid result.");
+      request.reject(error);
+      fail(error);
+    }
+  });
+  child.stdin.on("error", fail);
+  child.stdout.on("error", fail);
+  child.once("error", fail);
+  child.once("exit", (code, signal) => {
+    if (!closing) {
+      fail(
+        new Error(
+          `The Bedrock bridge exited unexpectedly (${signal ?? code ?? "unknown"}).`,
+        ),
+      );
+    }
+  });
+
+  return {
+    request(action, payload) {
+      if (failure) return Promise.reject(failure);
+      if (closing) {
+        return Promise.reject(new Error("The Bedrock bridge is closing."));
+      }
+      const pendingNonCancellations = Array.from(pending.values()).filter(
+        (request) => !BRIDGE_CANCELLATION_ACTIONS.has(request.action),
+      ).length;
+      if (
+        pending.size >= MAX_PENDING_BRIDGE_REQUESTS ||
+        (!BRIDGE_CANCELLATION_ACTIONS.has(action) &&
+          pendingNonCancellations >= MAX_PENDING_NON_CANCELLATIONS)
+      ) {
+        return Promise.reject(new Error("The Bedrock bridge is busy."));
+      }
+      const id = `bridge-${++sequence}`;
+      return new Promise((resolveRequest, rejectRequest) => {
+        const timeoutMs = timeouts[action] ?? 30_000;
+        const timer = setTimeout(() => {
+          fail(new Error(`The Bedrock bridge timed out during ${action}.`));
+        }, timeoutMs);
+        pending.set(id, {
+          resolve: resolveRequest,
+          reject: rejectRequest,
+          action,
+          timer,
+        });
+        try {
+          child.stdin.write(
+            `${JSON.stringify({ id, action, payload })}\n`,
+            (error) => {
+              if (error) fail(error);
+            },
+          );
+        } catch (error) {
+          fail(error);
+        }
+      });
+    },
+    close() {
+      if (closing) return;
+      closing = true;
+      const error = new Error("The Bedrock bridge is closing.");
+      rejectPending(error);
+      stopChild("SIGTERM");
+    },
+  };
 }
 
 async function locateFile(root, rootReal, pathname, acceptsHtml) {
@@ -389,19 +833,36 @@ async function serveFile(request, response, located) {
   }
 }
 
-export function createTraceServer({ root = DEFAULT_ROOT, logger = console } = {}) {
+export function createTraceServer({
+  root = DEFAULT_ROOT,
+  logger = console,
+  bedrockBridge = null,
+  tailnetGuard = null,
+} = {}) {
   const rootPath = resolve(root);
   const rootRealPromise = realpath(rootPath);
 
   return createServer(async (request, response) => {
     try {
+      const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+      const bedrockRoute = BEDROCK_ROUTES.get(requestUrl.pathname);
+      if (bedrockRoute) {
+        await handleBedrockRoute(
+          request,
+          response,
+          bedrockRoute,
+          bedrockBridge,
+          tailnetGuard,
+          logger,
+        );
+        return;
+      }
       if (request.method !== "GET" && request.method !== "HEAD") {
         response.setHeader("Allow", "GET, HEAD");
         sendText(response, 405, "Method not allowed");
         return;
       }
 
-      const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
       if (requestUrl.pathname === "/_trace/health") {
         const body = '{"service":"trace-ml","status":"ok"}\n';
         response.writeHead(
@@ -453,6 +914,32 @@ export function createTraceServer({ root = DEFAULT_ROOT, logger = console } = {}
   });
 }
 
+export async function listenTraceServer(
+  server,
+  port,
+  host,
+  bedrockBridge = null,
+) {
+  try {
+    await new Promise((resolveListen, rejectListen) => {
+      const onError = (error) => {
+        server.off("listening", onListening);
+        rejectListen(error);
+      };
+      const onListening = () => {
+        server.off("error", onError);
+        resolveListen();
+      };
+      server.once("error", onError);
+      server.once("listening", onListening);
+      server.listen(port, host);
+    });
+  } catch (error) {
+    bedrockBridge?.close();
+    throw error;
+  }
+}
+
 export function parsePort(value) {
   if (!/^[1-9][0-9]{0,4}$/.test(value)) {
     throw new Error(`Invalid port: ${value}`);
@@ -466,9 +953,12 @@ export function parsePort(value) {
 
 function parseArguments(arguments_) {
   const options = {
+    bedrockBridge: null,
     host: "127.0.0.1",
     port: 5600,
     root: DEFAULT_ROOT,
+    tailnetHttpsPort: null,
+    tailscaleCommand: null,
   };
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
@@ -480,11 +970,31 @@ function parseArguments(arguments_) {
     if (argument === "--host") options.host = value;
     else if (argument === "--port") options.port = parsePort(value);
     else if (argument === "--root") options.root = resolve(value);
-    else throw new Error(`Unknown argument: ${argument}`);
+    else if (argument === "--bedrock-bridge") {
+      options.bedrockBridge = resolve(value);
+    } else if (argument === "--tailnet-https-port") {
+      options.tailnetHttpsPort = parsePort(value);
+    } else if (argument === "--tailscale-command") {
+      options.tailscaleCommand = resolve(value);
+    } else throw new Error(`Unknown argument: ${argument}`);
     index += 1;
   }
   if (!LOOPBACK_HOSTS.has(options.host)) {
     throw new Error("Production server host must be a loopback address");
+  }
+  if (
+    options.bedrockBridge &&
+    (!options.tailnetHttpsPort || !options.tailscaleCommand)
+  ) {
+    throw new Error(
+      "The Bedrock bridge requires a live Tailnet route guard.",
+    );
+  }
+  if (
+    !options.bedrockBridge &&
+    (options.tailnetHttpsPort || options.tailscaleCommand)
+  ) {
+    throw new Error("Tailnet route guard options require the Bedrock bridge.");
   }
   return options;
 }
@@ -494,7 +1004,9 @@ async function main() {
   if (options.help) {
     process.stdout.write(
       "Usage: node scripts/serve-production.mjs " +
-        "[--host 127.0.0.1] [--port 5600] [--root dist]\n",
+        "[--host 127.0.0.1] [--port 5600] [--root dist] " +
+        "[--bedrock-bridge path --tailscale-command path " +
+        "--tailnet-https-port 9443]\n",
     );
     return;
   }
@@ -504,16 +1016,54 @@ async function main() {
     throw new Error(`Missing production entry point: ${options.root}/index.html`);
   }
 
-  const server = createTraceServer({ root: options.root });
-  await new Promise((resolveListen, rejectListen) => {
-    server.once("error", rejectListen);
-    server.listen(options.port, options.host, resolveListen);
+  let stopping = false;
+  let server = null;
+  const localHost = options.host.includes(":")
+    ? `[${options.host}]`
+    : options.host;
+  const tailnetGuard = options.bedrockBridge
+    ? createTailnetRouteGuard({
+        command: options.tailscaleCommand,
+        httpsPort: options.tailnetHttpsPort,
+        localTarget: `http://${localHost}:${options.port}`,
+      })
+    : null;
+  const bedrockBridge = options.bedrockBridge
+    ? createBedrockBridge(options.bedrockBridge, {
+        onFailure(error) {
+          if (stopping) return;
+          console.error(`error: ${error.message}`);
+          process.exitCode = 1;
+          server?.close();
+        },
+      })
+    : null;
+  if (bedrockBridge) {
+    try {
+      await bedrockBridge.request("ping", {});
+    } catch (error) {
+      bedrockBridge.close();
+      throw error;
+    }
+  }
+  server = createTraceServer({
+    root: options.root,
+    bedrockBridge,
+    tailnetGuard,
   });
+  await listenTraceServer(
+    server,
+    options.port,
+    options.host,
+    bedrockBridge,
+  );
   process.stdout.write(
     `Trace ML production server listening at http://${options.host}:${options.port}\n`,
   );
 
   const stop = () => {
+    stopping = true;
+    bedrockBridge?.close();
     server.close((error) => {
       if (error) {
         console.error(error);

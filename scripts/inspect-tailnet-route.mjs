@@ -7,6 +7,83 @@ function endpointUsesPort(endpoint, port) {
   return endpoint.endsWith(`:${port}`);
 }
 
+function effectivePort(url) {
+  if (url.port) return url.port;
+  if (url.protocol === "http:") return "80";
+  if (url.protocol === "https:") return "443";
+  return "";
+}
+
+function targetsProtectedBackendPort(value, expectedTarget, defaultProtocol) {
+  if (typeof value !== "string" || value.startsWith("unix:")) return false;
+  try {
+    const actual = new URL(
+      value.includes("://") ? value : `${defaultProtocol}://${value}`,
+    );
+    const expected = new URL(expectedTarget);
+    return effectivePort(actual) === effectivePort(expected);
+  } catch {
+    return false;
+  }
+}
+
+function endpointPort(endpoint) {
+  try {
+    return effectivePort(new URL(`https://${endpoint}`));
+  } catch {
+    return "";
+  }
+}
+
+function configScopes(config) {
+  const scopes = [config];
+  for (const foreground of Object.values(config?.Foreground ?? {})) {
+    scopes.push(...configScopes(foreground));
+  }
+  return scopes;
+}
+
+function funnelReachesTarget(config, expectedTarget) {
+  const scopes = configScopes(config);
+  const enabledEndpoints = new Set();
+  for (const scope of scopes) {
+    for (const [endpoint, enabled] of Object.entries(
+      scope?.AllowFunnel ?? {},
+    )) {
+      if (enabled === true) enabledEndpoints.add(endpoint);
+    }
+  }
+
+  for (const endpoint of enabledEndpoints) {
+    const port = endpointPort(endpoint);
+    if (!port) return true;
+
+    for (const scope of scopes) {
+      const handlers = scope?.Web?.[endpoint]?.Handlers;
+      if (
+        handlers &&
+        typeof handlers === "object" &&
+        Object.values(handlers).some((handler) =>
+          targetsProtectedBackendPort(handler?.Proxy, expectedTarget, "http")
+        )
+      ) {
+        return true;
+      }
+      if (
+        targetsProtectedBackendPort(
+          scope?.TCP?.[port]?.TCPForward,
+          expectedTarget,
+          "tcp",
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function usesPort(config, port) {
   return (
     Boolean(config?.TCP?.[port]) ||
@@ -81,6 +158,15 @@ export function inspectTailnetRoute(config, port, expectedTarget) {
     rootKeys[0] !== "Proxy"
   ) {
     return `conflict:${endpoint} does not exclusively proxy ${expectedTarget}`;
+  }
+  return "owned";
+}
+
+export function inspectTailnetBedrockRoute(config, port, expectedTarget) {
+  const route = inspectTailnetRoute(config, port, expectedTarget);
+  if (route !== "owned") return route;
+  if (funnelReachesTarget(config, expectedTarget)) {
+    return "conflict:Funnel can reach the Trace ML backend";
   }
   return "owned";
 }
