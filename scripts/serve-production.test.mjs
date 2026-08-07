@@ -511,6 +511,50 @@ describe("production static server", () => {
     await expect(malformedStatusGuard()).resolves.toBe(false);
   });
 
+  test("does not start Bedrock work after a disconnect during route verification", async () => {
+    let releaseGuard;
+    let markGuardStarted;
+    const guardStarted = new Promise((resolve) => {
+      markGuardStarted = resolve;
+    });
+    const guardRelease = new Promise((resolve) => {
+      releaseGuard = resolve;
+    });
+    const bedrockBridge = { request: vi.fn() };
+    const tailnetGuard = vi.fn(async () => {
+      markGuardStarted();
+      await guardRelease;
+      return true;
+    });
+    const { baseUrl } = await startFixtureServer({
+      bedrockBridge,
+      tailnetGuard,
+    });
+    const controller = new AbortController();
+    const readiness = fetch(
+      `${baseUrl}/_trace/bedrock/lesson-helper/readiness`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: baseUrl,
+        },
+        body: "{}",
+        signal: controller.signal,
+      },
+    );
+
+    await guardStarted;
+    controller.abort();
+    await expect(readiness).rejects.toThrow();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    releaseGuard();
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(tailnetGuard).toHaveBeenCalledOnce();
+    expect(bedrockBridge.request).not.toHaveBeenCalled();
+  });
+
   test("correlates out-of-order bridge replies and bounds pending work", async () => {
     const bridge = await startBridgeFixture(`
       import { createInterface } from "node:readline";

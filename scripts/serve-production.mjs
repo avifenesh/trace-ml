@@ -320,18 +320,12 @@ async function handleBedrockRoute(
     });
     return;
   }
-  if (!tailnetGuard || !(await tailnetGuard())) {
-    sendJson(response, 503, {
-      error: "Trace ML's private Tailnet route could not be verified.",
-    });
-    return;
-  }
-
   let bridgeStarted = false;
   let completed = false;
   let clientClosed = false;
   let cancelPayload = null;
   const cancelOnClose = () => {
+    if (clientClosed) return;
     clientClosed = true;
     if (!bridgeStarted || completed || !route.cancelAction || !cancelPayload) {
       return;
@@ -346,9 +340,21 @@ async function handleBedrockRoute(
       });
   };
   response.once("close", cancelOnClose);
+  request.once("aborted", cancelOnClose);
+  request.socket.once("close", cancelOnClose);
   try {
+    if (!tailnetGuard || !(await tailnetGuard())) {
+      if (clientClosed) return;
+      sendJson(response, 503, {
+        error: "Trace ML's private Tailnet route could not be verified.",
+      });
+      return;
+    }
+    if (clientClosed) return;
+
     const body = await readJsonBody(request);
     const payload = bridgePayload(route, body);
+    if (clientClosed) return;
     if (
       route.cancelAction &&
       typeof payload.requestId === "string" &&
@@ -379,6 +385,8 @@ async function handleBedrockRoute(
     sendJson(response, 503, { error: message });
   } finally {
     response.off("close", cancelOnClose);
+    request.off("aborted", cancelOnClose);
+    request.socket.off("close", cancelOnClose);
   }
 }
 
