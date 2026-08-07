@@ -1,4 +1,5 @@
 import { chmod, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { createServer as createHttpServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { connect } from "node:net";
@@ -8,6 +9,7 @@ import {
   createBedrockBridge,
   createTailnetRouteGuard,
   createTraceServer,
+  listenTraceServer,
   parsePort,
 } from "./serve-production.mjs";
 
@@ -673,6 +675,36 @@ describe("production static server", () => {
 
     expect(response).toMatch(/^HTTP\/1\.1 400 Bad Request\r\n/);
     expect(response).toContain("\r\n\r\nBad request\n");
+  });
+
+  test("closes the Bedrock bridge when the production port is occupied", async () => {
+    const occupied = createHttpServer();
+    await new Promise((resolve, reject) => {
+      occupied.once("error", reject);
+      occupied.listen(0, "127.0.0.1", resolve);
+    });
+    cleanups.push(
+      () =>
+        new Promise((resolve, reject) => {
+          occupied.close((error) => (error ? reject(error) : resolve()));
+        }),
+    );
+    const address = occupied.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Occupied fixture server did not bind a TCP port");
+    }
+    const candidate = createHttpServer();
+    const bedrockBridge = { close: vi.fn() };
+
+    await expect(
+      listenTraceServer(
+        candidate,
+        address.port,
+        "127.0.0.1",
+        bedrockBridge,
+      ),
+    ).rejects.toMatchObject({ code: "EADDRINUSE" });
+    expect(bedrockBridge.close).toHaveBeenCalledOnce();
   });
 
   test("rejects ambiguous port strings", () => {

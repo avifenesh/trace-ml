@@ -914,6 +914,32 @@ export function createTraceServer({
   });
 }
 
+export async function listenTraceServer(
+  server,
+  port,
+  host,
+  bedrockBridge = null,
+) {
+  try {
+    await new Promise((resolveListen, rejectListen) => {
+      const onError = (error) => {
+        server.off("listening", onListening);
+        rejectListen(error);
+      };
+      const onListening = () => {
+        server.off("error", onError);
+        resolveListen();
+      };
+      server.once("error", onError);
+      server.once("listening", onListening);
+      server.listen(port, host);
+    });
+  } catch (error) {
+    bedrockBridge?.close();
+    throw error;
+  }
+}
+
 export function parsePort(value) {
   if (!/^[1-9][0-9]{0,4}$/.test(value)) {
     throw new Error(`Invalid port: ${value}`);
@@ -1025,10 +1051,12 @@ async function main() {
     bedrockBridge,
     tailnetGuard,
   });
-  await new Promise((resolveListen, rejectListen) => {
-    server.once("error", rejectListen);
-    server.listen(options.port, options.host, resolveListen);
-  });
+  await listenTraceServer(
+    server,
+    options.port,
+    options.host,
+    bedrockBridge,
+  );
   process.stdout.write(
     `Trace ML production server listening at http://${options.host}:${options.port}\n`,
   );
