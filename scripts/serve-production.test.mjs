@@ -77,7 +77,7 @@ async function sendRawRequest(baseUrl, requestTarget) {
     socket.on("data", (chunk) => chunks.push(chunk));
     socket.once("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
     socket.once("connect", () => {
-      socket.end(
+      socket.write(
         `GET ${requestTarget} HTTP/1.1\r\n` +
           `Host: ${hostname}\r\n` +
           "Connection: close\r\n\r\n",
