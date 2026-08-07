@@ -52,6 +52,9 @@ The following properties must hold:
   tool request. They reject Tailscale's Funnel marker and fail closed unless the
   live private Serve route remains exclusively owned and no Funnel forwards to
   the Trace ML loopback backend.
+- Live route verification invokes only the fixed Tailscale Serve status
+  operation. Canonical Snap installs use its root-owned client and daemon socket
+  directly rather than weakening the service's `NoNewPrivileges` sandbox.
 - Helper and prose-assessment output is schema-validated and cannot create or
   reorder material, answer protected activities, change access, or claim
   mastery.

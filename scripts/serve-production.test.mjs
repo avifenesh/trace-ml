@@ -10,6 +10,7 @@ import {
   createTailnetRouteGuard,
   createTraceServer,
   listenTraceServer,
+  parseArguments,
   parsePort,
 } from "./serve-production.mjs";
 
@@ -511,6 +512,31 @@ describe("production static server", () => {
       readStatus: async () => "{",
     });
     await expect(malformedStatusGuard()).resolves.toBe(false);
+
+    const snapStatus = vi.fn(async () =>
+      JSON.stringify({
+        TCP: { 9443: { HTTPS: true } },
+        Web: {
+          "trace.tail0000.ts.net:9443": {
+            Handlers: {
+              "/": { Proxy: "http://127.0.0.1:5600" },
+            },
+          },
+        },
+      }),
+    );
+    const snapGuard = createTailnetRouteGuard({
+      command: "/snap/tailscale/current/bin/tailscale",
+      httpsPort: 9443,
+      localTarget: "http://127.0.0.1:5600",
+      socketPath: "/var/snap/tailscale/common/socket/tailscaled.sock",
+      readStatus: snapStatus,
+    });
+    await expect(snapGuard()).resolves.toBe(true);
+    expect(snapStatus).toHaveBeenCalledWith(
+      "/snap/tailscale/current/bin/tailscale",
+      "/var/snap/tailscale/common/socket/tailscaled.sock",
+    );
   });
 
   test("does not start Bedrock work after a disconnect during route verification", async () => {
@@ -711,5 +737,43 @@ describe("production static server", () => {
     expect(parsePort("5600")).toBe(5600);
     expect(() => parsePort("05600")).toThrow("Invalid port");
     expect(() => parsePort("0")).toThrow("Invalid port");
+  });
+
+  test("accepts a guarded Tailscale socket only with a complete bridge", () => {
+    expect(
+      parseArguments([
+        "--bedrock-bridge",
+        "/tmp/bridge",
+        "--tailscale-command",
+        "/snap/tailscale/current/bin/tailscale",
+        "--tailscale-socket",
+        "/var/snap/tailscale/common/socket/tailscaled.sock",
+        "--tailnet-https-port",
+        "9443",
+      ]),
+    ).toMatchObject({
+      tailnetHttpsPort: 9443,
+      tailscaleCommand: "/snap/tailscale/current/bin/tailscale",
+      tailscaleSocket:
+        "/var/snap/tailscale/common/socket/tailscaled.sock",
+    });
+    expect(() =>
+      parseArguments([
+        "--bedrock-bridge",
+        "/tmp/bridge",
+        "--tailscale-socket",
+        "/tmp/tailscaled.sock",
+        "--tailnet-https-port",
+        "9443",
+      ]),
+    ).toThrow("socket requires a Tailscale command");
+    expect(() =>
+      parseArguments([
+        "--tailscale-command",
+        "/tmp/tailscale",
+        "--tailscale-socket",
+        "/tmp/tailscaled.sock",
+      ]),
+    ).toThrow("options require the Bedrock bridge");
   });
 });

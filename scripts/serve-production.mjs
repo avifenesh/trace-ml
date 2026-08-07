@@ -159,11 +159,14 @@ function sendJson(response, statusCode, value) {
   response.end(body);
 }
 
-function readTailnetStatus(command) {
+function readTailnetStatus(command, socketPath) {
+  const arguments_ = socketPath
+    ? ["--socket", socketPath, "serve", "status", "--json"]
+    : ["serve", "status", "--json"];
   return new Promise((resolveStatus, rejectStatus) => {
     execFile(
       command,
-      ["serve", "status", "--json"],
+      arguments_,
       {
         encoding: "utf8",
         maxBuffer: MAX_TAILNET_STATUS_BYTES,
@@ -181,11 +184,12 @@ export function createTailnetRouteGuard({
   command,
   httpsPort,
   localTarget,
+  socketPath = null,
   readStatus = readTailnetStatus,
 }) {
   return async () => {
     try {
-      const rawStatus = await readStatus(command);
+      const rawStatus = await readStatus(command, socketPath);
       const config =
         typeof rawStatus === "string" ? JSON.parse(rawStatus) : rawStatus;
       return (
@@ -951,7 +955,7 @@ export function parsePort(value) {
   return port;
 }
 
-function parseArguments(arguments_) {
+export function parseArguments(arguments_) {
   const options = {
     bedrockBridge: null,
     host: "127.0.0.1",
@@ -959,6 +963,7 @@ function parseArguments(arguments_) {
     root: DEFAULT_ROOT,
     tailnetHttpsPort: null,
     tailscaleCommand: null,
+    tailscaleSocket: null,
   };
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
@@ -976,11 +981,16 @@ function parseArguments(arguments_) {
       options.tailnetHttpsPort = parsePort(value);
     } else if (argument === "--tailscale-command") {
       options.tailscaleCommand = resolve(value);
+    } else if (argument === "--tailscale-socket") {
+      options.tailscaleSocket = resolve(value);
     } else throw new Error(`Unknown argument: ${argument}`);
     index += 1;
   }
   if (!LOOPBACK_HOSTS.has(options.host)) {
     throw new Error("Production server host must be a loopback address");
+  }
+  if (options.tailscaleSocket && !options.tailscaleCommand) {
+    throw new Error("The Tailscale socket requires a Tailscale command.");
   }
   if (
     options.bedrockBridge &&
@@ -992,7 +1002,9 @@ function parseArguments(arguments_) {
   }
   if (
     !options.bedrockBridge &&
-    (options.tailnetHttpsPort || options.tailscaleCommand)
+    (options.tailnetHttpsPort ||
+      options.tailscaleCommand ||
+      options.tailscaleSocket)
   ) {
     throw new Error("Tailnet route guard options require the Bedrock bridge.");
   }
@@ -1006,6 +1018,7 @@ async function main() {
       "Usage: node scripts/serve-production.mjs " +
         "[--host 127.0.0.1] [--port 5600] [--root dist] " +
         "[--bedrock-bridge path --tailscale-command path " +
+        "[--tailscale-socket path] " +
         "--tailnet-https-port 9443]\n",
     );
     return;
@@ -1026,6 +1039,7 @@ async function main() {
         command: options.tailscaleCommand,
         httpsPort: options.tailnetHttpsPort,
         localTarget: `http://${localHost}:${options.port}`,
+        socketPath: options.tailscaleSocket,
       })
     : null;
   const bedrockBridge = options.bedrockBridge
