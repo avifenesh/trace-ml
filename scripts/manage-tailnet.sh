@@ -13,6 +13,7 @@ cargo_target_dir="${TRACE_ML_CARGO_TARGET_DIR:-$repo_root/src-tauri/target}"
 default_local_port="5600"
 default_https_port="9443"
 expected_health='{"service":"trace-ml","status":"ok"}'
+expected_guard_rejection='{"error":"Invalid Bedrock course request."}'
 
 configured_local_port=""
 configured_https_port=""
@@ -31,6 +32,8 @@ deployment_old_unit_enabled="false"
 deployment_old_release=""
 lifecycle_lock_fd=""
 route_cleanup_failure=""
+tailscale_runtime_command=""
+tailscale_runtime_socket=""
 
 usage() {
   cat <<'EOF'
@@ -208,7 +211,59 @@ require_linux_local_service_tools() {
 
 require_linux_service_tools() {
   require_linux_local_service_tools
-  require_commands curl node systemctl systemd-analyze tailscale
+  require_commands curl node readlink systemctl systemd-analyze tailscale
+}
+
+resolve_tailscale_runtime() {
+  [[ -z "$tailscale_runtime_command" ]] || return
+
+  local launcher
+  local snap_launcher
+  launcher="$(command -v tailscale)"
+  snap_launcher="$(command -v snap 2>/dev/null || true)"
+  tailscale_runtime_command="$launcher"
+  tailscale_runtime_socket=""
+
+  if [[ -z "$snap_launcher" ||
+    "$(readlink -f -- "$launcher")" != "$(readlink -f -- "$snap_launcher")" ]]; then
+    return
+  fi
+
+  local snap_output
+  local -a snap_paths=()
+  # $SNAP and $SNAP_COMMON must expand inside the shell created by snap.
+  # shellcheck disable=SC2016
+  if ! snap_output="$(
+    snap run --shell tailscale -c \
+      'printf "%s\n%s\n" "$SNAP" "$SNAP_COMMON"'
+  )"; then
+    fail "could not resolve the installed Tailscale Snap"
+  fi
+  mapfile -t snap_paths <<<"$snap_output"
+  if [[ "${#snap_paths[@]}" -ne 2 ||
+    "${snap_paths[0]}" != /* ||
+    "${snap_paths[1]}" != /* ]]; then
+    fail "the installed Tailscale Snap returned invalid runtime paths"
+  fi
+
+  local snap_parent
+  local direct_command
+  local daemon_socket
+  snap_parent="${snap_paths[0]%/*}"
+  direct_command="$snap_parent/current/bin/tailscale"
+  daemon_socket="${snap_paths[1]}/socket/tailscaled.sock"
+  [[ -x "$direct_command" ]] ||
+    fail "the installed Tailscale Snap client is unavailable: $direct_command"
+  [[ -S "$daemon_socket" ]] ||
+    fail "the installed Tailscale Snap socket is unavailable: $daemon_socket"
+  if ! "$direct_command" \
+    --socket "$daemon_socket" \
+    serve status --json >/dev/null; then
+    fail "the installed Tailscale Snap client cannot read Serve status directly"
+  fi
+
+  tailscale_runtime_command="$direct_command"
+  tailscale_runtime_socket="$daemon_socket"
 }
 
 acquire_lifecycle_lock() {
@@ -347,6 +402,27 @@ disable_route() {
 health_body() {
   curl --fail --silent --show-error --max-time 2 \
     "$local_target/_trace/health"
+}
+
+probe_bedrock_route_guard() {
+  local response
+  local status
+  local body
+  if ! response="$(
+    curl --silent --show-error --max-time 5 \
+      --request POST \
+      --header "Origin: $local_target" \
+      --header 'Content-Type: application/json' \
+      --data '{}' \
+      --write-out $'\n%{http_code}' \
+      "$local_target/_trace/bedrock/lesson-helper"
+  )"; then
+    return 1
+  fi
+  status="${response##*$'\n'}"
+  body="${response%$'\n'*}"
+  body="${body%$'\n'}"
+  [[ "$status" == "400" && "$body" == "$expected_guard_rejection" ]]
 }
 
 bedrock_readiness_body() {
@@ -586,12 +662,17 @@ validate_release() {
   local release="$1"
   local validation_port
   local validation_target
-  local tailscale_path
+  local -a tailscale_socket_arguments=()
   local attempt
   local body
   validation_port="$(select_validation_port)"
   validation_target="http://127.0.0.1:$validation_port"
-  tailscale_path="$(command -v tailscale)"
+  if [[ -n "$tailscale_runtime_socket" ]]; then
+    tailscale_socket_arguments=(
+      --tailscale-socket
+      "$tailscale_runtime_socket"
+    )
+  fi
   candidate_server_log="$(mktemp "$data_dir/.release-validation.XXXXXX.log")"
 
   node "$release/scripts/serve-production.mjs" \
@@ -599,7 +680,8 @@ validate_release() {
     --port "$validation_port" \
     --root "$release/dist" \
     --bedrock-bridge "$release/bin/trace-ml-bedrock-bridge" \
-    --tailscale-command "$tailscale_path" \
+    --tailscale-command "$tailscale_runtime_command" \
+    "${tailscale_socket_arguments[@]}" \
     --tailnet-https-port "$https_port" \
     >"$candidate_server_log" 2>&1 &
   candidate_server_pid="$!"
@@ -656,9 +738,7 @@ render_unit() {
   local release="$1"
   local destination="$2"
   local node_path
-  local tailscale_path
   node_path="$(command -v node)"
-  tailscale_path="$(command -v tailscale)"
   {
     printf '%s\n' \
       '# Managed by Trace ML' \
@@ -668,13 +748,18 @@ render_unit() {
       '[Service]' \
       'Type=simple'
     printf 'WorkingDirectory=%s\n' "$(unit_path "$release")"
-    printf 'ExecStart=%s %s --host 127.0.0.1 --port %s --root %s --bedrock-bridge %s --tailscale-command %s --tailnet-https-port %s\n' \
+    printf 'ExecStart=%s %s --host 127.0.0.1 --port %s --root %s --bedrock-bridge %s --tailscale-command %s' \
       "$(unit_quote "$node_path")" \
       "$(unit_quote "$release/scripts/serve-production.mjs")" \
       "$local_port" \
       "$(unit_quote "$release/dist")" \
       "$(unit_quote "$release/bin/trace-ml-bedrock-bridge")" \
-      "$(unit_quote "$tailscale_path")" \
+      "$(unit_quote "$tailscale_runtime_command")"
+    if [[ -n "$tailscale_runtime_socket" ]]; then
+      printf ' --tailscale-socket %s' \
+        "$(unit_quote "$tailscale_runtime_socket")"
+    fi
+    printf ' --tailnet-https-port %s\n' \
       "$https_port"
     printf '%s\n' \
       'Environment=NODE_ENV=production' \
@@ -896,6 +981,7 @@ deploy_release() {
   local previous_owned="false"
   local new_state_before
 
+  resolve_tailscale_runtime
   previous_state="$(route_state "$https_port" "$local_target")"
   case "$previous_state" in
     free)
@@ -936,6 +1022,13 @@ deploy_release() {
       "$new_state_before"
     rollback_unit_or_warn || true
     fail "Tailscale did not establish Trace ML's exclusive HTTPS route"
+  fi
+  if ! probe_bedrock_route_guard; then
+    rollback_route_or_warn \
+      "$previous_owned" \
+      "$new_state_before"
+    rollback_unit_or_warn || true
+    fail "candidate Trace ML release failed its active Tailnet guard check"
   fi
 
   if ! mark_release_deployed "$candidate_release"; then

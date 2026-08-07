@@ -44,8 +44,9 @@ import {
 } from "node:fs";
 import { basename, join } from "node:path";
 
-const command = basename(process.argv[1]);
-const args = process.argv.slice(2);
+const commandPath = process.argv[1];
+const command = basename(commandPath);
+let args = process.argv.slice(2);
 const stateDirectory = process.env.TRACE_ML_TEST_STATE;
 const systemctlPath = join(stateDirectory, "systemctl.json");
 const routesPath = join(stateDirectory, "routes.json");
@@ -101,7 +102,7 @@ function parseUnit() {
       .replaceAll("%%", "%");
   const execStart = /^ExecStart=(.+)$/m.exec(unit)?.[1];
   const bridgeMatch = execStart?.match(
-    /^"([^"]+)" "([^"]+)" --host ([^ ]+) --port ([^ ]+) --root "([^"]+)" --bedrock-bridge "([^"]+)" --tailscale-command "([^"]+)" --tailnet-https-port ([^ ]+)$/,
+    /^"([^"]+)" "([^"]+)" --host ([^ ]+) --port ([^ ]+) --root "([^"]+)" --bedrock-bridge "([^"]+)" --tailscale-command "([^"]+)"(?: --tailscale-socket "([^"]+)")? --tailnet-https-port ([^ ]+)$/,
   );
   const legacyMatch = execStart?.match(
     /^"([^"]+)" "([^"]+)" --host ([^ ]+) --port ([^ ]+) --root "([^"]+)"$/,
@@ -125,9 +126,14 @@ function parseUnit() {
       bridgeMatch[6].replaceAll("%%", "%"),
       "--tailscale-command",
       bridgeMatch[7].replaceAll("%%", "%"),
-      "--tailnet-https-port",
-      bridgeMatch[8],
     );
+    if (bridgeMatch[8]) {
+      arguments_.push(
+        "--tailscale-socket",
+        bridgeMatch[8].replaceAll("%%", "%"),
+      );
+    }
+    arguments_.push("--tailnet-https-port", bridgeMatch[9]);
   }
   return {
     command: match[1].replaceAll("%%", "%"),
@@ -143,6 +149,7 @@ async function startService(state) {
   const child = spawn(unit.command, unit.arguments, {
     cwd: unit.workingDirectory,
     detached: true,
+    env: { ...process.env, TRACE_ML_TEST_SERVICE_PROCESS: "1" },
     stdio: ["ignore", log, log],
   });
   child.unref();
@@ -227,6 +234,21 @@ function serveStatus(routes) {
 }
 
 function runTailscale() {
+  const snapCommand = process.env.TRACE_ML_TEST_SNAP_COMMAND;
+  const snapSocket = process.env.TRACE_ML_TEST_SNAP_SOCKET;
+  const isSnapDirectClient = Boolean(
+    snapCommand && commandPath === snapCommand,
+  );
+  if (isSnapDirectClient) {
+    if (args[0] !== "--socket" || args[1] !== snapSocket) {
+      throw new Error(
+        "Fixture direct Tailscale client requires the exact Snap socket.",
+      );
+    }
+    args = args.slice(2);
+  } else if (args[0] === "--socket") {
+    throw new Error("Fixture Tailscale launcher does not accept --socket.");
+  }
   if (args[0] === "status" && args[1] === "--json") {
     process.stdout.write(
       JSON.stringify({ Self: { DNSName: "trace.tail0000.ts.net." } }),
@@ -241,6 +263,24 @@ function runTailscale() {
 
   const routes = readJson(routesPath, {});
   if (args[1] === "status" && args[2] === "--json") {
+    if (
+      isSnapDirectClient &&
+      process.env.TRACE_ML_TEST_FAIL_SNAP_STATUS === "1"
+    ) {
+      process.exit(1);
+    }
+    if (
+      process.env.TRACE_ML_TEST_FAIL_POST_CUTOVER_GUARD === "1" &&
+      process.env.TRACE_ML_TEST_SERVICE_PROCESS === "1"
+    ) {
+      const marker = join(stateDirectory, "post-cutover-guard-failed");
+      try {
+        openSync(marker, "wx");
+        process.exit(1);
+      } catch (error) {
+        if (error?.code !== "EEXIST") throw error;
+      }
+    }
     process.stdout.write(JSON.stringify(serveStatus(routes)));
     return;
   }
@@ -257,6 +297,24 @@ function runTailscale() {
     routes[port] = args.at(-1);
   }
   writeJson(routesPath, routes);
+}
+
+function runSnap() {
+  if (
+    args[0] !== "run" ||
+    args[1] !== "--shell" ||
+    args[2] !== "tailscale" ||
+    args[3] !== "-c" ||
+    !args[4]
+  ) {
+    throw new Error("Unsupported fixture snap command: " + args.join(" "));
+  }
+  process.stdout.write(
+    process.env.TRACE_ML_TEST_SNAP_MOUNT +
+      "\n" +
+      process.env.TRACE_ML_TEST_SNAP_COMMON +
+      "\n",
+  );
 }
 
 function runNpm() {
@@ -330,6 +388,8 @@ try {
     await runSystemctl();
   } else if (command === "tailscale") {
     runTailscale();
+  } else if (command === "snap") {
+    runSnap();
   } else if (command === "npm") {
     runNpm();
   } else if (command === "cargo") {
@@ -361,13 +421,23 @@ async function selectFreePort() {
   return address.port;
 }
 
-async function createFixture() {
+async function createFixture({
+  snapDirectClient = true,
+  snapSocketAvailable = true,
+  snapTailscale = false,
+} = {}) {
   const root = await mkdtemp(join(tmpdir(), "trace-ml-tailnet-"));
   const bin = join(root, "bin");
   const state = join(root, "state");
   const runtime = join(root, "runtime");
   const config = join(root, "config");
   const data = join(root, "data");
+  const snapBin = join(root, "snap/bin");
+  const snapMount = join(root, "snap/tailscale/154");
+  const snapCurrentBin = join(root, "snap/tailscale/current/bin");
+  const snapCommon = join(root, "var/snap/tailscale/common");
+  const snapSocket = join(snapCommon, "socket/tailscaled.sock");
+  let snapSocketServer = null;
   await Promise.all([
     mkdir(bin, { recursive: true }),
     mkdir(state, { recursive: true }),
@@ -387,6 +457,30 @@ async function createFixture() {
       "tailscale",
     ].map((command) => symlink("tool-shim.mjs", join(bin, command))),
   );
+  if (snapTailscale) {
+    await Promise.all([
+      mkdir(snapBin, { recursive: true }),
+      mkdir(snapCurrentBin, { recursive: true }),
+      mkdir(join(snapCommon, "socket"), { recursive: true }),
+    ]);
+    const snapLinks = [
+      symlink(shimPath, join(bin, "snap")),
+      symlink(shimPath, join(snapBin, "tailscale")),
+    ];
+    if (snapDirectClient) {
+      snapLinks.push(
+        symlink(shimPath, join(snapCurrentBin, "tailscale")),
+      );
+    }
+    await Promise.all(snapLinks);
+    if (snapSocketAvailable) {
+      snapSocketServer = createServer();
+      await new Promise((resolve, reject) => {
+        snapSocketServer.once("error", reject);
+        snapSocketServer.listen(snapSocket, resolve);
+      });
+    }
+  }
 
   const [localPort, httpsPort] = await Promise.all([
     selectFreePort(),
@@ -395,7 +489,7 @@ async function createFixture() {
   const environment = {
     ...process.env,
     HOME: root,
-    PATH: `${bin}:${process.env.PATH}`,
+    PATH: `${snapTailscale ? `${snapBin}:` : ""}${bin}:${process.env.PATH}`,
     TRACE_ML_CARGO_TARGET_DIR: join(root, "cargo-target"),
     TRACE_ML_TAILNET_HTTPS_PORT: String(httpsPort),
     TRACE_ML_TEST_STATE: state,
@@ -404,6 +498,15 @@ async function createFixture() {
     XDG_DATA_HOME: data,
     XDG_RUNTIME_DIR: runtime,
   };
+  if (snapTailscale) {
+    environment.TRACE_ML_TEST_SNAP_COMMON = snapCommon;
+    environment.TRACE_ML_TEST_SNAP_COMMAND = join(
+      root,
+      "snap/tailscale/current/bin/tailscale",
+    );
+    environment.TRACE_ML_TEST_SNAP_MOUNT = snapMount;
+    environment.TRACE_ML_TEST_SNAP_SOCKET = snapSocket;
+  }
   delete environment.DBUS_SESSION_BUS_ADDRESS;
 
   async function stopFixtureService() {
@@ -419,6 +522,9 @@ async function createFixture() {
 
   cleanups.push(async () => {
     await stopFixtureService();
+    if (snapSocketServer) {
+      await new Promise((resolve) => snapSocketServer.close(resolve));
+    }
     await rm(root, { force: true, recursive: true });
   });
 
@@ -429,6 +535,10 @@ async function createFixture() {
     httpsPort,
     localPort,
     root,
+    snapCommand: snapTailscale
+      ? join(root, "snap/tailscale/current/bin/tailscale")
+      : null,
+    snapSocket: snapTailscale ? snapSocket : null,
     state,
   };
 }
@@ -640,6 +750,73 @@ describeLinux("managed tailnet lifecycle", () => {
     30_000,
   );
 
+  test("uses the direct Snap client without weakening the service sandbox", async () => {
+    const fixture = await createFixture({ snapTailscale: true });
+    const install = await runLifecycle("install", fixture.environment);
+    expect(install.code, install.stderr).toBe(0);
+
+    const unit = await readFile(
+      join(fixture.config, "systemd/user/trace-ml-web.service"),
+      "utf8",
+    );
+    expect(unit).toContain(
+      `--tailscale-command "${fixture.snapCommand}" ` +
+        `--tailscale-socket "${fixture.snapSocket}"`,
+    );
+    expect(unit).toContain("NoNewPrivileges=yes");
+    expect(
+      (await runLifecycle("status", fixture.environment)).stdout,
+    ).toContain("Bedrock: available (openai.gpt-5.6-sol");
+  }, 30_000);
+
+  test("rejects incomplete or unusable Snap runtime details", async () => {
+    const malformed = await createFixture({ snapTailscale: true });
+    const malformedInstall = await runLifecycle("install", {
+      ...malformed.environment,
+      TRACE_ML_TEST_SNAP_MOUNT: "snap/tailscale/154",
+    });
+    expect(malformedInstall.code).toBe(1);
+    expect(malformedInstall.stderr).toContain(
+      "Tailscale Snap returned invalid runtime paths",
+    );
+
+    const missingClient = await createFixture({
+      snapDirectClient: false,
+      snapTailscale: true,
+    });
+    const missingClientInstall = await runLifecycle(
+      "install",
+      missingClient.environment,
+    );
+    expect(missingClientInstall.code).toBe(1);
+    expect(missingClientInstall.stderr).toContain(
+      "Tailscale Snap client is unavailable",
+    );
+
+    const missingSocket = await createFixture({
+      snapSocketAvailable: false,
+      snapTailscale: true,
+    });
+    const missingSocketInstall = await runLifecycle(
+      "install",
+      missingSocket.environment,
+    );
+    expect(missingSocketInstall.code).toBe(1);
+    expect(missingSocketInstall.stderr).toContain(
+      "Tailscale Snap socket is unavailable",
+    );
+
+    const failedStatus = await createFixture({ snapTailscale: true });
+    const failedStatusInstall = await runLifecycle("install", {
+      ...failedStatus.environment,
+      TRACE_ML_TEST_FAIL_SNAP_STATUS: "1",
+    });
+    expect(failedStatusInstall.code).toBe(1);
+    expect(failedStatusInstall.stderr).toContain(
+      "Tailscale Snap client cannot read Serve status directly",
+    );
+  }, 30_000);
+
   test(
     "upgrades a running legacy release to the bridge-enabled service",
     async () => {
@@ -757,6 +934,51 @@ describeLinux("managed tailnet lifecycle", () => {
     },
     30_000,
   );
+
+  test("rolls back when the active service cannot execute its Tailnet guard", async () => {
+    const fixture = await createFixture();
+    const install = await runLifecycle("install", fixture.environment);
+    expect(install.code, install.stderr).toBe(0);
+    const unitPath = join(
+      fixture.config,
+      "systemd/user/trace-ml-web.service",
+    );
+    const originalUnit = await readFile(unitPath, "utf8");
+    const originalState = await readFixtureJson(
+      join(fixture.state, "systemctl.json"),
+    );
+    const originalReleases = await readdir(
+      join(fixture.data, "trace-ml-web/releases"),
+    );
+
+    const failedRestart = await runLifecycle("restart", {
+      ...fixture.environment,
+      TRACE_ML_TEST_FAIL_POST_CUTOVER_GUARD: "1",
+    });
+    expect(failedRestart.code).toBe(1);
+    expect(failedRestart.stderr).toContain(
+      "candidate Trace ML release failed its active Tailnet guard check",
+    );
+    expect(failedRestart.stderr).not.toContain("release validation failed");
+
+    expect(await readFile(unitPath, "utf8")).toBe(originalUnit);
+    expect(
+      await readFixtureJson(join(fixture.state, "systemctl.json")),
+    ).toMatchObject({
+      active: true,
+      enabled: true,
+      workingDirectory: originalState.workingDirectory,
+    });
+    expect(await readdir(join(fixture.data, "trace-ml-web/releases"))).toEqual(
+      originalReleases,
+    );
+    expect(await readFixtureJson(join(fixture.state, "routes.json"))).toEqual({
+      [fixture.httpsPort]: `http://127.0.0.1:${fixture.localPort}`,
+    });
+    expect(
+      (await runLifecycle("status", fixture.environment)).stdout,
+    ).toContain("Bedrock: available (openai.gpt-5.6-sol");
+  }, 30_000);
 
   test(
     "retains cleanup metadata when uninstall cannot remove the route",

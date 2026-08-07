@@ -263,6 +263,10 @@ same tailnet. Before installing:
 - Use a Linux login with a systemd user manager and `flock` from `util-linux`.
 - Install the Rust toolchain declared in `rust-toolchain.toml`; Tailnet releases
   compile the same Rust validation boundary used by the desktop app.
+- Install Tailscale from its Linux packages or the
+  [Canonical Snap](https://github.com/canonical/tailscale-snap). For Snap
+  installs, Trace ML resolves the root-owned client and daemon socket during
+  installation so the service can retain `NoNewPrivileges=yes`.
 
 Then install the service:
 

@@ -62,9 +62,71 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("useTutorThreads native helper", () => {
+  it("keeps fallback request ids distinct across simultaneous tabs", async () => {
+    const randomUuidDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis.crypto,
+      "randomUUID",
+    );
+    Object.defineProperty(globalThis.crypto, "randomUUID", {
+      configurable: true,
+      value: undefined,
+    });
+    vi.spyOn(Date, "now").mockReturnValue(1_786_070_000_000);
+    vi.spyOn(Math, "random").mockReturnValue(0.25);
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "lesson_helper_ready") {
+        return Promise.resolve(verifiedReadiness);
+      }
+      if (command === "answer_lesson_question") {
+        return new Promise(() => {});
+      }
+      if (command === "cancel_lesson_answer") return Promise.resolve(true);
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+
+    try {
+      const first = renderHook(() => useTutorThreads(lesson));
+      const second = renderHook(() => useTutorThreads(lesson));
+      await waitFor(() => {
+        expect(first.result.current.helperMode).toBe("semantic");
+        expect(second.result.current.helperMode).toBe("semantic");
+      });
+
+      act(() => {
+        first.result.current.send("What are the two classes?");
+        second.result.current.send("Why is the majority baseline 80 percent?");
+      });
+
+      const requestIds = invokeMock.mock.calls
+        .filter(([command]) => command === "answer_lesson_question")
+        .map(([, arguments_]) =>
+          (
+            arguments_ as {
+              request: { requestId: string };
+            }
+          ).request.requestId
+        );
+      expect(requestIds).toHaveLength(2);
+      expect(new Set(requestIds).size).toBe(2);
+    } finally {
+      if (randomUuidDescriptor) {
+        Object.defineProperty(
+          globalThis.crypto,
+          "randomUUID",
+          randomUuidDescriptor,
+        );
+      } else {
+        Reflect.deleteProperty(globalThis.crypto, "randomUUID");
+      }
+    }
+  });
+
   it("fails closed when readiness lacks verified policy metadata", async () => {
     invokeMock.mockImplementation((command: string) => {
       if (command === "lesson_helper_ready") return Promise.resolve(true);
