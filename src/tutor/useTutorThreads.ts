@@ -300,16 +300,31 @@ function writeBoundedRecord(
 
 let fallbackMessageSequence = 0;
 
+function fallbackMessageEntropy() {
+  if (globalThis.crypto?.getRandomValues) {
+    try {
+      const bytes = new Uint8Array(16);
+      globalThis.crypto.getRandomValues(bytes);
+      return Array.from(
+        bytes,
+        (byte) => byte.toString(16).padStart(2, "0"),
+      ).join("");
+    } catch {
+      // Fall through to the compatibility path below.
+    }
+  }
+  return Math.random().toString(36).slice(2) || "0";
+}
+
 function messageId() {
   const uuid = globalThis.crypto?.randomUUID?.();
   if (uuid) return `message-${uuid}`;
 
   fallbackMessageSequence += 1;
-  const entropy = Math.random().toString(36).slice(2) || "0";
   return [
     "message",
     Date.now().toString(36),
-    entropy,
+    fallbackMessageEntropy(),
     fallbackMessageSequence.toString(36),
   ].join("-");
 }

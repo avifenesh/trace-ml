@@ -465,13 +465,17 @@ function App() {
               aria-valuenow={evidenceCount}
               aria-valuetext={`${evidenceCount} of ${checkpointActivities.length} required checks recorded`}
             >
-              {gateRequirements.map((supported, index) => (
-                <i
-                  aria-hidden="true"
-                  className={supported ? "supported" : ""}
-                  key={`compact-${checkpointActivities[index]?.id}`}
-                />
-              ))}
+              <span className="compact-progress-label" aria-hidden="true">
+                {evidenceCount}/{checkpointActivities.length} checks
+              </span>
+              <span className="compact-progress-bars" aria-hidden="true">
+                {gateRequirements.map((supported, index) => (
+                  <i
+                    className={supported ? "supported" : ""}
+                    key={`compact-${checkpointActivities[index]?.id}`}
+                  />
+                ))}
+              </span>
             </div>
             {persistenceStatus === "memory-only" && (
               <span

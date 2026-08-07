@@ -1,7 +1,7 @@
 [
   {
     "lessonId": "prerequisite-trace",
-    "lessonRevision": "2026-08-04-r2",
+    "lessonRevision": "2026-08-07-r1",
     "lessonNumber": "00",
     "lessonTitle": "Trace the tools before the model",
     "lessonQuestion": "How do Python values, array shapes, coordinates, slopes, and class counts describe one calculation?",
@@ -38,7 +38,7 @@
         "id": "prerequisite-trace-teaching:introduction-3",
         "blockId": "prerequisite-trace-teaching",
         "heading": "Start with the notation; no Python or calculus is assumed",
-        "text": "NumPy is a Python tool for arrays, which are ordered tables of numbers. `import numpy as np` gives that tool the short name `np`, and `np.array([1, 2, 3])` constructs an array. A shape reports axis lengths in order: 4 by 3 means four rows and three columns. Here each row is one example and each column is one feature. If x and prediction are one-dimensional arrays, `np.column_stack((x, prediction))` makes x column zero and prediction column one, so every row is one plotted `(x, y)` coordinate pair.",
+        "text": "NumPy is a Python tool for arrays, which are ordered tables of numbers. `import numpy as np` gives that tool the short name `np`, and `np.array([1, 2, 3])` constructs an array. A shape reports axis lengths in order. NumPy prints the shape of a one-dimensional array with three positions as `(3,)`; the comma marks a one-item Python tuple and does not add a second axis. A 4 by 3 shape means four rows and three columns. Here each row is one example and each column is one feature. If x and prediction are one-dimensional arrays, `np.column_stack((x, prediction))` makes x column zero and prediction column one, so every row is one plotted `(x, y)` coordinate pair.",
         "tags": [
           "teaching",
           "mental model",
@@ -115,7 +115,7 @@
         "id": "prerequisite-trace-teaching:term-5",
         "blockId": "prerequisite-trace-teaching",
         "heading": "Terms you need · NumPy array and shape",
-        "text": "An ordered table of values whose shape lists each axis length, such as four rows by three columns.",
+        "text": "An ordered table of values whose shape lists each axis length. A one-dimensional array with three positions has shape (3,), where the comma marks a one-item tuple.",
         "tags": [
           "teaching",
           "definition",
@@ -398,7 +398,7 @@
         "id": "00-shapes:p3",
         "blockId": "00-shapes",
         "heading": "Shapes describe which axes can interact",
-        "text": "In NumPy, shape reports axis lengths in order. Given one-dimensional x and prediction arrays, np.column_stack((x, prediction)) makes each input a column, producing one (x, prediction) row per observation. A plotting table with shape 3 by 2 therefore has three points; transposing it to 2 by 3 swaps the meaning of rows and columns.",
+        "text": "In NumPy, shape reports axis lengths in order. A one-dimensional array with three positions prints as (3,): the comma belongs to Python's one-item tuple notation and does not mean there is a second axis. Given one-dimensional x and prediction arrays, np.column_stack((x, prediction)) makes each input a column, producing one (x, prediction) row per observation. A plotting table with shape 3 by 2 therefore has three points; transposing it to 2 by 3 swaps the meaning of rows and columns.",
         "tags": [
           "Python",
           "NumPy",

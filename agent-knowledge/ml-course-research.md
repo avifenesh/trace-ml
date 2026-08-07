@@ -1,8 +1,8 @@
 # Trace ML Course Research Guide
 
-**Research date:** 2026-08-02, with claim-specific corrections validated 2026-08-05<br>
+**Research date:** 2026-08-02, with claim-specific corrections validated through 2026-08-07<br>
 **Depth:** Deep<br>
-**Sources:** 109 live-validated resources<br>
+**Sources:** 110 live-validated resources<br>
 **Product:** Fixed, authored 21-lesson machine-learning course
 **Source registry:** `resources/ml-course-research-sources.json`
 
@@ -184,7 +184,7 @@ Slider movement, elapsed time, and visiting controls are activity telemetry, not
 - PRIMM starts learners with working code through `Predict -> Run -> Investigate -> Modify -> Make`, rather than a blank editor. `[S54]`
 - Current Google material places programming after conceptual explanations and interactive work; the loss and gradient-descent resources provide appropriate transition points. The gradient-descent page embeds a verified 2:12 Google video. `[S55-S56]`
 - PyTorch's examples move from manual NumPy forward/backward work to tensors, autograd, and modules. `[S57]`
-- NumPy is justified when vectorization, shape, multidimensional data, efficiency, and reduced boilerplate become part of the mechanism. `[S58]`
+- NumPy is justified when vectorization, shape, multidimensional data, efficiency, and reduced boilerplate become part of the mechanism. NumPy exposes shape as a tuple of axis lengths, so a from-zero lesson must explain one-item tuple notation such as `(3,)` before asking learners to predict it. `[S58] [S110]`
 - Current scikit-learn material is strongest for pipelines, leakage prevention, model selection, and evaluation after core concepts. `[S07]`
 - PyTorch `gradcheck` compares analytical derivatives with finite-difference approximations at tested inputs and tolerances; a pass supports derivative implementation but not the model or objective. `[S100]`
 - PyTorch's momentum convention initializes the first buffer from the first gradient, while Adam carries first and second gradient moments and bias-corrects both. These exact state conventions must be visible whenever the course claims to reproduce them. `[S101-S102]`

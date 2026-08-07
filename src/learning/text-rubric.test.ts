@@ -91,6 +91,7 @@ describe("deterministic text-response assessment", () => {
     expect(assessment.level).toBe("partial");
     expect(assessment.matchedCriteria).toEqual([cancellationCriterion.id]);
     expect(assessment.missingCriteria).toEqual([testBoundaryCriterion.id]);
+    expect(assessment.feedback).toContain("may still be correct");
   });
 
   it("rejects keyword-stuffed fragments without a coherent assertion", () => {
@@ -101,6 +102,7 @@ describe("deterministic text-response assessment", () => {
 
     expect(assessment.level).toBe("unsupported");
     expect(assessment.matchedCriteria).toEqual([]);
+    expect(assessment.feedback).toContain("can miss valid paraphrases");
   });
 
   it("rejects connector stuffing across every authored text rubric", () => {

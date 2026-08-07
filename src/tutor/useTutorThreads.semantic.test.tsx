@@ -68,7 +68,7 @@ afterEach(() => {
 });
 
 describe("useTutorThreads native helper", () => {
-  it("keeps fallback request ids distinct across simultaneous tabs", async () => {
+  it("uses cryptographic fallback request ids when randomUUID is unavailable", async () => {
     const randomUuidDescriptor = Object.getOwnPropertyDescriptor(
       globalThis.crypto,
       "randomUUID",
@@ -78,7 +78,6 @@ describe("useTutorThreads native helper", () => {
       value: undefined,
     });
     vi.spyOn(Date, "now").mockReturnValue(1_786_070_000_000);
-    vi.spyOn(Math, "random").mockReturnValue(0.25);
     invokeMock.mockImplementation((command: string) => {
       if (command === "lesson_helper_ready") {
         return Promise.resolve(verifiedReadiness);
@@ -114,6 +113,11 @@ describe("useTutorThreads native helper", () => {
         );
       expect(requestIds).toHaveLength(2);
       expect(new Set(requestIds).size).toBe(2);
+      expect(
+        requestIds.every((requestId) =>
+          /message-[^-]+-[0-9a-f]{32}-/.test(requestId)
+        ),
+      ).toBe(true);
     } finally {
       if (randomUuidDescriptor) {
         Object.defineProperty(

@@ -174,7 +174,7 @@ test("the fixed course exposes every authored lesson before any Q&A", async ({
   const teachingSources = page.getByLabel(
     "Editorial sources for Start with the notation; no Python or calculus is assumed",
   );
-  await expect(teachingSources.getByRole("link")).toHaveCount(7);
+  await expect(teachingSources.getByRole("link")).toHaveCount(8);
   await expect(
     teachingSources.getByRole("link", {
       name: /^\[S109\] Python Software Foundation/,
@@ -184,10 +184,18 @@ test("the fixed course exposes every authored lesson before any Q&A", async ({
     "https://docs.python.org/3/tutorial/introduction.html",
   );
   await expect(
+    teachingSources.getByRole("link", {
+      name: /^\[S110\] NumPy/,
+    }),
+  ).toHaveAttribute(
+    "href",
+    "https://numpy.org/doc/stable/reference/generated/numpy.ndarray.shape.html",
+  );
+  await expect(
     page.getByLabel(
       "Editorial sources for Start here: this lesson supplies the prerequisites",
     ).getByRole("link"),
-  ).toHaveCount(4);
+  ).toHaveCount(5);
 
   await lessonButton(map, "20", "Diagnose the deployed system").click();
   await expect(
@@ -666,7 +674,7 @@ test("authored remediation supports prediction, explanation, and code retries", 
     .getByRole("button", { name: "Check structure" })
     .click();
   await expect(explanation.getByRole("status")).toContainText(
-    "1 of 3 authored criteria matched",
+    "recognized wording for 1 of 3 authored criteria",
   );
   await expect(explanation.getByRole("status")).toContainText(
     "FORMATIVE STRUCTURE CHECK · NOT SEMANTIC GRADING",

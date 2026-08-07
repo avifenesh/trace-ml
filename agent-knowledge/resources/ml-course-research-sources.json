@@ -1,10 +1,10 @@
 {
   "topic": "Evidence base for the fixed authored Trace ML course",
   "slug": "ml-course-research",
-  "generated": "2026-08-04",
+  "generated": "2026-08-07",
   "depth": "deep",
-  "totalSources": 109,
-  "verificationNote": "The original 95 URLs were reported live with HTTP 200 by one of five research lanes or three direct-resource audits on 2026-08-02. Nine claim-specific correction and teaching-design sources were live-validated on 2026-08-03. Three exact sources for the ridge objective, demographic parity, and equality of opportunity were live-validated on 2026-08-04. This registry preserves report-level metadata; unknown exact dates are null or qualified rather than inferred.",
+  "totalSources": 110,
+  "verificationNote": "The original 95 URLs were reported live with HTTP 200 by one of five research lanes or three direct-resource audits on 2026-08-02. Nine claim-specific correction and teaching-design sources were live-validated on 2026-08-03. Three exact sources for the ridge objective, demographic parity, and equality of opportunity were live-validated on 2026-08-04. One exact NumPy shape-notation source was live-validated on 2026-08-07. This registry preserves report-level metadata; unknown exact dates are null or qualified rather than inferred.",
   "qualityScoring": {
     "method": "learn skill weighted rubric",
     "formula": "authority*3 + recency*2 + depth*2 + examples*2 + uniqueness",
@@ -1559,6 +1559,20 @@
       "keyInsights": ["Python assignment binds names to values, square brackets construct lists, arithmetic expressions can be evaluated directly, and len reports the number of items in a sequence."],
       "limitations": ["The tutorial is a language reference and introduction, not evidence that one syntax sequence is instructionally optimal or a guide to NumPy arrays."],
       "designImplications": ["Define assignment, lists, function calls, loops, and return in plain language before the first editable Python specimen."]
+    },
+    {
+      "id": "S110",
+      "url": "https://numpy.org/doc/stable/reference/generated/numpy.ndarray.shape.html",
+      "title": "numpy.ndarray.shape",
+      "publisher": "NumPy",
+      "type": "official API reference",
+      "publicationOrUpdateDate": null,
+      "dateNote": "The current stable API page and its definition of shape as a tuple of array dimensions were live-validated on 2026-08-07.",
+      "verifiedAt": "2026-08-07",
+      "qualityScores": {"authority": 10, "recency": 10, "depth": 7, "examples": 8, "uniqueness": 9, "total": 88},
+      "keyInsights": ["An ndarray shape is a tuple containing the array dimension lengths, so a one-dimensional array with three positions is represented by the one-item tuple (3,)."],
+      "limitations": ["The API reference defines representation and behavior; it is not evidence for one instructional sequence."],
+      "designImplications": ["Explain the trailing comma in one-dimensional shape output before asking a from-zero learner to predict or interpret it."]
     }
   ]
 }

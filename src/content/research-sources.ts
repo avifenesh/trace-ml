@@ -21,14 +21,18 @@ const sourceReferences = new Map(
   ]),
 );
 
+export function researchSourceForId(
+  sourceId: string,
+): ResearchSourceReference {
+  const source = sourceReferences.get(sourceId);
+  if (!source) {
+    throw new Error(`Unknown research source: ${sourceId}`);
+  }
+  return source;
+}
+
 export function researchSourcesForIds(
   sourceIds: readonly string[],
 ): ResearchSourceReference[] {
-  return sourceIds.map((sourceId) => {
-    const source = sourceReferences.get(sourceId);
-    if (!source) {
-      throw new Error(`Unknown research source: ${sourceId}`);
-    }
-    return source;
-  });
+  return sourceIds.map(researchSourceForId);
 }
