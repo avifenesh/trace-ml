@@ -13,7 +13,7 @@ components remain under their upstream licenses.
 | Tauri opener plugin | 2.5.4 | MIT OR Apache-2.0 | [tauri-apps/plugins-workspace](https://github.com/tauri-apps/plugins-workspace) |
 | React and React DOM | 19.2.8 | MIT | [facebook/react](https://github.com/facebook/react) |
 | Scheduler | 0.27.0 | MIT | [facebook/react](https://github.com/facebook/react) |
-| Lucide React | 1.28.0 | ISC | [lucide-icons/lucide](https://github.com/lucide-icons/lucide) |
+| Lucide React | 1.31.0 | ISC | [lucide-icons/lucide](https://github.com/lucide-icons/lucide) |
 | Pyodide | 314.0.3 | MPL-2.0 | [pyodide/pyodide at `ac57031`](https://github.com/pyodide/pyodide/tree/ac57031be7564f864d061cb37c5c152e59f83ad4) |
 | CPython runtime and standard library | 3.14.2 | Python-2.0 | [python/cpython](https://github.com/python/cpython/tree/v3.14.2) |
 | NumPy | 2.4.3 | BSD-3-Clause | [numpy/numpy](https://github.com/numpy/numpy) |
