@@ -918,7 +918,7 @@ describe("fixed authored course integrity", () => {
       );
 
       expect(activity.evidenceKind).toBe("code-check");
-      expect(activity.spec.runtimeId).toBe("pyodide-314.0.3");
+      expect(activity.spec.runtimeId).toBe("pyodide-314.0.4");
       expect(activity.spec.environmentDigest).toBe(PYODIDE_ENVIRONMENT);
       expect(activity.spec.seed).toBeGreaterThan(0);
       expect(Number.isInteger(activity.spec.seed)).toBe(true);
