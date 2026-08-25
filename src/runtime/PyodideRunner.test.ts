@@ -15,7 +15,7 @@ import type {
 import { PyodideRunner } from "./PyodideRunner";
 
 const environment: RuntimeEnvironment = {
-  pyodideVersion: "314.0.3",
+  pyodideVersion: "314.0.4",
   pythonVersion: "3.14.2",
   abi: "test-abi",
   packages: {},

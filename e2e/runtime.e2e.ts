@@ -23,7 +23,7 @@ test("an authored Python lab runs through the accessible UI", async ({
   const lab = page.getByRole("region", {
     name: "Rebuild the mechanism in Python.",
   });
-  await expect(lab).toContainText("Pyodide 314.0.3");
+  await expect(lab).toContainText("Pyodide 314.0.4");
   const source = lab.getByRole("textbox", { name: "Python source" });
   const run = lab.getByRole("button", { name: "Run", exact: true });
   const check = lab.getByRole("button", { name: "Check work" });
@@ -281,7 +281,7 @@ test("Pyodide bounds output, interrupts work, and recovers", async ({
 
   expect(result.crossOriginIsolated).toBe(true);
   expect(result.environment).toMatchObject({
-    pyodideVersion: "314.0.3",
+    pyodideVersion: "314.0.4",
     pythonVersion: "3.14.2",
     crossOriginIsolated: true,
   });

@@ -171,7 +171,7 @@ using chat history as course content or learning evidence.
 ## Local Python
 
 Python labs run locally in a dedicated Web Worker using pinned Pyodide
-`314.0.3` and Python `3.14.2`. There is no remote execution service.
+`314.0.4` and Python `3.14.2`. There is no remote execution service.
 
 `predev` and `prebuild` copy the Pyodide module, WebAssembly binary, lockfile,
 and standard library from `node_modules/pyodide` into the ignored
