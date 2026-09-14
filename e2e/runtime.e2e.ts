@@ -23,7 +23,7 @@ test("an authored Python lab runs through the accessible UI", async ({
   const lab = page.getByRole("region", {
     name: "Rebuild the mechanism in Python.",
   });
-  await expect(lab).toContainText("Pyodide 314.0.4");
+  await expect(lab).toContainText("Pyodide 314.0.6");
   const source = lab.getByRole("textbox", { name: "Python source" });
   const run = lab.getByRole("button", { name: "Run", exact: true });
   const check = lab.getByRole("button", { name: "Check work" });
@@ -281,7 +281,7 @@ test("Pyodide bounds output, interrupts work, and recovers", async ({
 
   expect(result.crossOriginIsolated).toBe(true);
   expect(result.environment).toMatchObject({
-    pyodideVersion: "314.0.4",
+    pyodideVersion: "314.0.6",
     pythonVersion: "3.14.2",
     crossOriginIsolated: true,
   });
@@ -418,10 +418,10 @@ test("pinned NumPy, autograd, and scikit-learn run from local assets", async ({
     return results;
   });
 
-  expect(results[0]?.environment.packages).toEqual({ numpy: "2.4.3" });
+  expect(results[0]?.environment.packages).toEqual({ numpy: "2.4.6" });
   expect(results[0]?.result).toMatchObject({
     status: "completed",
-    stdout: "2.4.3\n",
+    stdout: "2.4.6\n",
     result: "(2, 2)",
   });
   expect(results[1]?.environment.packages).toEqual({ autograd: "1.9.1" });

@@ -14,9 +14,9 @@ components remain under their upstream licenses.
 | React and React DOM | 19.2.8 | MIT | [facebook/react](https://github.com/facebook/react) |
 | Scheduler | 0.27.0 | MIT | [facebook/react](https://github.com/facebook/react) |
 | Lucide React | 1.31.0 | ISC | [lucide-icons/lucide](https://github.com/lucide-icons/lucide) |
-| Pyodide | 314.0.4 | MPL-2.0 | [pyodide/pyodide at `da436a9`](https://github.com/pyodide/pyodide/tree/da436a90d68f9fe986eb97563d49f527e072da2c) |
+| Pyodide | 314.0.6 | MPL-2.0 | [pyodide/pyodide at `8cec1b9`](https://github.com/pyodide/pyodide/tree/8cec1b9bb8ead68c7c09b0a6443576bec7512268) |
 | CPython runtime and standard library | 3.14.2 | Python-2.0 | [python/cpython](https://github.com/python/cpython/tree/v3.14.2) |
-| NumPy | 2.4.3 | BSD-3-Clause | [numpy/numpy](https://github.com/numpy/numpy) |
+| NumPy | 2.4.6 | BSD-3-Clause | [numpy/numpy](https://github.com/numpy/numpy) |
 | SciPy | 1.18.0 | BSD-3-Clause | [scipy/scipy](https://github.com/scipy/scipy) |
 | scikit-learn | 1.8.0 | BSD-3-Clause | [scikit-learn/scikit-learn](https://github.com/scikit-learn/scikit-learn) |
 | joblib | 1.5.3 | BSD-3-Clause | [joblib/joblib](https://github.com/joblib/joblib) |
