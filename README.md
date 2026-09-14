@@ -171,7 +171,7 @@ using chat history as course content or learning evidence.
 ## Local Python
 
 Python labs run locally in a dedicated Web Worker using pinned Pyodide
-`314.0.4` and Python `3.14.2`. There is no remote execution service.
+`314.0.6` and Python `3.14.2`. There is no remote execution service.
 
 `predev` and `prebuild` copy the Pyodide module, WebAssembly binary, lockfile,
 and standard library from `node_modules/pyodide` into the ignored
@@ -188,7 +188,7 @@ Stop, timeout, lesson navigation, and component teardown all force termination
 after a short cooperative-interrupt grace period. Fourteen labs use the Python
 standard library only.
 Five scientific labs load pinned, checksum-verified local wheels for NumPy
-`2.4.3`, scikit-learn `1.8.0`, or autograd `1.9.1`; no package is fetched at
+`2.4.6`, scikit-learn `1.8.0`, or autograd `1.9.1`; no package is fetched at
 lesson runtime.
 
 The worker exposes a frozen empty `js` module, revokes Pyodide's
