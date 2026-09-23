@@ -109,11 +109,6 @@ fn readiness_from_value(value: Value) -> Result<BedrockReadiness, String> {
         || model.data_retention.source.trim().is_empty()
         || model.data_retention.source.chars().count() > 100
         || model.data_retention.allowed_modes.is_empty()
-        || model
-            .data_retention
-            .allowed_modes
-            .iter()
-            .any(|mode| !RETENTION_MODES.contains(&mode.as_str()))
         || !model
             .data_retention
             .allowed_modes
@@ -121,7 +116,14 @@ fn readiness_from_value(value: Value) -> Result<BedrockReadiness, String> {
     {
         return Err("Bedrock model policy metadata is invalid.".to_string());
     }
-    let mut allowed_retention_modes = model.data_retention.allowed_modes;
+    // Bedrock adds account options over time (aws_review appeared in 2026-09). The effective
+    // mode must be one we can disclose; options we do not know yet are left out of the list.
+    let mut allowed_retention_modes: Vec<String> = model
+        .data_retention
+        .allowed_modes
+        .into_iter()
+        .filter(|mode| RETENTION_MODES.contains(&mode.as_str()))
+        .collect();
     allowed_retention_modes.sort();
     allowed_retention_modes.dedup();
     Ok(BedrockReadiness {
@@ -327,6 +329,45 @@ mod tests {
             readiness.allowed_retention_modes,
             vec!["default".to_string(), "provider_data_share".to_string()]
         );
+    }
+
+    #[test]
+    fn ignores_unknown_allowed_modes_but_keeps_the_effective_mode() {
+        let readiness = readiness_from_value(json!({
+            "object": "list",
+            "data": [{
+                "id": BEDROCK_MODEL,
+                "status": "available",
+                "data_retention": {
+                    "mode": "provider_data_share",
+                    "source": "account",
+                    "allowed_modes": ["provider_data_share", "aws_review", "default"]
+                }
+            }]
+        }))
+        .unwrap();
+        assert_eq!(readiness.retention_mode, "provider_data_share");
+        assert_eq!(
+            readiness.allowed_retention_modes,
+            vec!["default".to_string(), "provider_data_share".to_string()]
+        );
+    }
+
+    #[test]
+    fn rejects_an_unknown_effective_mode() {
+        let value = json!({
+            "object": "list",
+            "data": [{
+                "id": BEDROCK_MODEL,
+                "status": "available",
+                "data_retention": {
+                    "mode": "aws_review",
+                    "source": "account",
+                    "allowed_modes": ["aws_review", "default"]
+                }
+            }]
+        });
+        assert!(readiness_from_value(value).is_err());
     }
 
     #[test]
