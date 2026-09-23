@@ -157,7 +157,7 @@ Guaranteed ZDR requires an effective account or project
 `data_retention_mode: none`. Standard Bedrock model-invocation logging currently
 does not capture Mantle Responses calls. Classifier-flagged GPT-5.6 Sol traffic
 may still be retained by AWS for up to 30 days for automated offline abuse
-detection. `[PA21, PA31-PA38, PA41]`
+detection (checked for GPT-5.6 Sol; not rechecked for GPT-6 Sol). `[PA21, PA31-PA38, PA41]`
 
 Trace ML implication:
 
@@ -176,7 +176,7 @@ Trace ML implication:
 | Concern | Trace ML implementation |
 |---|---|
 | Curriculum authority | Fixed authored lesson page, prompt, guidance, and criterion labels |
-| Model | Direct Amazon Bedrock Mantle Responses call to `openai.gpt-5.6-sol` in `us-east-1` with max reasoning |
+| Model | Direct Amazon Bedrock Mantle Responses call to `openai.gpt-6-sol` in `us-east-1` with max reasoning |
 | Runtime | Reused HTTPS client; one active cancellable request; six requests per ten minutes; no redirects or proxy; 4,096-token output ceiling; 180-second deadline; 256 KiB response cap |
 | IPC authority | Webview sends lesson/revision/activity IDs plus the draft; Rust resolves a generated manifest compiled into the app and authorizes only the `main` window |
 | Input | Authored lesson text, prompt, guidance, rubric labels, and one learner response; no authored feedback, chat history, or external retrieval |
@@ -208,6 +208,19 @@ Before changing the prompt, model, or rubric format, test:
 | Repeated identical run | Stability measured, not assumed |
 | Human disagreement | Escalated for rubric or calibration review |
 
+## Model Acceptance Record
+
+A model change reruns the ignored live probes in `src-tauri/src/prose_assessment.rs`
+and `src-tauri/src/lesson_helper.rs` (`cargo test --lib live_bedrock -- --ignored`)
+before the constant moves.
+
+| Date | Model | Result |
+|---|---|---|
+| 2026-09-23 | `openai.gpt-6-sol`, `us-east-1`, prose effort `max`, helper effort `low` | 7 of 7 passed: authored prose, novice paraphrase, partial answer to the missing link, learner control instructions rejected, ambiguous wording to clarification, helper 80/20 explanation, helper-only boundary |
+
+These are single runs of five prose cases and two helper cases. They are not a
+calibration, repeated-run, or fairness study.
+
 ## Common Pitfalls
 
 | Pitfall | Why it fails | Required response |
@@ -229,7 +242,8 @@ Before changing the prompt, model, or rubric format, test:
 - The live probes cover canonical, novice-paraphrase, partial, and direct
   instruction-attack cases, not every lesson or misconception.
 - No repeated-run reliability, subgroup fairness, multilingual, or calibration
-  study has been completed for `openai.gpt-5.6-sol`.
+  study has been completed for `openai.gpt-6-sol` (or for `openai.gpt-5.6-sol`
+  before it).
 - The configured account reported `provider_data_share` on 2026-08-05. Moving
   to guaranteed ZDR would require a deliberate AWS account/project policy
   change and confirmation that the selected model permits mode `none`.

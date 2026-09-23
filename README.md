@@ -240,9 +240,10 @@ Linux host for Tailnet access. Ordinary browser Q&A and structure checks send
 nothing remotely. `store: false`
 disables retrievable Responses state but does not guarantee zero retention;
 AWS documents that classifier-flagged GPT-5.6 Sol traffic may be retained for
-up to 30 days. Account/project retention and provider-sharing policy still
-apply. Live model metadata reported `provider_data_share` on 2026-08-06, so
-this installation does not establish zero data retention.
+up to 30 days; that page was not rechecked for GPT-6 Sol, the current model.
+Account/project retention and provider-sharing policy still apply. Live model
+metadata for `openai.gpt-6-sol` reported `provider_data_share` on 2026-09-23,
+so this installation does not establish zero data retention.
 
 If browser storage is unavailable, activity continues in memory for that
 session and the compact toolbar displays **Session only**. That warning means

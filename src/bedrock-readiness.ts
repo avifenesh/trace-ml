@@ -1,4 +1,4 @@
-export const BEDROCK_MODEL = "openai.gpt-5.6-sol";
+export const BEDROCK_MODEL = "openai.gpt-6-sol";
 
 export type BedrockRetentionMode =
   | "default"

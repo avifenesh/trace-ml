@@ -359,7 +359,7 @@ describe("production static server", () => {
         if (action === "lessonHelperReady") {
           return {
             available: true,
-            model: "openai.gpt-5.6-sol",
+            model: "openai.gpt-6-sol",
             retentionMode: "provider_data_share",
             retentionSource: "account",
             allowedRetentionModes: ["default", "provider_data_share"],
@@ -401,7 +401,7 @@ describe("production static server", () => {
     expect(readiness.status).toBe(200);
     expect((await readiness.json()).result).toMatchObject({
       available: true,
-      model: "openai.gpt-5.6-sol",
+      model: "openai.gpt-6-sol",
     });
     expect(readiness.headers.get("cache-control")).toBe("no-store");
     expect(answer.status).toBe(200);

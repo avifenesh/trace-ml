@@ -7,6 +7,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Changed
+
+- The Bedrock helper and prose review use `openai.gpt-6-sol` instead of
+  `openai.gpt-5.6-sol`, after the seven live acceptance probes passed on it.
+
 ### Added
 
 - A fixed, pre-authored course with 21 lessons across seven machine-learning
