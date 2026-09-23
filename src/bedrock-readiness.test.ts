@@ -7,7 +7,7 @@ import {
 
 const verifiedPolicy = {
   available: true,
-  model: "openai.gpt-5.6-sol",
+  model: "openai.gpt-6-sol",
   retentionMode: "provider_data_share",
   retentionSource: "account",
   allowedRetentionModes: ["default", "provider_data_share"],

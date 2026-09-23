@@ -377,7 +377,7 @@ function runCargo() {
       '} else if (request.action.endsWith("Ready")) {',
       "    result = {",
       "      available: true,",
-      '      model: "openai.gpt-5.6-sol",',
+      '      model: "openai.gpt-6-sol",',
       '      retentionMode: "provider_data_share",',
       '      retentionSource: "account",',
       '      allowedRetentionModes: ["default", "provider_data_share"],',
@@ -698,7 +698,7 @@ describeLinux("managed tailnet lifecycle", () => {
       );
       expect(status.stdout).toMatch(/Main PID: [1-9][0-9]*/);
       expect(status.stdout).toContain(
-        "Bedrock: available (openai.gpt-5.6-sol",
+        "Bedrock: available (openai.gpt-6-sol",
       );
 
       const stop = await runLifecycle("stop", fixture.environment);
@@ -780,7 +780,7 @@ describeLinux("managed tailnet lifecycle", () => {
     expect(unit).toContain("NoNewPrivileges=yes");
     expect(
       (await runLifecycle("status", fixture.environment)).stdout,
-    ).toContain("Bedrock: available (openai.gpt-5.6-sol");
+    ).toContain("Bedrock: available (openai.gpt-6-sol");
   }, 30_000);
 
   test("rejects incomplete or unusable Snap runtime details", async () => {
@@ -991,7 +991,7 @@ describeLinux("managed tailnet lifecycle", () => {
     });
     expect(
       (await runLifecycle("status", fixture.environment)).stdout,
-    ).toContain("Bedrock: available (openai.gpt-5.6-sol");
+    ).toContain("Bedrock: available (openai.gpt-6-sol");
   }, 30_000);
 
   test(
