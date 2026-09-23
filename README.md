@@ -243,7 +243,10 @@ AWS documents that classifier-flagged GPT-5.6 Sol traffic may be retained for
 up to 30 days; that page was not rechecked for GPT-6 Sol, the current model.
 Account/project retention and provider-sharing policy still apply. Live model
 metadata for `openai.gpt-6-sol` reported `provider_data_share` on 2026-09-23,
-so this installation does not establish zero data retention.
+so this installation does not establish zero data retention. The readiness
+check requires the effective mode to be one it can disclose (`default`,
+`provider_data_share`, `none`); account options it does not know yet, such as
+`aws_review`, are left out of the allowed list instead of blocking the app.
 
 If browser storage is unavailable, activity continues in memory for that
 session and the compact toolbar displays **Session only**. That warning means
