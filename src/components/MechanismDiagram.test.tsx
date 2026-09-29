@@ -82,6 +82,19 @@ describe("MechanismDiagram", () => {
       expect(first).toContain(
         `<title>Exact linked state for ${labId}:`,
       );
+      if (labId === "knn-versus-tree") {
+        const pointTitles = [
+          ...first.matchAll(/<title>([^<]*)<\/title>/g),
+        ]
+          .map((match) => match[1] ?? "")
+          .filter((title) => title.startsWith("Training point x="));
+        expect(pointTitles.length).toBeGreaterThan(0);
+        for (const title of pointTitles) {
+          expect(title).toMatch(
+            /^Training point x=[^,]+, class \d+, (selected neighbor|not selected)$/,
+          );
+        }
+      }
       expect(first).toContain(escapedMarkup(observation.primary));
       expect(first).toContain(escapedMarkup(observation.secondary));
       expect(first).toContain("<summary>Diagram values</summary>");

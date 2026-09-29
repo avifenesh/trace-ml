@@ -1033,8 +1033,7 @@ function KnnTreeView({ observation }: ObservationViewProps) {
             data-knn-selected={selected ? "true" : "false"}
           >
             <title>
-              Training point x={formatNumber(point)}, class {label},{" "}
-              {selected ? "selected neighbor" : "not selected"}
+              {`Training point x=${formatNumber(point)}, class ${label}, ${selected ? "selected neighbor" : "not selected"}`}
             </title>
             {selected && (
               <circle
