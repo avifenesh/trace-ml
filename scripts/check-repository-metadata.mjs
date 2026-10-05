@@ -69,7 +69,6 @@ function cargoLockVersion(name) {
 }
 for (const [rustPackage, npmPackage] of [
   ["tauri", "@tauri-apps/api"],
-  ["tauri", "@tauri-apps/cli"],
   ["tauri-plugin-opener", "@tauri-apps/plugin-opener"],
 ]) {
   const rustVersion = cargoLockVersion(rustPackage);
