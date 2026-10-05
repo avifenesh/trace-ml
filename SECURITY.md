@@ -84,10 +84,10 @@ The following properties must hold:
   [Tauri reports no affected internal path](https://github.com/tauri-apps/tauri/issues/12048),
   but the dependency cannot be upgraded independently of Tauri's GTK backend.
 - RustSec also reports unmaintained `proc-macro-error` through the same GTK3
-  bindings and five unmaintained `unic-*` crates through Tauri's `urlpattern`
-  dependency. These are transitive Tauri dependencies rather than direct Trace
-  ML choices. The weekly audit remains blocking for vulnerability advisories;
-  informational maintenance warnings are reviewed before each release.
+  bindings. This is a transitive Tauri dependency rather than a direct Trace
+  ML choice. Tauri 2.12 removes the earlier unmaintained `unic-*` dependencies.
+  The weekly audit remains blocking for vulnerability advisories; informational
+  maintenance warnings are reviewed before each release.
 - Links intentionally leave the application after exact authored-scope
   validation. The destination site remains outside Trace ML's security
   boundary.

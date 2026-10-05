@@ -171,7 +171,7 @@ using chat history as course content or learning evidence.
 ## Local Python
 
 Python labs run locally in a dedicated Web Worker using pinned Pyodide
-`314.0.6` and Python `3.14.2`. There is no remote execution service.
+`314.0.7` and Python `3.14.2`. There is no remote execution service.
 
 `predev` and `prebuild` copy the Pyodide module, WebAssembly binary, lockfile,
 and standard library from `node_modules/pyodide` into the ignored
@@ -361,8 +361,8 @@ different proxy, a foreground Serve session, or Funnel.
 ## Development
 
 The desktop build requires Node `^22.22.2`, `^24.15.0`, or `>=26.0.0`, npm,
-the pinned Rust `1.97.1` toolchain (the crate remains compatible with Rust
-`1.88.0` or newer), and the operating-system prerequisites below. The latest
+the pinned Rust `1.97.1` toolchain (the crate declares Rust `1.90.0` as its
+minimum), and the operating-system prerequisites below. The latest
 Node 24 LTS is recommended; `.nvmrc` and `rust-toolchain.toml` select the
 expected toolchains.
 
