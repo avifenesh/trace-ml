@@ -38,7 +38,7 @@ const activity: CodeLabActivity = {
   conceptIds: ["python-state"],
   evidenceKind: "code-check",
   spec: {
-    runtimeId: "pyodide-314.0.6",
+    runtimeId: "pyodide-314.0.7",
     environmentDigest: "test-environment",
     seed: 1,
     timeoutMs: 1_000,
@@ -69,7 +69,7 @@ const completedResult: RunResult = {
   bytesProduced: 0,
   durationMs: 1,
   environment: {
-    pyodideVersion: "314.0.6",
+    pyodideVersion: "314.0.7",
     pythonVersion: "3.14.2",
     abi: "test",
     packages: {},

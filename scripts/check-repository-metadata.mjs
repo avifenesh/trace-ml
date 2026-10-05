@@ -55,7 +55,53 @@ if (!cargoPackage) {
 
 assertEqual("npm/Cargo version", packageJson.version, cargoPackage.version);
 assertEqual("npm/Tauri version", packageJson.version, tauriConfig.version);
-assertEqual("Cargo minimum Rust", cargoPackage.rust_version, "1.88.0");
+assertEqual("Cargo minimum Rust", cargoPackage.rust_version, "1.90.0");
+
+// Tauri refuses builds when Rust and npm packages use different minor releases.
+const cargoLock = readText("src-tauri/Cargo.lock");
+function cargoLockVersion(name) {
+  const block = cargoLock
+    .split("[[package]]")
+    .find((value) => value.includes(`\nname = "${name}"\n`));
+  const version = block?.match(/\nversion = "([^"]+)"/)?.[1];
+  assert(version, `Cargo.lock is missing ${name}.`);
+  return version;
+}
+for (const [rustPackage, npmPackage] of [
+  ["tauri", "@tauri-apps/api"],
+  ["tauri", "@tauri-apps/cli"],
+  ["tauri-plugin-opener", "@tauri-apps/plugin-opener"],
+]) {
+  const rustVersion = cargoLockVersion(rustPackage);
+  const npmVersion = packageLock.packages?.[`node_modules/${npmPackage}`]?.version;
+  assert(npmVersion, `package-lock.json is missing ${npmPackage}.`);
+  assertEqual(
+    `${rustPackage}/${npmPackage} major.minor`,
+    npmVersion.split(".").slice(0, 2).join("."),
+    rustVersion.split(".").slice(0, 2).join("."),
+  );
+}
+
+const pyodideVersion = packageJson.dependencies.pyodide;
+for (const relativePath of [
+  "README.md",
+  "THIRD_PARTY_NOTICES.md",
+  "e2e/runtime.e2e.ts",
+  "src/components/PythonCodeLab.tsx",
+  "src/components/PythonCodeLab.test.tsx",
+  "src/runtime/PyodideRunner.test.ts",
+  "src/content/lesson-helpers.ts",
+  "src/content/types.ts",
+  "src/content/course.test.ts",
+]) {
+  const versions = [...readText(relativePath).matchAll(
+    /(?:pyodide-|Pyodide(?:\s*\|\s*|\s+[`"']?)|pyodideVersion:\s*["'])(\d+\.\d+\.\d+)/g,
+  )];
+  assert(versions.length > 0, `${relativePath} has no Pyodide runtime version.`);
+  for (const match of versions) {
+    assertEqual(`${relativePath} Pyodide runtime`, match[1], pyodideVersion);
+  }
+}
 assertEqual("npm private", packageJson.private, true);
 assert(
   Array.isArray(cargoPackage.publish) && cargoPackage.publish.length === 0,

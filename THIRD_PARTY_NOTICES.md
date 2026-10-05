@@ -8,13 +8,13 @@ components remain under their upstream licenses.
 
 | Component | Version | License | Source |
 | --- | --- | --- | --- |
-| Tauri core | 2.11.5 | Apache-2.0 OR MIT | [tauri-apps/tauri](https://github.com/tauri-apps/tauri) |
-| Tauri JavaScript API | 2.11.1 | Apache-2.0 OR MIT | [tauri-apps/tauri](https://github.com/tauri-apps/tauri) |
-| Tauri opener plugin | 2.5.4 | MIT OR Apache-2.0 | [tauri-apps/plugins-workspace](https://github.com/tauri-apps/plugins-workspace) |
+| Tauri core | 2.12.1 | Apache-2.0 OR MIT | [tauri-apps/tauri](https://github.com/tauri-apps/tauri) |
+| Tauri JavaScript API | 2.12.1 | Apache-2.0 OR MIT | [tauri-apps/tauri](https://github.com/tauri-apps/tauri) |
+| Tauri opener plugin | 2.7.0 | MIT OR Apache-2.0 | [tauri-apps/plugins-workspace](https://github.com/tauri-apps/plugins-workspace) |
 | React and React DOM | 19.3.0 | MIT | [facebook/react](https://github.com/facebook/react) |
 | Scheduler | 0.28.0 | MIT | [facebook/react](https://github.com/facebook/react) |
-| Lucide React | 1.31.0 | ISC | [lucide-icons/lucide](https://github.com/lucide-icons/lucide) |
-| Pyodide | 314.0.6 | MPL-2.0 | [pyodide/pyodide at `8cec1b9`](https://github.com/pyodide/pyodide/tree/8cec1b9bb8ead68c7c09b0a6443576bec7512268) |
+| Lucide React | 1.52.0 | ISC | [lucide-icons/lucide](https://github.com/lucide-icons/lucide) |
+| Pyodide | 314.0.7 | MPL-2.0 | [pyodide/pyodide at `b1e4fcc`](https://github.com/pyodide/pyodide/tree/b1e4fcc2488962f6360a97f19b9982d6fdb5d16f) |
 | CPython runtime and standard library | 3.14.2 | Python-2.0 | [python/cpython](https://github.com/python/cpython/tree/v3.14.2) |
 | NumPy | 2.4.6 | BSD-3-Clause | [numpy/numpy](https://github.com/numpy/numpy) |
 | SciPy | 1.18.0 | BSD-3-Clause | [scipy/scipy](https://github.com/scipy/scipy) |
