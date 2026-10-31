@@ -130,7 +130,7 @@ reorders course material. Free-form explanation and transfer prompts remain
 formative drafts and never control access or objective completion.
 
 The 204 focused reading paragraphs and 489 teaching chunks form 693
-source-linked page chunks backed by a 109-source research registry. Compact
+source-linked page chunks backed by a 110-source research registry. Compact
 editorial citations under teaching and reading blocks are separate from
 optional resources and never record learner activity.
 
@@ -531,7 +531,7 @@ and [DMG](https://v2.tauri.app/distribute/dmg/) guides (accessed 2026-08-05).
 
 The research synthesis is in
 [`agent-knowledge/ml-course-research.md`](agent-knowledge/ml-course-research.md).
-Its 109-source registry is
+Its 110-source registry is
 [`agent-knowledge/resources/ml-course-research-sources.json`](agent-knowledge/resources/ml-course-research-sources.json).
 Source IDs in lesson content resolve against that registry; the guide also
 records synthesized design decisions and known evidence gaps.
