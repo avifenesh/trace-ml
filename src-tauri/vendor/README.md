@@ -11,8 +11,8 @@ Tauri 3 and cannot replace the stable plugin in this application.
 
 Local changes cover the zbus 6 dependency, its async file-reveal API, and the
 OpenDirectory fallback contract. The fallback addresses the Desktop service
-through the OpenURI interface, transfers a read-only file descriptor with
-variant options, and accepts the returned request object path. A private
+through the OpenURI interface, transfers a nonblocking read-only file descriptor
+with variant options, and accepts the returned request object path. A private
 D-Bus regression checks the wire contract, fallback order, and error paths.
 The existing dedicated thread, URL-opening code, plugin commands,
 permissions, and other platform implementations are preserved. Remove this patch

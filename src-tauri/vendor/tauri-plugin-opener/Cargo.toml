@@ -97,6 +97,9 @@ features = ["derive"]
 version = "2.7.1"
 features = ["build"]
 
+[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))'.dependencies.libc]
+version = "0.2"
+
 [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))'.dependencies.url]
 version = "2"
 

@@ -277,7 +277,7 @@ mod imp {
         path: &Path,
         connection: &zbus::Connection,
     ) -> crate::Result<()> {
-        let file = std::fs::File::open(path)?;
+        let file = open_portal_file(path)?;
 
         #[zbus::proxy(
             interface = "org.freedesktop.portal.OpenURI",
@@ -299,6 +299,14 @@ mod imp {
             .OpenDirectory("", zbus::Fd::from(&file), HashMap::new())
             .await?;
         Ok(())
+    }
+
+    fn open_portal_file(path: &Path) -> std::io::Result<std::fs::File> {
+        use std::os::unix::fs::OpenOptionsExt;
+        std::fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NONBLOCK)
+            .open(path)
     }
 
     #[cfg(test)]
@@ -561,6 +569,46 @@ mod imp {
                     "no first path means no fallback"
                 );
             });
+        }
+        #[test]
+        fn maintained_dbus_portal_file_open_does_not_wait_for_a_fifo_writer() {
+            use std::os::unix::fs::{FileTypeExt, OpenOptionsExt};
+            let directory = TestDirectory(std::env::temp_dir().join(format!(
+                "opener-fifo-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            )));
+            std::fs::create_dir(&directory.0).unwrap();
+            let fifo = directory.0.join("without-writer");
+            assert!(
+                Command::new("mkfifo")
+                    .arg(&fifo)
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            let path = fifo.clone();
+            let (tx, rx) = mpsc::channel();
+            let probe = std::thread::spawn(move || {
+                let _ = tx.send(open_portal_file(&path));
+            });
+            let result = rx.recv_timeout(Duration::from_secs(5));
+            if result.is_err() {
+                // Release an incorrectly blocking reader before reporting the bounded failure.
+                let _writer = std::fs::OpenOptions::new()
+                    .write(true)
+                    .custom_flags(libc::O_NONBLOCK)
+                    .open(&fifo);
+                let _ = rx.recv_timeout(Duration::from_secs(5));
+            }
+            let file = result
+                .expect("opening a portal FIFO must not wait for a writer")
+                .unwrap();
+            probe.join().unwrap();
+            assert!(file.metadata().unwrap().file_type().is_fifo());
         }
     }
 }

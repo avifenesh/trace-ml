@@ -3405,6 +3405,7 @@ version = "2.7.2"
 dependencies = [
  "dunce",
  "glob",
+ "libc",
  "objc2-app-kit",
  "objc2-foundation",
  "open",
