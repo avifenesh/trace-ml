@@ -9,9 +9,13 @@ zbus_names, zvariant, and zvariant_derive crates (RUSTSEC-2026-0371,
 RUSTSEC-2026-0370, and RUSTSEC-2026-0372). The opener 3 prerelease requires
 Tauri 3 and cannot replace the stable plugin in this application.
 
-Local changes are limited to the zbus 6 dependency and its async file-reveal
-API. The existing dedicated thread, URL-opening code, plugin commands,
-permissions, and platform implementations are preserved. Remove this patch
+Local changes cover the zbus 6 dependency, its async file-reveal API, and the
+OpenDirectory fallback contract. The fallback addresses the Desktop service
+through the OpenURI interface, transfers a read-only file descriptor with
+variant options, and accepts the returned request object path. A private
+D-Bus regression checks the wire contract, fallback order, and error paths.
+The existing dedicated thread, URL-opening code, plugin commands,
+permissions, and other platform implementations are preserved. Remove this patch
 when a stable Tauri 2 opener release provides the maintained D-Bus stack.
 
 Upstream: https://github.com/tauri-apps/plugins-workspace/tree/44293a5722efcaf27060504e63b17aeba721b40f/plugins/opener
