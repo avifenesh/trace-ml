@@ -46,6 +46,7 @@ check:
 	@cargo fmt --all --manifest-path src-tauri/Cargo.toml -- --check
 	@cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 	@cargo test --locked --manifest-path src-tauri/Cargo.toml
+	@cargo test --locked --manifest-path src-tauri/Cargo.toml -p tauri-plugin-opener --lib maintained_dbus
 
 test-e2e:
 	@npm run test:e2e

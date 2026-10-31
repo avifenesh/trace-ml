@@ -10,6 +10,10 @@ default-run = "trace-ml"
 edition = "2021"
 rust-version = "1.90.0"
 
+[workspace]
+members = ["vendor/tauri-plugin-opener"]
+default-members = ["."]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
@@ -28,3 +32,7 @@ tauri = { version = "2.12.1", features = [] }
 tauri-plugin-opener = "2.7.0"
 tokio = { version = "1", features = ["macros", "sync"] }
 unicode-normalization = "0.1.25"
+
+# Keep the stable Tauri 2 opener API while using the maintained D-Bus stack.
+[patch.crates-io]
+tauri-plugin-opener = { path = "vendor/tauri-plugin-opener" }
