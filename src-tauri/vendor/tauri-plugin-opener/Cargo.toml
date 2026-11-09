@@ -87,7 +87,7 @@ features = ["wry"]
 default-features = false
 
 [build-dependencies.schemars]
-version = "0.8"
+version = "1.2"
 
 [build-dependencies.serde]
 version = "1"
