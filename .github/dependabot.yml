@@ -21,6 +21,16 @@ updates:
       day: monday
       time: "07:15"
       timezone: Asia/Jerusalem
+    ignore:
+      # The vendored tauri-plugin-opener port (zbus 6 ahead of upstream) feeds
+      # schemars 0.8 RootSchema into tauri-plugin 2.7.x's typed build API
+      # (tauri-plugin 2.7.2 still depends on schemars 0.8.22). schemars 0.9+
+      # removes RootSchema, so those bumps cannot compile against any stable
+      # tauri-plugin (the schemars-1 line arrives with tauri-plugin 3.0,
+      # alpha-only on 2026-11-09). 0.8.x patch bumps stay eligible.
+      # Landed with #130's resolution; revisit when tauri-plugin 3.0 is stable.
+      - dependency-name: schemars
+        versions: [">=0.9"]
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
