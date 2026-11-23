@@ -183,7 +183,7 @@ export interface CodeCheck {
 }
 
 export interface CodeLabSpec {
-  runtimeId: "pyodide-314.0.7";
+  runtimeId: "pyodide-314.0.8";
   environmentDigest: string;
   seed: number;
   timeoutMs: number;

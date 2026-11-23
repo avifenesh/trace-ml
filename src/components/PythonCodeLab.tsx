@@ -368,7 +368,7 @@ export function PythonCodeLab({
         <div className="runtime-contract">
           <ShieldCheck size={16} aria-hidden="true" />
           <span>
-            <strong>Pyodide 314.0.7</strong>
+            <strong>Pyodide 314.0.8</strong>
             {packageLabel} · clean checks
           </span>
         </div>

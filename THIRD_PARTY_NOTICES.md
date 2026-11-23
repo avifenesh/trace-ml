@@ -14,7 +14,7 @@ components remain under their upstream licenses.
 | React and React DOM | 19.3.0 | MIT | [facebook/react](https://github.com/facebook/react) |
 | Scheduler | 0.28.0 | MIT | [facebook/react](https://github.com/facebook/react) |
 | Lucide React | 1.52.0 | ISC | [lucide-icons/lucide](https://github.com/lucide-icons/lucide) |
-| Pyodide | 314.0.7 | MPL-2.0 | [pyodide/pyodide at `b1e4fcc`](https://github.com/pyodide/pyodide/tree/b1e4fcc2488962f6360a97f19b9982d6fdb5d16f) |
+| Pyodide | 314.0.8 | MPL-2.0 | [pyodide/pyodide at `b1e4fcc`](https://github.com/pyodide/pyodide/tree/f37a18559ae11c5f371beb1c9462a13a663fc461) |
 | CPython runtime and standard library | 3.14.2 | Python-2.0 | [python/cpython](https://github.com/python/cpython/tree/v3.14.2) |
 | NumPy | 2.4.6 | BSD-3-Clause | [numpy/numpy](https://github.com/numpy/numpy) |
 | SciPy | 1.18.0 | BSD-3-Clause | [scipy/scipy](https://github.com/scipy/scipy) |
